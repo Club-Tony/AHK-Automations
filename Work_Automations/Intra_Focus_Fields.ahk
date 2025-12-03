@@ -45,8 +45,8 @@ Return
     Sleep 200
     MouseClick, left, 1060, 185
     Sleep 200
-    MouseMove, 1100, 365
-    Sleep 100
+    MouseClick, left, 1100, 365, 2
+    Sleep 200
     Loop 50
     {
         MouseClick, WheelUp
