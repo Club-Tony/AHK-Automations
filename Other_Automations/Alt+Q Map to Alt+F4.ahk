@@ -1,6 +1,5 @@
 #NoEnv
 #Warn
-#SingleInstance, Force  ; Reload without prompt when Esc is pressed.
 SendMode Input
 SetWorkingDir %A_ScriptDir%
 
