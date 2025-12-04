@@ -119,6 +119,23 @@ return
     Sleep 200
 return
 
+!h::
+    MouseClick, left, 70, 1345, 2
+    Sleep 200
+    ClickScaled(StatusBar)
+    Sleep 200
+    Loop 25 {
+        MouseClick, WheelUp
+        Sleep 20
+    }
+    Loop 17 {
+        MouseClick, WheelDown
+        Sleep 20
+    }
+    ClickScaled(FirstDropdown)
+    Sleep 200
+return
+
 !c::
     MouseClick, left, 70, 1345, 2
     Sleep 200

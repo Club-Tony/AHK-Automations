@@ -47,6 +47,7 @@ Alt+D - Item Var Lookup + Apply All Toggle
 Update Tab:
 Alt+P - Status Select -> Pickup from BSC
 Alt+D - Status Select -> Delivery
+Alt+H - Status Select -> Outbound Handed-Off
 Alt+V - Status Select -> Void
 Alt+S - Click Status Field
 Ctrl+Alt+T - Show this tooltip again
@@ -78,6 +79,7 @@ Return
 ~!2::Gosub HideTooltips
 ~!3::Gosub HideTooltips
 ~!d::Gosub HideTooltips
+~!h::Gosub HideTooltips
 ~!c::Gosub HideTooltips
 ~^!c::Gosub HideTooltips
 ~^!f::Gosub HideTooltips
