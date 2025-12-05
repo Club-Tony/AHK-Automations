@@ -102,6 +102,7 @@ Return
 SSJ Intra - Interoffice Requests
 Alt+S  - Focus envelope icon
 Alt+A  - Focus alias field
+Alt+N  - Focus SF name field
 Ctrl+Enter - Scroll to bottom and Submit
 Ctrl+Alt+S - Fill Special Instructions
 Ctrl+Alt+A - ACP preset -> Alias
@@ -120,6 +121,7 @@ Return
 ~!s::Gosub HideTooltips
 ~!e::Gosub HideTooltips
 ~!a::Gosub HideTooltips
+~!n::Gosub HideTooltips
 ~!p::Gosub HideTooltips
 ~^!a::Gosub HideTooltips
 ~^!s::Gosub HideTooltips

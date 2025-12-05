@@ -69,6 +69,7 @@ Ctrl+Alt+F: Load and reload search script
 Alt+D: Docksided items
 Ctrl+Alt+D: Delivered items
 Alt+O: On-shelf items
+Alt+H: Outbound - Handed Off (down 3)
 Alt+A: Arrived at BSC
 Alt+P: Pickup from BSC
 Alt+Space: Search Windows Quick Resize

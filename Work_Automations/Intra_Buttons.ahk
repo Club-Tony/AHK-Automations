@@ -83,6 +83,16 @@ return
     MouseClick, left, 1005, 860, 2
 return
 
+!n::
+    EnsureIntraWindow()
+    Sleep 150
+    MouseClick, left, 1400, 850, 2
+    Sleep 150
+    SendInput, ^{Home}
+    Sleep 150
+    MouseClick, left, 450, 560, 2
+return
+
 !p::
     EnsureIntraWindow()
     Sleep 150
