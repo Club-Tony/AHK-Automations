@@ -11,9 +11,9 @@ intraWinTitle := "Intra: Shipping Request Form ahk_exe firefox.exe"
 
 ; Launch: Smartsheets ; Keybind: Ctrl+Alt+L
 ^!l:: 
-    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Work-Automations\Work_Automations\Daily_Audit.ahk ; Keybind: Ctrl+Alt+D
+    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Daily_Audit.ahk ; Keybind: Ctrl+Alt+D
     Sleep 150
-    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Work-Automations\Work_Automations\Daily_Smartsheet.ahk ; Keybind: Ctrl+Alt+S
+    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Daily_Smartsheet.ahk ; Keybind: Ctrl+Alt+S
     Sleep 150
     TooltipText =
     (
@@ -30,13 +30,13 @@ Return
     FocusAssignRecipWindow()
     MouseMove, 200, 245  ; Move cursor to scan field in Assign Recip
     Sleep 75
-    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Work-Automations\Work_Automations\IT_Requested_IOs-Faster_Assigning.ahk ; Keybind: Alt+S
+    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\IT_Requested_IOs-Faster_Assigning.ahk ; Keybind: Alt+S
     Sleep 150
-    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Work-Automations\Work_Automations\Parent_Ticket_Creation-(BYOD).ahk ; Keybind: Alt+P
+    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Parent_Ticket_Creation-(BYOD).ahk ; Keybind: Alt+P
     Sleep 150
-    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Work-Automations\Work_Automations\Parent_Ticket_Creation-(GENERAL).ahk ; Keybind: Ctrl+Alt+P
+    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Parent_Ticket_Creation-(GENERAL).ahk ; Keybind: Ctrl+Alt+P
     Sleep 150
-    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Work-Automations\Work_Automations\IT_Asset_Move.ahk ; Keybind: Alt+T
+    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\IT_Asset_Move.ahk ; Keybind: Alt+T
     Sleep 150
     TooltipText =
     (
@@ -57,7 +57,7 @@ Return
     FocusAssignRecipWindow()
     MouseMove, 200, 245  ; Move cursor to scan field in Assign Recip
     Sleep 75
-    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Work-Automations\Work_Automations\Intra_Desktop_Search_Shortcuts.ahk
+    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Intra_Desktop_Search_Shortcuts.ahk
     Sleep 150
     Sleep 250
     SendInput, ^f
@@ -88,7 +88,7 @@ Return
     MouseMove, 410, 581 ; Move to Cost Center field for tooltip visibility
 
     ; Launch DSRF-to-UPS_WorldShip.ahk after declaring focus window variables
-    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Work-Automations\Work_Automations\DSRF-to-UPS_WorldShip.ahk
+    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WorldShip.ahk
     Sleep 150
     TooltipText =
     (
