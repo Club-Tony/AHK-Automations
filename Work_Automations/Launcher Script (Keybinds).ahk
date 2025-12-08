@@ -8,6 +8,7 @@ SetTitleMatchMode, 2
 CoordMode, Mouse, Window
 
 intraWinTitle := "Intra: Shipping Request Form ahk_exe firefox.exe"
+TooltipActive := false
 
 ; Launch: Smartsheets ; Keybind: Ctrl+Alt+L
 ^!l:: 
@@ -20,9 +21,7 @@ intraWinTitle := "Intra: Shipping Request Form ahk_exe firefox.exe"
 Ctrl+Alt+D: Daily Audit
 Ctrl+Alt+S: Daily Smartsheet
     )
-    Tooltip, %TooltipText%
-    Sleep 5000
-    Tooltip
+    ShowTooltip(TooltipText, 5000)
 Return
 
 ; Launch: Super Saiyan Intra ; Keybind: Ctrl+Alt+I
@@ -47,9 +46,7 @@ Ctrl+Alt+P: Parent Ticket (General)
 Alt+T: IT Asset Move
 Ctrl+Alt+I: Relaunch Scripts + Tooltip
     )
-    Tooltip, %TooltipText%
-    Sleep 10000
-    Tooltip
+    ShowTooltip(TooltipText, 10000)
 Return
 
 ; Launch: Intra SSJ Search ; Keybind: Ctrl+Alt+F
@@ -74,9 +71,7 @@ Alt+A: Arrived at BSC
 Alt+P: Pickup from BSC
 Alt+Space: Search Windows Quick Resize
     )
-    Tooltip, %TooltipText%
-    Sleep 7000
-    Tooltip
+    ShowTooltip(TooltipText, 7000)
 Return
 
 ; Launch: DSRF-to-UPS WorldShip ; Keybind: Ctrl+Alt+C
@@ -98,15 +93,7 @@ Ctrl+Alt+B: Business Form
 Ctrl+Alt+P: Personal Form
 Ctrl+Alt+C: Launches DSRF-to-UPS_WorldShip.ahk
     )
-    ToolTip, %TooltipText%
-    SetTimer, ClearWorldShipTip, -10000
-Return
-
-~^!b::ToolTip
-~^!p::ToolTip
-
-ClearWorldShipTip:
-    ToolTip
+    ShowTooltip(TooltipText, 10000)
 Return
 
 FocusIntraWindow()
@@ -132,3 +119,22 @@ FocusAssignRecipWindow()
 }
 
 ^Esc::Reload
+
+ShowTooltip(TooltipText, durationMs)
+{
+    global TooltipActive
+    SetTimer, HideLauncherTooltip, Off
+    ToolTip, %TooltipText%
+    TooltipActive := true
+    SetTimer, HideLauncherTooltip, % -durationMs
+}
+
+HideLauncherTooltip:
+    SetTimer, HideLauncherTooltip, Off
+    TooltipActive := false
+    ToolTip
+Return
+
+#If (TooltipActive)
+~Esc::Gosub HideLauncherTooltip
+#If

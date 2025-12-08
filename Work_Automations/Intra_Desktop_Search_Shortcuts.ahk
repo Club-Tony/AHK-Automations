@@ -77,6 +77,12 @@ return
     MouseMove, 945, 70
 return
 
+!c::  ; Clear search and focus Tracking #
+    MouseClick, left, % ClearSearchBtn.x, % ClearSearchBtn.y, 2
+    Sleep 200
+    MouseClick, left, % TrackingNumField.x, % TrackingNumField.y
+return
+
 !o::  ; On-shelf items
     MouseClick, left, % ClearSearchBtn.x, % ClearSearchBtn.y, 3
     Sleep 250
