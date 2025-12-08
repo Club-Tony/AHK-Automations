@@ -85,7 +85,9 @@ Return
     FocusIntraWindow()
     EnsureIntraWindow()
     Sleep 50
-    MouseMove, 410, 581 ; Move to Cost Center field for tooltip visibility
+    MouseClick, left, 410, 581 ; Move to Cost Center field for tooltip visibility
+    Sleep 50
+    SendInput, {WheelUp 25} ; Scroll to top of form
 
     ; Launch DSRF-to-UPS_WorldShip.ahk after declaring focus window variables
     Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Work-Automations\Work_Automations\DSRF-to-UPS_WorldShip.ahk

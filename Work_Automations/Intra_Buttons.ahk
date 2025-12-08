@@ -44,8 +44,10 @@ PackagesCountY := 1154
     MouseClick, left, 1400, 850, 2
     Sleep 150
     SendInput, ^{End}
+    Sleep 250
+    MouseClick, left, 460, 1313, 2 ; this Mouseclick, the Sleep 250 before, and the following double mouseclick ensures successful button press
     Sleep 150
-    MouseClick, left, 460, 1313, 2
+    MouseClick, left, 457, 1313, 2
 return
 
 !c::

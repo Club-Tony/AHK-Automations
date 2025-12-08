@@ -111,6 +111,17 @@ Esc::ExitApp
     FocusWorldShipWindow()
     MouseClick, left, % worldShipTabs.ShipTo.x, worldShipTabs.ShipTo.y
 
+    ; Prefill Ship To Company with Ship To Name as a fallback (required field)
+    FocusIntraWindow()
+    EnsureIntraWindow()
+    Sleep 50
+    NeutralAndHome()
+    stName := CopyFieldAt(intraFields.STName.x, intraFields.STName.y)
+    FocusWorldShipWindow()
+    EnsureWorldShipTop()
+    Sleep 150
+    PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, stName)
+
     FocusIntraWindow()
     EnsureIntraWindow()
     Sleep 50
@@ -119,13 +130,10 @@ Esc::ExitApp
     FocusWorldShipWindow()
     EnsureWorldShipTop()
     Sleep 150
-    PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, company)
+    if (company != "")
+        PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, company)
 
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    NeutralAndHome()
-    stName := CopyFieldAt(intraFields.STName.x, intraFields.STName.y)
+    ; Ship To Name (uses previously captured stName)
     FocusWorldShipWindow()
     EnsureWorldShipTop()
     Sleep 150
@@ -137,10 +145,10 @@ Esc::ExitApp
     Sleep 150
     NeutralClick()
     Sleep 250
-    Loop 10
+    Loop 20
         {
             Sleep 50
-            SendInput, {WheelDown}
+            SendInput, {Down}
             Sleep 50
         }
     Sleep 150   
@@ -278,6 +286,17 @@ return
     FocusWorldShipWindow()
     MouseClick, left, % worldShipTabs.ShipTo.x, worldShipTabs.ShipTo.y
 
+    ; Prefill Ship To Company with Ship To Name as a fallback (required field)
+    FocusIntraWindow()
+    EnsureIntraWindow()
+    Sleep 50
+    NeutralAndHome()
+    stName := CopyFieldAt(intraFields.STName.x, intraFields.STName.y + offsetY)
+    FocusWorldShipWindow()
+    EnsureWorldShipTop()
+    Sleep 150
+    PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, stName)
+
     FocusIntraWindow()
     EnsureIntraWindow()
     Sleep 50
@@ -286,13 +305,10 @@ return
     FocusWorldShipWindow()
     EnsureWorldShipTop()
     Sleep 150
-    PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, company)
+    if (company != "")
+        PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, company)
 
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    NeutralAndHome()
-    stName := CopyFieldAt(intraFields.STName.x, intraFields.STName.y + offsetY)
+    ; Ship To Name (uses previously captured stName)
     FocusWorldShipWindow()
     EnsureWorldShipTop()
     Sleep 150
