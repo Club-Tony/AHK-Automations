@@ -76,6 +76,20 @@ Return
 
 ; Launch: DSRF-to-UPS WorldShip ; Keybind: Ctrl+Alt+C
 ^!c::
+    ; Ensure Intra Window is present; if not, show guidance and exit
+    if (!WinExist(intraWinTitle)) {
+        ShowTooltip("Intra: Shipping Request Form must be open in Firefox", 4000)
+        Return
+    }
+
+    ; Close any running super-speed script before launching the normal one
+    SetTitleMatchMode, 2
+    DetectHiddenWindows, On
+    WinGet, pidFast, PID, DSRF-to-UPS_WorldShip(Super-Speed).ahk
+    if pidFast
+        Process, Close, %pidFast%
+    DetectHiddenWindows, Off
+
     ; Ensure Intra Window is focused and Mouse cursor is positioned
     FocusIntraWindow()
     EnsureIntraWindow()
@@ -85,15 +99,57 @@ Return
     SendInput, {WheelUp 25} ; Scroll to top of form
 
     ; Launch DSRF-to-UPS_WorldShip.ahk after declaring focus window variables
-    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WorldShip.ahk
+    Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WorldShip.ahk"
     Sleep 150
     TooltipText =
     (
 Ctrl+Alt+B: Business Form
 Ctrl+Alt+P: Personal Form
 Ctrl+Alt+C: Launches DSRF-to-UPS_WorldShip.ahk
+Ctrl+Alt+U: Launches Super-Speed version (Warning: May be unstable)
+Current Mode: Normal Speed
     )
-    ShowTooltip(TooltipText, 10000)
+    if (!TooltipActive)
+        ShowTooltip(TooltipText, 5000)
+Return
+
+; Launch: DSRF-to-UPS WorldShip (Super-Speed) ; Keybind: Ctrl+Alt+U
+^!u::
+    if (!WinExist(intraWinTitle)) {
+        ShowTooltip("Intra: Shipping Request Form must be open in Firefox", 4000)
+        Return
+    }
+
+    ; Close any running WorldShip scripts (normal or super-speed) before launching
+    SetTitleMatchMode, 2
+    DetectHiddenWindows, On
+    WinGet, pidNormal, PID, DSRF-to-UPS_WorldShip.ahk
+    if pidNormal
+        Process, Close, %pidNormal%
+    WinGet, pidFast, PID, DSRF-to-UPS_WorldShip(Super-Speed).ahk
+    if pidFast
+        Process, Close, %pidFast%
+    DetectHiddenWindows, Off
+
+    FocusIntraWindow()
+    EnsureIntraWindow()
+    Sleep 50
+    MouseClick, left, 410, 581
+    Sleep 50
+    SendInput, {WheelUp 25}
+
+    Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WorldShip(Super-Speed).ahk"
+    Sleep 75
+    TooltipText =
+    (
+Ctrl+Alt+B: Business Form
+Ctrl+Alt+P: Personal Form
+Ctrl+Alt+C: Launches DSRF-to-UPS_WorldShip.ahk
+Ctrl+Alt+U: Launches Super-Speed version (Warning: May be unstable)
+Current Mode: Super-Speed
+    )
+    if (!TooltipActive)
+        ShowTooltip(TooltipText, 5000)
 Return
 
 FocusIntraWindow()

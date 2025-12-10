@@ -50,13 +50,13 @@ Alt+D - Status Select -> Delivery
 Alt+H - Status Select -> Outbound Handed-Off
 Alt+V - Status Select -> Void
 Alt+S - Click Status Field
-Ctrl+Alt+T - Show this tooltip again
 -
 Additional Scripts Launch Hotkeys:
 Ctrl+Alt+F - Launch Intra Search Shortcuts
 Ctrl+Alt+I - Launch Intra Extensive Automations
 Ctrl+Alt+C - Launch DSRF to WorldShip Script
 Ctrl+Alt+L - Launch Daily Audit + Smartsheet
+Ctrl+Alt+T - Show this tooltip again
     )
     Tooltip, %TooltipText%
     Hotkey, Esc, HideTooltips, On
@@ -111,6 +111,7 @@ Alt+1  - Focus "# of Packages"
 Alt+2  - Focus Package Type
 Alt+L  - Click Load button
 Alt+C  - Clear/Reset
+Ctrl+Alt+T - Show this tooltip again
     )
     Tooltip, %tooltipText%
     SetTimer, HideTooltips, -15000
@@ -145,8 +146,10 @@ Return
     (
 Launch Hotkeys:
 Ctrl+Alt+C: Launch DSRF to WorldShip Script
+Ctrl+Alt+U: Launch Super-Speed version (Warning: May be unstable)
 Ctrl+Alt+P: Personal Form
 Ctrl+Alt+B: Business Form
+Ctrl+Alt+T - Show this tooltip again
     )
     Tooltip, %tooltipText%
     SetTimer, HideTooltips, -15000

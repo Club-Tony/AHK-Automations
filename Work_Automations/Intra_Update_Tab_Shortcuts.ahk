@@ -21,6 +21,8 @@ PrintLabel := {rx: 300/baseW, ry: 120/baseH}
 ScanField := {rx: 200/baseW, ry: 245/baseH}
 
 ; Borrowed from Intra_Desktop_Search_Shortcuts (Search - General window)
+TrackingNumField := {x: 350, y: 50}
+ClearSearchBtn := {x: 745, y: 770}
 LoadSavedSearchBtn := {x: 120, y: 720}
 DocksidedPreset := {x: 200, y: 600}
 StatusSelect := {x: 375, y: 160}
@@ -39,6 +41,7 @@ return
 
 !p::
     ResetAbort()
+    ClearUpdatePrompt()
     MouseClick, left, 70, 1345, 2
     Sleep 200
     ClickScaled(StatusBar)
@@ -90,6 +93,7 @@ return
 return
 
 !d::
+    ClearUpdatePrompt()
     MouseClick, left, 70, 1345, 2
     Sleep 200
     ClickScaled(StatusBar)
@@ -103,6 +107,7 @@ return
 return
 
 ^!d::
+    ClearUpdatePrompt()
     MouseClick, left, 70, 1345, 2
     Sleep 200
     ClickScaled(StatusBar)
@@ -120,6 +125,7 @@ return
 return
 
 !h::
+    ClearUpdatePrompt()
     MouseClick, left, 70, 1345, 2
     Sleep 200
     ClickScaled(StatusBar)
@@ -152,6 +158,47 @@ return
     mY := Floor(winH * StatusBar.ry)
     MouseMove, %mX%, %mY%
 return
+
+!o::
+    ; Open Search - General, then mirror search script !o (on-shelf) flow
+    ClearUpdatePrompt()
+    SendInput, ^f
+    WinWaitActive, Search - General,, 2
+    MouseClick, left, % ClearSearchBtn.x, % ClearSearchBtn.y, 3
+    Sleep 250
+    MouseClick, left, % LoadSavedSearchBtn.x, % LoadSavedSearchBtn.y
+    Sleep 500
+    MouseClick, left, % DocksidedPreset.x, % DocksidedPreset.y
+    Sleep 500
+    MouseClick, left, % StatusSelect.x, % StatusSelect.y
+    Sleep 250
+    SendInput, o
+    Sleep 250
+    SendInput, {Down}
+    Sleep 250
+    SendInput, {Space}
+    Sleep 250
+    SendInput, {Enter}
+    Sleep 500
+    WinWait, Search Results:, , 5
+    if (ErrorLevel)
+        return
+    WinActivate, Search Results:
+    WinWaitActive, Search Results:, , 2
+    Sleep 100
+    SendInput, !{Space}
+    Sleep 100
+    SendInput, s
+    Sleep 100
+    SendInput, {Right}
+    Sleep 100
+    SendInput, {Down}
+    MouseMove, 2050, 1025
+    Sleep 100
+    SendInput, {Enter}
+    Sleep 100
+    MouseMove, 945, 70
+return
 #If
 
 #If WinActive("Intra Desktop Client - Update")
@@ -174,6 +221,7 @@ return
 return
 
 !v::
+    ClearUpdatePrompt()
     MouseClick, left, 70, 1345, 2
     Sleep 200
     ClickScaled(StatusBar)
@@ -190,6 +238,20 @@ ClickScaled(coord, clicks := 1)
     tx := Floor(winW * coord.rx)
     ty := Floor(winH * coord.ry)
     MouseClick, left, %tx%, %ty%, clicks
+}
+
+ClearUpdatePrompt()
+{
+    MouseClick, left, 70, 1345, 2
+    Sleep 200
+    Send, {Enter}
+    Sleep 200
+    Loop, 2
+    {
+        SendInput, {Esc}
+        Sleep 50
+    }
+    Sleep 200
 }
 
 ResetAbort()
