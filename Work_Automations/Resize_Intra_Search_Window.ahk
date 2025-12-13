@@ -25,7 +25,9 @@ SetTitleMatchMode, 2 ; allows for partial window title matches
     Sleep 100
     SendInput, {Enter}
     Sleep 100
-    MouseMove, 200, 500
+    MouseClick, left, 999, 501
+    Sleep 50
+    MouseMove, 137, 37
 Return
 #IfWinActive
 
