@@ -41,12 +41,6 @@ PackagesCountY := 1154
 ^Enter::
     EnsureIntraWindow()
     Sleep 150
-    MouseClick, left, 1005, 860, 2
-    Sleep 150
-    aliasText := CopyFieldText("Top", AliasFieldX, AliasFieldY)
-    Sleep 150
-    if (aliasText != "")
-        Clipboard := aliasText  ; leave alias ready to paste after submit
     MouseClick, left, 1400, 850, 2
     Sleep 150
     SendInput, ^{End}
@@ -83,18 +77,12 @@ return
 
 !a::
     EnsureIntraWindow()
-    Sleep 50
+    Sleep 150
     MouseClick, left, 1400, 850, 2
     Sleep 150
     SendInput, ^{Home}
     Sleep 150
     MouseClick, left, 1005, 860, 2
-    Sleep 150
-    aliasText := CopyFieldText("Top", AliasFieldX, AliasFieldY)
-    Sleep 150
-    if (aliasText != "")
-        Clipboard := aliasText  ; leave alias ready to paste after submit
-    MouseClick, left, 1005, 860
 return
 
 !n::

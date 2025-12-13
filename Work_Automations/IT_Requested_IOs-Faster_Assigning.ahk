@@ -18,7 +18,6 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 Esc::ExitApp
 SetKeyDelay 100
-scanReady := false
 
 #If AssignRecipHotkeyAllowed()
 !s::
@@ -52,47 +51,23 @@ Enter::
             Sleep 100
             ControlSend, %ctrlUnderMouse%, {Enter}, ahk_id %winID%
             Sleep 100
-            scanReady := true
-            if (scanReady) {
-                scanReady := false
-                Send, {F5}
-                Gosub, PostF5Recovery
+            Send, {F5}
+            ; Wait up to ~6s for Intra to clear the scan field after refresh instead of fixed 2s.
+            Loop 60 {
+                Sleep 100
+                ControlGetFocus, focusedCtrl, ahk_id %winID%
+                if (focusedCtrl = "")
+                    continue
+                ControlGetText, postF5Text, %focusedCtrl%, ahk_id %winID%
+                if (postF5Text = "")
+                    Break
             }
+            Sleep 250
+            Gosub, !s
             Break
         }
     }
 Return
-
-F5::
-    if (!AssignRecipHotkeyAllowed())
-        return
-    if (!scanReady)
-        return
-    scanReady := false
-    Send, {F5}
-    Gosub, PostF5Recovery
-return
-
-PostF5Recovery:
-    ; Wait up to ~6s for Intra to clear the scan field after refresh instead of fixed 2s.
-    WinGet, winIDAfter, ID, Intra Desktop Client - Assign Recip
-    Loop 60 {
-        Sleep 100
-        ControlGetFocus, focusedCtrl, ahk_id %winIDAfter%
-        if (focusedCtrl = "")
-            continue
-        ControlGetText, postF5Text, %focusedCtrl%, ahk_id %winIDAfter%
-        if (postF5Text = "")
-            Break
-    }
-    ; Wait for Assign Recip to regain active status after the brief loading overlay, then refocus the alias field.
-    WinWaitActive, Intra Desktop Client - Assign Recip,, 3
-    FocusAssignRecipWindow()
-    MouseClick, left, 945, 850
-    Sleep 150
-    Sleep 250
-    Gosub, !s
-return
 
 #IfWinActive
 

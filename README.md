@@ -11,7 +11,7 @@
 #### -Launcher Script (Keybinds)
 #### -Alt+Q Map to Alt+F4
 #### -Alt+R_Post_Parent_Normalize
-#### -DSRF-to-UPS_WS-Legacy
+#### -DSRF-to-UPS_WorldShip
 #### -Intra_Buttons
 #### -Intra_Focus_Fields
 #### -Intra_Update_Tab_Shortcuts
@@ -19,7 +19,7 @@
 #### -Resize_Intra_Search_Window
 #### -Right Click
 #### -ToolTips
-#### -UPS_WS_Shortcuts
+#### -UPS_WorldShip_Shortcuts
 #### -Yellow_Pouch
 ---
 ## Run 'Launcher Script (Keybinds)' to launch certain scripts with Hotkeys 
