@@ -21,7 +21,7 @@ Return
 Return
 
 ^+!c::
-    Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Other_Automations\Coordinate Capture Helper\WinActive_Coord_Capture.ahk"
+    Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Other_Automations\Coordinate Capture Helper\Coord_Capture.ahk"
     ToolTip, Coord Helper: Click to capture
     SetTimer, HideCoordTip, -4000
 Return

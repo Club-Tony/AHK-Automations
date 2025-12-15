@@ -14,7 +14,8 @@ CoordMode, Caret, Window
 ; Note: Currently ~6 sec faster than regular speed script
 
 ; Window targets
-intraWinTitle := "Intra: Shipping Request Form ahk_exe firefox.exe"
+intraWinTitle := "Intra: Shipping Request Form"
+intraWinExes := ["firefox.exe", "chrome.exe", "msedge.exe"]
 worldShipTitle := "UPS WorldShip"
 
 ; Normalized window size used for ratio/absolute clicks (matches Intra_Buttons)
@@ -70,6 +71,7 @@ worldShipFields.PostalCode := {x: 215, y: 403}
 worldShipFields.Ref1       := {x: 721, y: 309}
 worldShipFields.Ref2       := {x: 721, y: 345}
 worldShipFields.DeclVal    := {x: 721, y: 273}
+scaleOffClick := {x: 316, y: 559} ; click to disable electronic scale lag
 
 ; Button targets (window-relative pixels)
 PersonalButtonX := 469
@@ -82,6 +84,7 @@ return  ; end of auto-execute section
 Esc::ExitApp
 
 ^!b:: ; Business Form: capture everything in Intra, then paste in WorldShip
+    scaleClickDone := false
     startTick := A_TickCount
     data := CollectIntraData("business")
     PasteBusinessToWorldShip(data)
@@ -92,6 +95,7 @@ Esc::ExitApp
 return
 
 ^!p:: ; Personal Form: capture everything in Intra, then paste in WorldShip
+    scaleClickDone := false
     startTick := A_TickCount
     data := CollectIntraData("personal")
     PastePersonalToWorldShip(data)
@@ -342,15 +346,15 @@ PasteAliasAndQVn(alias)
 
 FocusIntraWindow()
 {
-    global intraWinTitle
-    WinActivate, %intraWinTitle%
-    WinWaitActive, %intraWinTitle%,, 1
+    title := GetIntraWindowTitle()
+    WinActivate, %title%
+    WinWaitActive, %title%,, 1
 }
 
 EnsureIntraWindow()
 {
-    global intraWinTitle
-    WinMove, %intraWinTitle%,, 1917, 0, 1530, 1399
+    title := GetIntraWindowTitle()
+    WinMove, %title%,, 1917, 0, 1530, 1399
     Sleep 120
 }
 
@@ -376,6 +380,7 @@ FocusWorldShipWindow()
     global worldShipTitle
     WinActivate, %worldShipTitle%
     WinWaitActive, %worldShipTitle%,, 1
+    DisableWorldShipScale()
 }
 
 EnsureWorldShipTop()
@@ -498,3 +503,26 @@ ShowHotkeyRuntime(startTick)
 HideRuntimeTooltip:
     ToolTip
 return
+
+GetIntraWindowTitle()
+{
+    global intraWinTitle, intraWinExes
+    Loop % intraWinExes.Length()
+    {
+        candidate := intraWinTitle " ahk_exe " intraWinExes[A_Index]
+        if (WinExist(candidate))
+            return candidate
+    }
+    return intraWinTitle
+}
+
+DisableWorldShipScale()
+{
+    global scaleOffClick, scaleClickDone
+    if (scaleClickDone)
+        return
+    Sleep 150
+    MouseClick, left, % scaleOffClick.x, scaleOffClick.y
+    Sleep 250
+    scaleClickDone := true
+}

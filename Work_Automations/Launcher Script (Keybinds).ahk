@@ -7,12 +7,13 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 SetTitleMatchMode, 2
 CoordMode, Mouse, Window
 
-intraWinTitle := "Intra: Shipping Request Form ahk_exe firefox.exe"
+intraWinTitle := "Intra: Shipping Request Form"
+intraWinExes := ["firefox.exe", "chrome.exe", "msedge.exe"]  ; priority order
 TooltipActive := false
 
 ; Launch: Coordinate Helper ; Keybind: Ctrl+Shift+Alt+C
 ^+!c::
-    Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Other_Automations\Coordinate Capture Helper\WinActive_Coord_Capture.ahk"
+    Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Other_Automations\Coordinate Capture Helper\Coord_Capture.ahk"
     ShowTooltip("Coord Helper: Click to capture", 4000)
 return
 
@@ -57,14 +58,18 @@ Return
 
 ; Launch: Intra SSJ Search ; Keybind: Ctrl+Alt+F
 ^!f::
-    FocusAssignRecipWindow()
-    MouseMove, 200, 245  ; Move cursor to scan field in Assign Recip
-    Sleep 75
+    hasAssignRecip := FocusAssignRecipWindow()
+    if (hasAssignRecip) {
+        MouseMove, 200, 245  ; Move cursor to scan field in Assign Recip
+        Sleep 75
+    }
     Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Intra_Desktop_Search_Shortcuts.ahk
     Sleep 150
-    Sleep 250
-    SendInput, ^f
-    Sleep 100
+    if (hasAssignRecip) {
+        Sleep 250
+        SendInput, ^f
+        Sleep 100
+    }
     TooltipText =
     (
 Intra SSJ Search
@@ -77,27 +82,22 @@ Alt+A: Arrived at BSC
 Alt+P: Pickup from BSC
 Alt+Space: Search Windows Quick Resize
     )
+    if (!hasAssignRecip) {
+        TooltipText .= "`nAssign Recip window not found — loaded shortcuts without sending Ctrl+F."
+    }
     ShowTooltip(TooltipText, 7000)
 Return
 
 ; Launch: DSRF-to-UPS WorldShip ; Keybind: Ctrl+Alt+C
 ^!c::
-    ; Ensure Intra Window is present; if not, show guidance and exit
-    if (!WinExist(intraWinTitle)) {
-        ShowTooltip("Intra: Shipping Request Form must be open in Firefox", 4000)
+    intraTitle := GetIntraWindowTitle()
+    intraExe := GetIntraBrowserExe()
+    if (intraTitle = "") {
+        ShowTooltip("Open Intra: Shipping Request Form in Firefox/Chrome/Edge", 4000)
         Return
     }
 
-    ; Close any running super-speed script before launching the normal one
-    SetTitleMatchMode, 2
-    DetectHiddenWindows, On
-    WinGet, pidFast, PID, DSRF-to-UPS_WS(Super-Speed).ahk
-    if pidFast
-        Process, Close, %pidFast%
-    WinGet, pidLegacy, PID, DSRF-to-UPS_WS-Legacy.ahk
-    if pidLegacy
-        Process, Close, %pidLegacy%
-    DetectHiddenWindows, Off
+    CloseWorldShipScripts()
 
     ; Ensure Intra Window is focused and Mouse cursor is positioned
     FocusIntraWindow()
@@ -107,41 +107,42 @@ Return
     Sleep 50
     SendInput, {WheelUp 25} ; Scroll to top of form
 
-    ; Launch DSRF-to-UPS_WS.ahk after declaring focus window variables
-    Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WS.ahk"
-    Sleep 150
-    TooltipText =
-    (
+    if (intraExe != "firefox.exe") {
+        Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WS-Legacy.ahk"
+        Sleep 150
+        TooltipText =
+        (
+Ctrl+Alt+B: Business Form (Legacy)
+Ctrl+Alt+P: Personal Form (Legacy)
+Ctrl+Alt+C: Launches Legacy (Chrome/Edge)
+Current Mode: Legacy (No zoom)
+        )
+    } else {
+        Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WS.ahk"
+        Sleep 150
+        TooltipText =
+        (
 Ctrl+Alt+B: Business Form
 Ctrl+Alt+P: Personal Form
 Ctrl+Alt+C: Launches DSRF-to-UPS_WS Script
 Ctrl+Alt+U: Launches Super-Speed version (Warning: May be unstable)
 Current Mode: Normal Speed
-    )
+        )
+    }
     if (!TooltipActive)
         ShowTooltip(TooltipText, 5000)
 Return
 
 ; Launch: DSRF-to-UPS WorldShip (Super-Speed) ; Keybind: Ctrl+Alt+U
 ^!u::
-    if (!WinExist(intraWinTitle)) {
-        ShowTooltip("Intra: Shipping Request Form must be open in Firefox", 4000)
+    intraTitle := GetIntraWindowTitle()
+    intraExe := GetIntraBrowserExe()
+    if (intraTitle = "") {
+        ShowTooltip("Open Intra: Shipping Request Form in Firefox/Chrome/Edge", 4000)
         Return
     }
 
-    ; Close any running WorldShip scripts (normal or super-speed) before launching
-    SetTitleMatchMode, 2
-    DetectHiddenWindows, On
-    WinGet, pidNormal, PID, DSRF-to-UPS_WS.ahk
-    if pidNormal
-        Process, Close, %pidNormal%
-    WinGet, pidFast, PID, DSRF-to-UPS_WS(Super-Speed).ahk
-    if pidFast
-        Process, Close, %pidFast%
-    WinGet, pidLegacy, PID, DSRF-to-UPS_WS-Legacy.ahk
-    if pidLegacy
-        Process, Close, %pidLegacy%
-    DetectHiddenWindows, Off
+    CloseWorldShipScripts()
 
     FocusIntraWindow()
     EnsureIntraWindow()
@@ -150,40 +151,62 @@ Return
     Sleep 50
     SendInput, {WheelUp 25}
 
-    Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WS(Super-Speed).ahk"
-    Sleep 75
-    TooltipText =
-    (
+    if (intraExe != "firefox.exe") {
+        Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WS-Legacy.ahk"
+        Sleep 150
+        TooltipText =
+        (
+Ctrl+Alt+B: Business Form (Legacy)
+Ctrl+Alt+P: Personal Form (Legacy)
+Ctrl+Alt+U: Launches Legacy (Chrome/Edge)
+Current Mode: Legacy (No zoom)
+        )
+    } else {
+        Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WS(Super-Speed).ahk"
+        Sleep 75
+        TooltipText =
+        (
 Ctrl+Alt+B: Business Form
 Ctrl+Alt+P: Personal Form
 Ctrl+Alt+C: Launches DSRF-to-UPS_WS Script
 Ctrl+Alt+U: Launches Super-Speed version (Warning: May be unstable)
 Current Mode: Super-Speed
-    )
+        )
+    }
     if (!TooltipActive)
         ShowTooltip(TooltipText, 5000)
 Return
 
 FocusIntraWindow()
 {
-    global intraWinTitle
-    WinActivate, %intraWinTitle%
-    WinWaitActive, %intraWinTitle%,, 1
+    title := GetIntraWindowTitle()
+    if (title = "")
+        return false
+    WinActivate, %title%
+    WinWaitActive, %title%,, 1
+    return !ErrorLevel
 }
 
 EnsureIntraWindow()
 {
-    global intraWinTitle
+    title := GetIntraWindowTitle()
+    if (title = "")
+        return false
     ; Match the working dimensions used in Intra_Buttons. Adjust here if the target size changes.
-    WinMove, %intraWinTitle%,, 1917, 0, 1530, 1399
+    WinMove, %title%,, 1917, 0, 1530, 1399
     Sleep 150
+    return true
 }
 
 FocusAssignRecipWindow()
 {
     ; Bring forward Assign Recip if it's open before launching the search helper.
-    WinActivate, Intra Desktop Client - Assign Recip
-    WinWaitActive, Intra Desktop Client - Assign Recip,, 1
+    assignTitle := "Intra Desktop Client - Assign Recip"
+    if (!WinExist(assignTitle))
+        return false
+    WinActivate, %assignTitle%
+    WinWaitActive, %assignTitle%,, 1
+    return !ErrorLevel
 }
 
 ^Esc::Reload
@@ -203,6 +226,60 @@ HideLauncherTooltip:
     ToolTip
 Return
 
+GetIntraWindowTitle()
+{
+    global intraWinTitle, intraWinExes
+    ; Prefer the active Intra tab in priority order (Firefox > Chrome > Edge).
+    Loop % intraWinExes.Length()
+    {
+        activeCandidate := intraWinTitle " ahk_exe " intraWinExes[A_Index]
+        if (WinActive(activeCandidate))
+            return activeCandidate
+    }
+    ; Otherwise pick the first present in priority order.
+    Loop % intraWinExes.Length()
+    {
+        candidate := intraWinTitle " ahk_exe " intraWinExes[A_Index]
+        if (WinExist(candidate))
+            return candidate
+    }
+    return ""
+}
+
+GetIntraBrowserExe()
+{
+    global intraWinTitle, intraWinExes
+    Loop % intraWinExes.Length()
+    {
+        activeCandidate := intraWinTitle " ahk_exe " intraWinExes[A_Index]
+        if (WinActive(activeCandidate))
+            return intraWinExes[A_Index]
+    }
+    Loop % intraWinExes.Length()
+    {
+        candidate := intraWinTitle " ahk_exe " intraWinExes[A_Index]
+        if (WinExist(candidate))
+            return intraWinExes[A_Index]
+    }
+    return ""
+}
+
+CloseWorldShipScripts()
+{
+    SetTitleMatchMode, 2
+    DetectHiddenWindows, On
+    WinGet, pidNormal, PID, DSRF-to-UPS_WS.ahk
+    if pidNormal
+        Process, Close, %pidNormal%
+    WinGet, pidFast, PID, DSRF-to-UPS_WS(Super-Speed).ahk
+    if pidFast
+        Process, Close, %pidFast%
+    WinGet, pidLegacy, PID, DSRF-to-UPS_WS-Legacy.ahk
+    if pidLegacy
+        Process, Close, %pidLegacy%
+    DetectHiddenWindows, Off
+    SetTitleMatchMode, 1
+}
 #If (TooltipActive)
 ~Esc::Gosub HideLauncherTooltip
 #If

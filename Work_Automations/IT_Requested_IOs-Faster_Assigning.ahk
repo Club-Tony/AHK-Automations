@@ -55,7 +55,9 @@ Enter::
             scanReady := true
             if (scanReady) {
                 scanReady := false
+                Sleep 200
                 Send, {F5}
+                Sleep 200
                 Gosub, PostF5Recovery
             }
             Break
