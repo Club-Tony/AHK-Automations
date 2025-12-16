@@ -1,9 +1,9 @@
 #Requires AutoHotkey v1
-#NoEnv ; Prevents Unnecessary Environment Variable lookup
-#Warn ; Warn All (All Warnings Enabled)
-#SingleInstance, Force  ; Reload without prompt when Esc is pressed.
-SendMode Input ; Send works as SendInput
-SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
+#NoEnv
+#Warn
+#SingleInstance, Force
+SendMode Input
+SetWorkingDir %A_ScriptDir%
 ; For use with Chrome/Edge when Firefox is unavailable (no zoom dependency).
 SetKeyDelay, 25
 
@@ -23,6 +23,7 @@ intraWinH := 1399
 neutralClickR := {x: 0.895425, y: 0.50683} ; same neutral spot used in Intra_Buttons
 
 ; Intra: Shipping Request Form field coordinates (window-relative pixels at normalized size)
+; Coordinates are the post-scroll positions for Chrome/Edge.
 intraFields := {}
 intraFields.CostCenter    := {x: 411, y: 587}
 intraFields.Alias         := {x: 410, y: 885}
@@ -31,7 +32,7 @@ intraFields.SFPhone       := {x: 1040, y: 788}
 intraFields.STName        := {x: 476, y: 1365}
 intraFields.Company       := {x: 980, y: 1368}
 intraFields.Address1      := {x: 473, y: 545}
-intraFields.Address2      := {x: 392, y: 633}
+intraFields.Address2      := {x: 400, y: 635}
 intraFields.STPhone       := {x: 976, y: 542}
 intraFields.PostalCode    := {x: 1120, y: 633}
 intraFields.DeclaredValue := {x: 410, y: 830} ; note y is 741 if ship from name field closes [Theory]
@@ -72,407 +73,199 @@ return  ; end of auto-execute section
 
 Esc::ExitApp
 
-^!b:: ; Business Form (mirrors ^!p without offsets/cost center)
+^!b:: ; Business Form: collect first, then paste
     scaleClickDone := false
     startTick := A_TickCount
+    data := CollectIntraDataLegacy("business")
+    PasteBusinessToWorldShip(data)
     FocusIntraWindow()
     EnsureIntraWindow()
-    Sleep 50
-    NeutralAndHome()
-    Sleep 50
-    SendInput, {WheelUp 15}
-    Sleep 150
-    MouseClick, left, %BusinessButtonX%, %BusinessButtonY%, 2
-    Sleep 150
-    FocusIntraWindow()
-    costCenter := CopyFieldAt(intraFields.CostCenter.x, intraFields.CostCenter.y)
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
-    Sleep 150
-    MouseClick, left, % worldShipTabs.ShipTo.x, worldShipTabs.ShipTo.y
-    Sleep 150
-    MouseClick, left, % worldShipTabs.Service.x, worldShipTabs.Service.y
-    Sleep 150
-    PasteFieldAt(worldShipFields.Ref1.x, worldShipFields.Ref1.y, costCenter)
-    Sleep 150
-    FocusIntraWindow()
-    sfName := CopyFieldAt(intraFields.SFName.x, intraFields.SFName.y)
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
-    Sleep 150
-    MouseClick, left, % worldShipTabs.Service.x, worldShipTabs.Service.y  ; ensure Service tab active before first paste
-    Sleep 150
-    MouseClick, left, % worldShipTabs.ShipFrom.x, worldShipTabs.ShipFrom.y
-    Sleep 150
-    FocusWorldShipWindow()
-    PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, sfName)
-    Sleep 150
-    MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-    Sleep 3000
-    FocusWorldShipWindow()
-    PasteFieldAt(worldShipFields.SFName.x, worldShipFields.SFName.y, sfName)
-    Sleep 150
-    EnsureWorldShipTop()
-    Sleep 150
-    FocusWorldShipWindow()
-    PasteFieldAt(worldShipFields.Ref2.x, worldShipFields.Ref2.y, sfName)
-
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    NeutralAndHome()
-    FocusIntraWindow()
-    sfPhone := CopyFieldAt(intraFields.SFPhone.x, intraFields.SFPhone.y)
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
-    Sleep 150
-    FocusWorldShipWindow()
-    PasteFieldAt(worldShipFields.SFPhone.x, worldShipFields.SFPhone.y, sfPhone)
-    Sleep 150
-    FocusWorldShipWindow()
-    MouseClick, left, % worldShipTabs.ShipTo.x, worldShipTabs.ShipTo.y
-    Sleep 150
-    MouseClick, left, % worldShipTabs.Service.x, worldShipTabs.Service.y
-
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    NeutralAndHome()
-    FocusIntraWindow()
-    company := CopyFieldAt(intraFields.Company.x, intraFields.Company.y)
-
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    NeutralAndHome()
-    FocusIntraWindow()
-    stName := CopyFieldAt(intraFields.STName.x, intraFields.STName.y)
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
-    Sleep 150
-    if (company != "")
-    {
-        FocusWorldShipWindow()
-        PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, company)
-        Sleep 150
-        MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-        Sleep 3000
-    }
-    else
-    {
-        FocusWorldShipWindow()
-        PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, stName)
-        Sleep 150
-        MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-        Sleep 3000  ; allow WorldShip address book fill to process
-    }
-    FocusWorldShipWindow()
-    PasteFieldAt(worldShipFields.STName.x, worldShipFields.STName.y, stName)
-
-    ; Scroll Down
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 150
-    NeutralClick()
-    Sleep 250
-    Loop 11
-        {
-            Sleep 25
-            SendInput, {WheelDown}
-            Sleep 25
-        }
-    Sleep 150
-    FocusIntraWindow()
-    Address1 := CopyFieldAt(intraFields.Address1.x, intraFields.Address1.y)
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
-    MouseClick, left, % worldShipFields.Address1.x, worldShipFields.Address1.y
-    Sleep 150
-    FocusWorldShipWindow()
-    PasteFieldAt(worldShipFields.Address1.x, worldShipFields.Address1.y, Address1)
-
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    FocusIntraWindow()
-    Address2 := CopyFieldAt(intraFields.Address2.x, intraFields.Address2.y)
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
-    MouseClick, left, % worldShipFields.Address2.x, worldShipFields.Address2.y
-    Sleep 150
-    FocusWorldShipWindow()
-    PasteFieldAt(worldShipFields.Address2.x, worldShipFields.Address2.y, Address2)
-
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    FocusIntraWindow()
-    STPhone := CopyFieldAt(intraFields.STPhone.x, intraFields.STPhone.y)
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
-    MouseClick, left, % worldShipFields.STPhone.x, worldShipFields.STPhone.y
-    Sleep 150
-    FocusWorldShipWindow()
-    PasteFieldAt(worldShipFields.STPhone.x, worldShipFields.STPhone.y, STPhone)
-
-    ; Clear PostalCode first in WorldShip (handles saved address autofill), then copy/paste
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    FocusIntraWindow()
-    PostalCode := CopyFieldAt(intraFields.PostalCode.x, intraFields.PostalCode.y)
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
-    ClipSaved := ClipboardAll
-    Clipboard := PostalCode
-    MouseClick, left, % worldShipFields.PostalCode.x, worldShipFields.PostalCode.y
-    Sleep 150
-    SendInput, {Home}
-    Sleep 80
-    SendInput, +{End}
-    Sleep 80
-    SendInput, {Delete}
-    Sleep 250
-    SendInput, %PostalCode%
-    Sleep 250
-    MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-    Sleep 2000  ; allow any address book/city-state prompts to settle
-
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    FocusIntraWindow()
-    MouseClick, left, % intraFields.PostalCode.x, intraFields.PostalCode.y
-    Sleep 150
-    Loop 6
-    {
-        Sleep 50
-        SendInput, {Tab}
-        Sleep 50
-    }
-    Sleep 150
-    DeclaredValue := CopyCaretValue()
-    if (!RegExMatch(DeclaredValue, "^\d{0,5}$"))
-    {
-        SendInput, {Tab}
-        Sleep 120
-        DeclaredValue := CopyCaretValue()
-    }
-    Clipboard := ClipSaved
-    ClipSaved := ""
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
-    Sleep 150
-    MouseClick, left, % worldShipTabs.ShipTo.x, worldShipTabs.ShipTo.y  ; keep Ship To tab active
-    Sleep 150
-    MouseClick, left, % worldShipTabs.Service.x, worldShipTabs.Service.y
-    Sleep 150
-    PasteFieldAt(worldShipFields.DeclVal.x, worldShipFields.DeclVal.y, DeclaredValue)
-    Sleep 150
-
-    ; alias paste in email field then select options-qvn-recipients-
-    ; paste into qvnemail-then done, optionally implement a send enter
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    NeutralAndHome()
-    Sleep 150
-    Alias := CopyFieldAt(intraFields.Alias.x, intraFields.Alias.y)
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
-    Sleep 150
-    PasteFieldAt(worldShipFields.STEmail.x, worldShipFields.STEmail.y, Alias)
-    Sleep 150
-    Send {End}
-    Sleep 150
-    MouseClick, left, % worldShipTabs.Options.x, worldShipTabs.Options.y
-    Sleep 150
-    MouseClick, left, % worldShipTabs.QVN.x, worldShipTabs.QVN.y
-    Sleep 150
-    MouseClick, left, % worldShipTabs.Recipients.x, worldShipTabs.Recipients.y
-    Sleep 250
-    WinWaitActive, Quantum View Notify Recipients (Shipment),, 1
-    Sleep 250
-    Loop 2
-    {
-        Sleep 25
-        Send {Tab}
-        Sleep 25
-    }
-    Sleep 150
-    ClipSaved := ClipboardAll
-    Clipboard := Alias
-    SendInput, ^v
-    Sleep 150
-    Clipboard := ClipSaved
-    ClipSaved := ""
-    Sleep 150
-    Send {End}
-    Sleep 150
-    Send {Enter}
     ShowHotkeyRuntime(startTick)
 return
 
-^!p:: ; Personal Form
-    offsetY := -90              ; Y offset (General) 
+^!p:: ; Personal Form: collect first, then paste
     scaleClickDone := false
     startTick := A_TickCount
+    data := CollectIntraDataLegacy("personal")
+    PastePersonalToWorldShip(data)
+    FocusIntraWindow()
+    EnsureIntraWindow()
+    ShowHotkeyRuntime(startTick)
+return
+
+CollectIntraDataLegacy(mode)
+{
+    global intraFields, BusinessButtonX, BusinessButtonY, PersonalButtonX, PersonalButtonY
+    offsetY := (mode = "personal") ? -90 : 0
+    includeCostCenter := (mode = "business")
 
     FocusIntraWindow()
     EnsureIntraWindow()
-    Sleep 50
+    Sleep 250
     NeutralAndHome()
-    Sleep 50
-    MouseClick, left, %PersonalButtonX%, %PersonalButtonY%, 2
-    Sleep 150
-    FocusIntraWindow()
-    sfName := CopyFieldAt(intraFields.SFName.x, intraFields.SFName.y + offsetY)
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
-    Sleep 150
-    MouseClick, left, % worldShipTabs.Service.x, worldShipTabs.Service.y  ; ensure Service tab active before first paste
-    Sleep 150
-    MouseClick, left, % worldShipTabs.ShipFrom.x, worldShipTabs.ShipFrom.y
-    Sleep 150
-    FocusWorldShipWindow()
-    PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, sfName)
-    Sleep 150
-    MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-    Sleep 3000
-    FocusWorldShipWindow()
-    PasteFieldAt(worldShipFields.SFName.x, worldShipFields.SFName.y, sfName)
-    Sleep 150
-    EnsureWorldShipTop()
-    Sleep 150
-    FocusWorldShipWindow()
-    PasteFieldAt(worldShipFields.Ref2.x, worldShipFields.Ref2.y, sfName)
+    Sleep 80
 
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    NeutralAndHome()
-    FocusIntraWindow()
-    sfPhone := CopyFieldAt(intraFields.SFPhone.x, intraFields.SFPhone.y + offsetY)
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
-    Sleep 150
-    FocusWorldShipWindow()
-    PasteFieldAt(worldShipFields.SFPhone.x, worldShipFields.SFPhone.y, sfPhone)
-    Sleep 150
-    FocusWorldShipWindow()
-    MouseClick, left, % worldShipTabs.ShipTo.x, worldShipTabs.ShipTo.y
-
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    NeutralAndHome()
-    FocusIntraWindow()
-    company := CopyFieldAt(intraFields.Company.x, intraFields.Company.y + offsetY)
-
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    NeutralAndHome()
-    FocusIntraWindow()
-    stName := CopyFieldAt(intraFields.STName.x, intraFields.STName.y + offsetY)
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
-    Sleep 150
-    if (company != "")
+    if (mode = "business")
     {
-        FocusWorldShipWindow()
-        PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, company)
-        Sleep 150
-        MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-        Sleep 2000
+        SendInput, {WheelUp 15}
+        Sleep 120
+        MouseClick, left, %BusinessButtonX%, %BusinessButtonY%, 2
     }
     else
     {
-        FocusWorldShipWindow()
-        PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, stName)
-        Sleep 150
-        MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-        Sleep 3000  ; allow WorldShip address book fill to process
+        MouseClick, left, %PersonalButtonX%, %PersonalButtonY%, 2
     }
-    FocusWorldShipWindow()
-    PasteFieldAt(worldShipFields.STName.x, worldShipFields.STName.y, stName)
+    Sleep 150
 
-    ; Scroll Down
+    payload := {}
+    if (includeCostCenter)
+        payload.CostCenter := CopyFieldAt(intraFields.CostCenter.x, intraFields.CostCenter.y + offsetY)
+    payload.Alias      := CopyFieldAt(intraFields.Alias.x, intraFields.Alias.y + offsetY)
+    payload.SFName     := CopyFieldAt(intraFields.SFName.x, intraFields.SFName.y + offsetY)
+    payload.SFPhone    := CopyFieldAt(intraFields.SFPhone.x, intraFields.SFPhone.y + offsetY)
+    payload.Company    := CopyFieldAt(intraFields.Company.x, intraFields.Company.y + offsetY)
+    payload.STName     := CopyFieldAt(intraFields.STName.x, intraFields.STName.y + offsetY)
+
+    ; Scroll to Ship To block before grabbing the lower fields
+    ScrollDownToShipToLegacy()
+
+    payload.Address1   := CopyFieldAt(intraFields.Address1.x, intraFields.Address1.y + offsetY)
+    payload.Address2   := CopyFieldAt(intraFields.Address2.x, intraFields.Address2.y + offsetY)
+    payload.STPhone    := CopyFieldAt(intraFields.STPhone.x, intraFields.STPhone.y + offsetY)
+    payload.PostalCode := CopyFieldAt(intraFields.PostalCode.x, intraFields.PostalCode.y + offsetY)
+    payload.DeclaredValue := CopyDeclaredValueLegacy(intraFields, offsetY)
+
+    FocusWorldShipWindow()
+    return payload
+}
+
+PasteBusinessToWorldShip(data)
+{
+    global worldShipTabs, worldShipFields
+    FocusWorldShipWindow()
+    EnsureWorldShipTop()
+    Sleep 120
+
+    MouseClick, left, % worldShipTabs.ShipTo.x, worldShipTabs.ShipTo.y
+    Sleep 120
+    MouseClick, left, % worldShipTabs.Service.x, worldShipTabs.Service.y
+    Sleep 120
+    PasteFieldAt(worldShipFields.Ref1.x, worldShipFields.Ref1.y, data.CostCenter)
+    Sleep 120
+
+    MouseClick, left, % worldShipTabs.Service.x, worldShipTabs.Service.y
+    Sleep 120
+    MouseClick, left, % worldShipTabs.ShipFrom.x, worldShipTabs.ShipFrom.y
+    Sleep 120
+    PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, data.SFName)
+    Sleep 120
+    MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
+    Sleep 3000
+    PasteFieldAt(worldShipFields.SFName.x, worldShipFields.SFName.y, data.SFName)
+    Sleep 120
+    EnsureWorldShipTop()
+    PasteFieldAt(worldShipFields.Ref2.x, worldShipFields.Ref2.y, data.SFName)
+    Sleep 120
+    PasteFieldAt(worldShipFields.SFPhone.x, worldShipFields.SFPhone.y, data.SFPhone)
+    Sleep 120
+
+    MouseClick, left, % worldShipTabs.ShipTo.x, worldShipTabs.ShipTo.y
+    Sleep 120
+    MouseClick, left, % worldShipTabs.Service.x, worldShipTabs.Service.y
+    Sleep 120
+
+    companyName := data.Company != "" ? data.Company : data.STName
+    PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, companyName)
+    Sleep 120
+    MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
+    delay := (companyName = data.Company && companyName != "") ? 2000 : 3000
+    Sleep, %delay%
+    PasteFieldAt(worldShipFields.STName.x, worldShipFields.STName.y, data.STName)
+    Sleep 120
+
+    PasteFieldAt(worldShipFields.Address1.x, worldShipFields.Address1.y, data.Address1)
+    Sleep 120
+    PasteFieldAt(worldShipFields.Address2.x, worldShipFields.Address2.y, data.Address2)
+    Sleep 120
+    PasteFieldAt(worldShipFields.STPhone.x, worldShipFields.STPhone.y, data.STPhone)
+    Sleep 120
+
+    PastePostalCode(data.PostalCode)
+    PasteDeclaredValue(data.DeclaredValue)
+    PasteAliasAndQVn(data.Alias)
+}
+
+PastePersonalToWorldShip(data)
+{
+    global worldShipTabs, worldShipFields
+    FocusWorldShipWindow()
+    EnsureWorldShipTop()
+    Sleep 120
+
+    MouseClick, left, % worldShipTabs.Service.x, worldShipTabs.Service.y
+    Sleep 120
+    MouseClick, left, % worldShipTabs.ShipFrom.x, worldShipTabs.ShipFrom.y
+    Sleep 120
+    PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, data.SFName)
+    Sleep 120
+    MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
+    Sleep 3000
+    PasteFieldAt(worldShipFields.SFName.x, worldShipFields.SFName.y, data.SFName)
+    Sleep 120
+    EnsureWorldShipTop()
+    PasteFieldAt(worldShipFields.Ref2.x, worldShipFields.Ref2.y, data.SFName)
+    Sleep 120
+    PasteFieldAt(worldShipFields.SFPhone.x, worldShipFields.SFPhone.y, data.SFPhone)
+    Sleep 120
+
+    MouseClick, left, % worldShipTabs.ShipTo.x, worldShipTabs.ShipTo.y
+    Sleep 120
+
+    companyName := data.Company != "" ? data.Company : data.STName
+    PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, companyName)
+    Sleep 120
+    MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
+    delay := (companyName = data.Company && companyName != "") ? 2000 : 3000
+    Sleep, %delay%
+    PasteFieldAt(worldShipFields.STName.x, worldShipFields.STName.y, data.STName)
+    Sleep 120
+
+    PasteFieldAt(worldShipFields.Address1.x, worldShipFields.Address1.y, data.Address1)
+    Sleep 120
+    PasteFieldAt(worldShipFields.Address2.x, worldShipFields.Address2.y, data.Address2)
+    Sleep 120
+    PasteFieldAt(worldShipFields.STPhone.x, worldShipFields.STPhone.y, data.STPhone)
+    Sleep 120
+
+    PastePostalCode(data.PostalCode)
+    PasteDeclaredValue(data.DeclaredValue)
+    PasteAliasAndQVn(data.Alias)
+}
+
+ScrollDownToShipToLegacy()
+{
     FocusIntraWindow()
     EnsureIntraWindow()
     Sleep 150
     NeutralClick()
     Sleep 250
     Loop 11
-        {
-            Sleep 25
-            SendInput, {WheelDown}
-            Sleep 25
-        }
+    {
+        Sleep 25
+        SendInput, {WheelDown}
+        Sleep 25
+    }
     Sleep 150
-    FocusIntraWindow()
-    Address1 := CopyFieldAt(intraFields.Address1.x, intraFields.Address1.y + offsetY)
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
-    MouseClick, left, % worldShipFields.Address1.x, worldShipFields.Address1.y
-    Sleep 150
-    FocusWorldShipWindow()
-    PasteFieldAt(worldShipFields.Address1.x, worldShipFields.Address1.y, Address1)
+    ; Settling time + neutral click before resuming copies.
+    NeutralClick()
+    Sleep 200
+}
 
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    FocusIntraWindow()
-    Address2 := CopyFieldAt(intraFields.Address2.x, intraFields.Address2.y + offsetY)
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
-    MouseClick, left, % worldShipFields.Address2.x, worldShipFields.Address2.y
-    Sleep 150
-    FocusWorldShipWindow()
-    PasteFieldAt(worldShipFields.Address2.x, worldShipFields.Address2.y, Address2)
-
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    FocusIntraWindow()
-    STPhone := CopyFieldAt(intraFields.STPhone.x, intraFields.STPhone.y + offsetY)
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
-    MouseClick, left, % worldShipFields.STPhone.x, worldShipFields.STPhone.y
-    Sleep 150
-    FocusWorldShipWindow()
-    PasteFieldAt(worldShipFields.STPhone.x, worldShipFields.STPhone.y, STPhone)
-
-    ; Clear PostalCode first in WorldShip (handles saved address autofill), then copy/paste
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    FocusIntraWindow()
-    PostalCode := CopyFieldAt(intraFields.PostalCode.x, intraFields.PostalCode.y + offsetY)
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
+CopyDeclaredValueLegacy(fields, offsetY := 0)
+{
     ClipSaved := ClipboardAll
-    Clipboard := PostalCode
-    MouseClick, left, % worldShipFields.PostalCode.x, worldShipFields.PostalCode.y
-    Sleep 150
-    SendInput, {Home}
-    Sleep 80
-    SendInput, +{End}
-    Sleep 80
-    SendInput, {Delete}
-    Sleep 250
-    SendInput, %PostalCode%
-    Sleep 250
-    MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-    Sleep 2000  ; allow any address book/city-state prompts to settle
-
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    FocusIntraWindow()
-    MouseClick, left, % intraFields.PostalCode.x, intraFields.PostalCode.y + offsetY, 2
-    Sleep 150
-    SendInput, {Right}
+    Clipboard :=
+    MouseClick, left, % fields.PostalCode.x, fields.PostalCode.y + offsetY
     Sleep 100
     Loop 6
     {
@@ -480,45 +273,68 @@ return
         SendInput, {Tab}
         Sleep 50
     }
-    Sleep 150
-    DeclaredValue := CopyCaretValue()
-    if (!RegExMatch(DeclaredValue, "^\d{0,5}$"))
+    Sleep 120
+    value := CopyCaretValue()
+    if (!RegExMatch(value, "^\d{0,5}$"))
     {
         SendInput, {Tab}
         Sleep 120
-        DeclaredValue := CopyCaretValue()
+        value := CopyCaretValue()
     }
     Clipboard := ClipSaved
     ClipSaved := ""
-    FocusWorldShipWindow()
-    EnsureWorldShipTop()
-    Sleep 150
-    MouseClick, left, % worldShipTabs.ShipTo.x, worldShipTabs.ShipTo.y  ; keep Ship To tab active
-    Sleep 150
-    MouseClick, left, % worldShipTabs.Service.x, worldShipTabs.Service.y
-    Sleep 150
-    PasteFieldAt(worldShipFields.DeclVal.x, worldShipFields.DeclVal.y, DeclaredValue)
-    Sleep 150
+    return value
+}
 
-    ; alias paste in email field then select options-qvn-recipients-
-    ; paste into qvnemail-then done, optionally implement a send enter
-    FocusIntraWindow()
-    EnsureIntraWindow()
-    Sleep 50
-    NeutralAndHome()
+PastePostalCode(postalCode)
+{
+    global worldShipFields, worldShipTabs
+    ClipSaved := ClipboardAll
+    Clipboard := postalCode
+    MouseClick, left, % worldShipFields.PostalCode.x, worldShipFields.PostalCode.y
     Sleep 150
-    Alias := CopyFieldAt(intraFields.Alias.x, intraFields.Alias.y + offsetY)
+    SendInput, {Home}
+    Sleep 80
+    SendInput, +{End}
+    Sleep 80
+    SendInput, {Delete}
+    Sleep 250
+    SendInput, %postalCode%
+    Sleep 250
+    MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
+    Sleep 2000  ; allow any address book/city-state prompts to settle
+    Clipboard := ClipSaved
+    ClipSaved := ""
+}
+
+PasteDeclaredValue(declaredValue)
+{
+    global worldShipTabs, worldShipFields
     FocusWorldShipWindow()
     EnsureWorldShipTop()
-    Sleep 150
-    PasteFieldAt(worldShipFields.STEmail.x, worldShipFields.STEmail.y, Alias)
-    Sleep 150
+    Sleep 120
+    MouseClick, left, % worldShipTabs.ShipTo.x, worldShipTabs.ShipTo.y
+    Sleep 120
+    MouseClick, left, % worldShipTabs.Service.x, worldShipTabs.Service.y
+    Sleep 120
+    PasteFieldAt(worldShipFields.DeclVal.x, worldShipFields.DeclVal.y, declaredValue)
+    Sleep 120
+}
+
+PasteAliasAndQVn(alias)
+{
+    global worldShipTabs, worldShipFields
+    FocusWorldShipWindow()
+    EnsureWorldShipTop()
+    Sleep 120
+    PasteFieldAt(worldShipFields.STEmail.x, worldShipFields.STEmail.y, alias)
+    Sleep 120
     Send {End}
-    Sleep 150
+    Sleep 120
     MouseClick, left, % worldShipTabs.Options.x, worldShipTabs.Options.y
-    Sleep 150
+    Sleep 120
     MouseClick, left, % worldShipTabs.QVN.x, worldShipTabs.QVN.y
-    Sleep 150
+    Sleep 120
     MouseClick, left, % worldShipTabs.Recipients.x, worldShipTabs.Recipients.y
     Sleep 250
     WinWaitActive, Quantum View Notify Recipients (Shipment),, 1
@@ -529,19 +345,18 @@ return
         Send {Tab}
         Sleep 25
     }
-    Sleep 150
+    Sleep 120
     ClipSaved := ClipboardAll
-    Clipboard := Alias
+    Clipboard := alias
     SendInput, ^v
-    Sleep 150
+    Sleep 120
     Clipboard := ClipSaved
     ClipSaved := ""
-    Sleep 150
+    Sleep 120
     Send {End}
-    Sleep 150
+    Sleep 120
     Send {Enter}
-    ShowHotkeyRuntime(startTick)
-return
+}
 
 FocusIntraWindow()
 {
@@ -628,6 +443,7 @@ CopyCaretValue()
     ClipSaved := ""
     return text
 }
+
 PasteFieldAt(x, y, text)
 {
     local ClipSaved
