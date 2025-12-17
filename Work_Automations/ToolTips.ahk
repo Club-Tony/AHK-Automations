@@ -83,8 +83,33 @@ Return
 ~!c::Gosub HideTooltips
 ~^!c::Gosub HideTooltips
 ~^!f::Gosub HideTooltips
+~^!d::Gosub HideTooltips
+~^!t::Gosub HideTooltips
 ~^!i::Gosub HideTooltips
 ~^i::Gosub HideTooltips
+#If
+
+; Intra Search - show SSJ search hotkeys when Search - General is active
+#IfWinActive, Search - General
+^!t::
+    ButtonsTooltipActive := true
+    TooltipActive := true
+    tooltipText =
+    (
+Intra SSJ Search
+Ctrl+Alt+F: Load and reload search script
+Alt+D: Docksided items
+Ctrl+Alt+D: Delivered items
+Alt+O: On-shelf items
+Alt+H: Outbound - Handed Off (down 3)
+Alt+A: Arrived at BSC
+Alt+P: Pickup from BSC
+Alt+Space: Search Windows Quick Resize
+Ctrl+Alt+T: Show this tooltip again
+    )
+    Tooltip, %tooltipText%
+    SetTimer, HideTooltips, -15000
+return
 #If
 
 UnlockTooltip:
