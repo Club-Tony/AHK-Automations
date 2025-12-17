@@ -120,7 +120,7 @@ Esc::ExitApp
     PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, sfName)
     Sleep 150
     MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-    Sleep 3000
+    Sleep 5000
     FocusWorldShipWindow()
     PasteFieldAt(worldShipFields.SFName.x, worldShipFields.SFName.y, sfName)
     Sleep 150
@@ -163,7 +163,7 @@ Esc::ExitApp
         PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, company)
         Sleep 150
         MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-        Sleep 3000
+        Sleep 5000
     }
     else
     {
@@ -171,7 +171,7 @@ Esc::ExitApp
         PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, stName)
         Sleep 150
         MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-        Sleep 3000  ; allow WorldShip address book fill to process
+        Sleep 5000  ; allow WorldShip address book fill to process
     }
     FocusWorldShipWindow()
     PasteFieldAt(worldShipFields.STName.x, worldShipFields.STName.y, stName)
@@ -336,7 +336,7 @@ return
     PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, sfName)
     Sleep 150
     MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-    Sleep 3000
+    Sleep 5000
     FocusWorldShipWindow()
     PasteFieldAt(worldShipFields.SFName.x, worldShipFields.SFName.y, sfName)
     Sleep 150
@@ -390,7 +390,7 @@ return
         PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, stName)
         Sleep 150
         MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-        Sleep 3000  ; allow WorldShip address book fill to process
+        Sleep 5000  ; allow WorldShip address book fill to process
     }
     FocusWorldShipWindow()
     PasteFieldAt(worldShipFields.STName.x, worldShipFields.STName.y, stName)

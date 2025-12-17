@@ -169,7 +169,7 @@ PasteBusinessToWorldShip(data)
     PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, data.SFName)
     Sleep 120
     MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-    Sleep 3000
+    Sleep 5000
     PasteFieldAt(worldShipFields.SFName.x, worldShipFields.SFName.y, data.SFName)
     Sleep 120
     EnsureWorldShipTop()
@@ -187,7 +187,7 @@ PasteBusinessToWorldShip(data)
     PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, companyName)
     Sleep 120
     MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-    delay := (companyName = data.Company && companyName != "") ? 2000 : 3000
+    delay := (companyName = data.Company && companyName != "") ? 2000 : 5000
     Sleep, %delay%
     PasteFieldAt(worldShipFields.STName.x, worldShipFields.STName.y, data.STName)
     Sleep 120
@@ -218,7 +218,7 @@ PastePersonalToWorldShip(data)
     PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, data.SFName)
     Sleep 120
     MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-    Sleep 3000
+    Sleep 5000
     PasteFieldAt(worldShipFields.SFName.x, worldShipFields.SFName.y, data.SFName)
     Sleep 120
     EnsureWorldShipTop()
@@ -234,7 +234,7 @@ PastePersonalToWorldShip(data)
     PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, companyName)
     Sleep 120
     MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-    delay := (companyName = data.Company && companyName != "") ? 2000 : 3000
+    delay := (companyName = data.Company && companyName != "") ? 2000 : 5000
     Sleep, %delay%
     PasteFieldAt(worldShipFields.STName.x, worldShipFields.STName.y, data.STName)
     Sleep 120
