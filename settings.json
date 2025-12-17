@@ -1,5 +1,6 @@
 {
-    "files.associations": { 
+    "files.associations": {
         "*.ahk": "ahk"
-    }
+    },
+    "terminal.integrated.cwd": "C:/Users/Davey/Documents/GitHub/Repositories/AHK-Automations/Work_Automations"
 }
