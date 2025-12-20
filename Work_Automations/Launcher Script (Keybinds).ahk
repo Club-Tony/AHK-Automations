@@ -10,6 +10,9 @@ CoordMode, Mouse, Window
 intraWinTitle := "Intra: Shipping Request Form"
 intraWinExes := ["firefox.exe", "chrome.exe", "msedge.exe"]  ; priority order
 TooltipActive := false
+searchWinTitle := "Search - General"
+searchShortcutsLaunched := false
+SetTimer, DetectSearchWindow, 500  ; Watch for first appearance of Search - General
 
 ; Launch: Coordinate Helper ; Keybind: Ctrl+Shift+Alt+C
 ^+!c::
@@ -58,21 +61,7 @@ Return
 
 ; Launch: Intra SSJ Search ; Keybind: Ctrl+Alt+F
 ^!f::
-    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Intra_Desktop_Search_Shortcuts.ahk
-    Sleep 150
-    TooltipText =
-    (
-Intra SSJ Search
-Ctrl+Alt+F: Load and reload search script
-Alt+D: Docksided items
-Ctrl+Alt+D: Delivered items
-Alt+O: On-shelf items
-Alt+H: Outbound - Handed Off (down 3)
-Alt+A: Arrived at BSC
-Alt+P: Pickup from BSC
-Alt+Space: Search Windows Quick Resize
-    )
-    ShowTooltip(TooltipText, 7000)
+    Gosub, LaunchIntraSearchShortcuts
 Return
 
 ; Launch: DSRF-to-UPS WorldShip ; Keybind: Ctrl+Alt+C
@@ -267,6 +256,35 @@ CloseWorldShipScripts()
     DetectHiddenWindows, Off
     SetTitleMatchMode, 1
 }
+
+LaunchIntraSearchShortcuts:
+    global searchShortcutsLaunched
+    searchShortcutsLaunched := true
+    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Intra_Desktop_Search_Shortcuts.ahk
+    Sleep 150
+    TooltipText =
+    (
+Intra SSJ Search
+Ctrl+Alt+F: Load and reload search script
+Alt+D: Docksided items
+Ctrl+Alt+D: Delivered items
+Alt+O: On-shelf items
+Alt+H: Outbound - Handed Off (down 3)
+Alt+A: Arrived at BSC
+Alt+P: Pickup from BSC
+Alt+Space: Search Windows Quick Resize
+    )
+    ShowTooltip(TooltipText, 7000)
+Return
+
+DetectSearchWindow:
+    global searchShortcutsLaunched, searchWinTitle
+    if (searchShortcutsLaunched)
+        Return
+    if WinExist(searchWinTitle)
+        Gosub, LaunchIntraSearchShortcuts
+Return
+
 #If (TooltipActive)
 ~Esc::Gosub HideLauncherTooltip
 #If
