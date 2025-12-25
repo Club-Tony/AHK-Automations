@@ -19,11 +19,13 @@ browserExes := ["firefox.exe", "chrome.exe", "msedge.exe"]
 #a::ToggleFocusOrMinimize(assignTitle)
 #u::ToggleFocusOrMinimize(updateTitle)
 #p::ToggleFocusOrMinimize(pickupTitle)
-#f::ToggleFocusOrMinimizeExe("firefox.exe")
+#f::ToggleFirefox()
 #s::ToggleFocusOrMinimizeExe("slack.exe")
 #w::ToggleFocusOrMinimize(worldShipTitle)
+#o::ToggleOutlookPwa()
 
 #i::ToggleIntraGroup()
+#!v::ToggleFocusOrMinimizeExe("Code.exe")
 
 #!m::
     WinMinimizeAll
@@ -186,6 +188,27 @@ ToggleFocusOrMinimizeExe(exe)
     }
 }
 
+ToggleFirefox()
+{
+    if WinActive("ahk_exe firefox.exe")
+    {
+        WinMinimize, ahk_exe firefox.exe
+        return
+    }
+    if WinExist("ahk_exe firefox.exe")
+    {
+        WinActivate  ; last found window
+        WinWaitActive, ahk_exe firefox.exe,, 1
+        EnsureFirefoxWindow()
+    }
+}
+
+EnsureFirefoxWindow()
+{
+    ; Align Firefox to the standard Intra size/position used by DSRF scripts.
+    WinMove, ahk_exe firefox.exe,, 1917, 0, 1530, 1399
+}
+
 FocusOutlookPwa()
 {
     ; Try common PWA hosts first (title starts with "Outlook (PWA"), then native Outlook as fallback.
@@ -193,6 +216,35 @@ FocusOutlookPwa()
                  , "Outlook (PWA) ahk_exe msedge.exe"
                  , "Outlook (PWA) ahk_exe chrome.exe"
                  , "Outlook ahk_exe outlook.exe"]
+    Loop % candidates.Length()
+    {
+        candidate := candidates[A_Index]
+        if (WinExist(candidate))
+        {
+            WinActivate  ; last found window
+            WinWaitActive, %candidate%,, 1
+            return
+        }
+    }
+}
+
+ToggleOutlookPwa()
+{
+    candidates := ["Outlook (PWA) ahk_exe msedgewebview2.exe"
+                 , "Outlook (PWA) ahk_exe msedge.exe"
+                 , "Outlook (PWA) ahk_exe chrome.exe"
+                 , "Outlook ahk_exe outlook.exe"]
+
+    Loop % candidates.Length()
+    {
+        candidate := candidates[A_Index]
+        if (WinActive(candidate))
+        {
+            WinMinimize, %candidate%
+            return
+        }
+    }
+
     Loop % candidates.Length()
     {
         candidate := candidates[A_Index]

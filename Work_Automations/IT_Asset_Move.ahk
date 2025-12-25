@@ -25,6 +25,10 @@ SetTitleMatchMode, 2 ; allows for partial window title matches
 Esc::ExitApp
 SetKeyDelay 150
 isRunning := false
+assetTimeoutShowing := false
+assetTimeoutMouseX := 0
+assetTimeoutMouseY := 0
+assetTimedOut := false
 #IfWinActive, Intra Desktop Client - Assign Recip
 
 CloseScriptIfRunning(name) {
@@ -58,6 +62,7 @@ CloseScriptIfRunning(name) {
 !t::
     if (isRunning)
         return
+    Gosub, AssetTimeoutHide
     isRunning := true
     ; Stop the Alt+S assignment helper to avoid hotkey conflicts.
     SetTitleMatchMode, 2
@@ -162,12 +167,17 @@ CloseScriptIfRunning(name) {
             break
         }
     }
-    ToolTip
     if (!changed)
     {
+        assetTimeoutShowing := true
+        assetTimedOut := true
+        MouseGetPos, assetTimeoutMouseX, assetTimeoutMouseY
+        ToolTip, IT Asset Move script timed out
+        SetTimer, AssetTimeoutMouseCheck, 100
         isRunning := false
         return
     }
+    ToolTip  ; clear scan prompt on success
     DetectHiddenWindows, Off
     
     ; Resume rest of script
@@ -210,4 +220,23 @@ CloseScriptIfRunning(name) {
     MouseMove, 945, 70
     isRunning := false
 Return
+#If
+
+AssetTimeoutHide:
+    SetTimer, AssetTimeoutMouseCheck, Off
+    assetTimeoutShowing := false
+    ToolTip
+    if (assetTimedOut)
+        ExitApp
+return
+
+AssetTimeoutMouseCheck:
+    MouseGetPos, curX, curY
+    if (curX != assetTimeoutMouseX || curY != assetTimeoutMouseY)
+        Gosub, AssetTimeoutHide
+return
+
+#If (assetTimeoutShowing)
+~Esc::Gosub AssetTimeoutHide
+~!t::Gosub AssetTimeoutHide
 #If

@@ -99,6 +99,20 @@ Return
 ~#!m::Gosub HideTooltips
 #If
 
+; Guard tooltip when Faster Assigning script is not running (Alt+S in Assign Recip)
+#IfWinActive, Intra Desktop Client - Assign Recip
+!s::
+    DetectHiddenWindows, On
+    running := WinExist("IT_Requested_IOs-Faster_Assigning.ahk ahk_class AutoHotkey")
+    DetectHiddenWindows, Off
+    if (running)
+        return
+    tooltipText := "Faster-Assign script inactive - Ctrl+Alt+I to launch then try hotkey again."
+    Tooltip, %tooltipText%
+    SetTimer, HideTooltips, -3000
+return
+#If
+
 ; Intra Search - show SSJ search hotkeys when Search - General is active
 #IfWinActive, Search - General
 ^!t::
@@ -236,3 +250,31 @@ HideTooltips:
     Hotkey, Esc, HideTooltips, Off
     Tooltip
 Return
+
+; Intra Pickup window hotkeys
+#IfWinActive, Intra Desktop Client - Pickup
+^!t::
+    if (TooltipActive) {
+        Gosub, HideTooltips
+        Return
+    }
+    TooltipActive := true
+    tooltipText =
+    (
+Intra Pickup Hotkeys
+Alt+1 - Signature Print Name
+Alt+E - Focus Item # / Scan field
+Alt+C - Clear + Return to scan
+Ctrl+Alt+T - Show this tooltip again
+    )
+    Tooltip, %tooltipText%
+    Hotkey, Esc, HideTooltips, On
+    SetTimer, HideTooltips, -7000
+return
+#If
+
+#If (TooltipActive)
+~!1::Gosub HideTooltips
+~!e::Gosub HideTooltips
+~!c::Gosub HideTooltips
+#If

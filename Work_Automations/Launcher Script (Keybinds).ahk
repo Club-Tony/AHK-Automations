@@ -12,7 +12,11 @@ intraWinExes := ["firefox.exe", "chrome.exe", "msedge.exe"]  ; priority order
 TooltipActive := false
 searchWinTitle := "Search - General"
 searchShortcutsLaunched := false
+fastAssignPrevRunning := false
+tooltipMouseX := 0
+tooltipMouseY := 0
 SetTimer, DetectSearchWindow, 500  ; Watch for first appearance of Search - General
+SetTimer, DetectFastAssignClosed, 1000
 
 ; Launch: Coordinate Helper ; Keybind: Ctrl+Shift+Alt+C
 ^+!c::
@@ -189,15 +193,19 @@ FocusAssignRecipWindow()
 
 ShowTooltip(TooltipText, durationMs)
 {
-    global TooltipActive
+    global TooltipActive, tooltipMouseX, tooltipMouseY
     SetTimer, HideLauncherTooltip, Off
+    SetTimer, TooltipMouseCheck, Off
+    MouseGetPos, tooltipMouseX, tooltipMouseY
     ToolTip, %TooltipText%
     TooltipActive := true
     SetTimer, HideLauncherTooltip, % -durationMs
+    SetTimer, TooltipMouseCheck, 100
 }
 
 HideLauncherTooltip:
     SetTimer, HideLauncherTooltip, Off
+    SetTimer, TooltipMouseCheck, Off
     TooltipActive := false
     ToolTip
 Return
@@ -285,7 +293,28 @@ DetectSearchWindow:
         Gosub, LaunchIntraSearchShortcuts
 Return
 
+DetectFastAssignClosed:
+    global fastAssignPrevRunning
+    DetectHiddenWindows, On
+    running := WinExist("IT_Requested_IOs-Faster_Assigning.ahk ahk_class AutoHotkey")
+    DetectHiddenWindows, Off
+    if (fastAssignPrevRunning && !running)
+        ShowTooltip("Fast-Assign Script Closed", 1500)
+    fastAssignPrevRunning := running
+Return
+
 #If (TooltipActive)
 ~Esc::Gosub HideLauncherTooltip
+~!s::Gosub HideLauncherTooltip
+~!p::Gosub HideLauncherTooltip
+~^!p::Gosub HideLauncherTooltip
+~!t::Gosub HideLauncherTooltip
+~^!i::Gosub HideLauncherTooltip
 #If
 
+TooltipMouseCheck:
+    global tooltipMouseX, tooltipMouseY
+    MouseGetPos, curX, curY
+    if (curX != tooltipMouseX || curY != tooltipMouseY)
+        Gosub, HideLauncherTooltip
+return

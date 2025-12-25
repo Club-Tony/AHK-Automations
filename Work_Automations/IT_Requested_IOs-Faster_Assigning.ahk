@@ -19,45 +19,63 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 Esc::ExitApp
 SetKeyDelay 100
 scanReady := false
+lastActivity := 0
+timeoutActive := false
+timeoutShowing := false
+timeoutMouseX := 0
+timeoutMouseY := 0
 
 #If AssignRecipHotkeyAllowed()
 !s::
+    BumpAssignActivity()
+    StartAssignTimeout()
     FocusAssignRecipWindow()
     if (!WinActive("Intra Desktop Client - Assign Recip"))
         Return
     CloseParentTicketGeneral()
     CloseParentTicketBYOD()
-    Sleep 250
+    Sleep 50
     MouseClick, left, 930, 830, 2
-    Sleep 500
+    Sleep 100
     MouseClick, left, 925, 850
 Return
 
 #IfWinExist, Intra Desktop Client - Assign Recip
 Enter::
+    BumpAssignActivity()
     SendInput, {enter}
-    Sleep 250
+    Sleep 400
     Send, {Down}
-    Sleep 250
+    Sleep 400
     MouseClick, left, 200, 245, 2
 
     ; insert text detection here, where upon text detected under mouse, wait for it to finish and then send so it mimicks scanner carriage return
     MouseGetPos, , , winID, ctrlUnderMouse
+    if (ctrlUnderMouse = "")
+        Return
     ControlGetText, oldText, %ctrlUnderMouse%, ahk_id %winID%
+    lastText := oldText
+    stableCount := 0
 
-    Loop {
+    Loop, 80 {  ; up to ~8s
         Sleep 100
         ControlGetText, newText, %ctrlUnderMouse%, ahk_id %winID%
-        if (newText != oldText && newText != "") {
-            Sleep 100
+        if (newText != "" && newText != lastText) {
+            lastText := newText
+            stableCount := 1
+        } else if (newText != "" && newText = lastText) {
+            stableCount++
+        }
+        if (stableCount >= 3) {
+            Sleep 150
             ControlSend, %ctrlUnderMouse%, {Enter}, ahk_id %winID%
-            Sleep 100
+            Sleep 150
             scanReady := true
             if (scanReady) {
                 scanReady := false
-                Sleep 200
+                Sleep 250
                 Send, {F5}
-                Sleep 200
+                Sleep 250
                 Gosub, PostF5Recovery
             }
             Break
@@ -66,6 +84,7 @@ Enter::
 Return
 
 F5::
+    BumpAssignActivity()
     if (!AssignRecipHotkeyAllowed())
         return
     if (!scanReady)
@@ -91,9 +110,53 @@ PostF5Recovery:
     WinWaitActive, Intra Desktop Client - Assign Recip,, 3
     FocusAssignRecipWindow()
     MouseClick, left, 945, 850
+    Sleep 100
     Sleep 150
-    Sleep 250
     Gosub, !s
+return
+
+CheckAssignTimeout:
+    if (!timeoutActive)
+        return
+    elapsed := A_TickCount - lastActivity
+    if (elapsed >= 30000) {
+        timeoutActive := false
+        timeoutShowing := true
+        MouseGetPos, timeoutMouseX, timeoutMouseY
+        Tooltip, Alt+S Faster Assigning Script Timeout
+        SetTimer, TimeoutMouseCheck, 100
+        SetTimer, TimeoutExitSub, -3000
+    }
+return
+
+TimeoutExitSub:
+    SetTimer, TimeoutMouseCheck, Off
+    Tooltip
+    ExitApp
+return
+
+BumpAssignActivity() {
+    global lastActivity
+    lastActivity := A_TickCount
+}
+
+StartAssignTimeout() {
+    global timeoutActive
+    if (!timeoutActive) {
+        SetTimer, CheckAssignTimeout, 500
+        timeoutActive := true
+    }
+    BumpAssignActivity()
+}
+
+#If (timeoutShowing)
+~Esc::Gosub TimeoutExitSub
+#If
+
+TimeoutMouseCheck:
+    MouseGetPos, curX, curY
+    if (curX != timeoutMouseX || curY != timeoutMouseY)
+        Gosub, TimeoutExitSub
 return
 
 #IfWinActive
