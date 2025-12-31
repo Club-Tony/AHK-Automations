@@ -121,6 +121,7 @@ FocusWindow(title)
 
 ToggleFocusOrMinimize(title)
 {
+    global pickupTitle
     if WinActive(title)
     {
         WinMinimize, %title%
@@ -129,6 +130,8 @@ ToggleFocusOrMinimize(title)
     {
         WinActivate, %title%
         WinWaitActive, %title%,, 1
+        if (title = pickupTitle)
+            WinMaximize, %title%
     }
 }
 
@@ -157,6 +160,8 @@ ToggleIntraGroup()
         if (WinExist(t))
         {
             WinRestore, %t%
+            if (t = pickupTitle)
+                WinMaximize, %t%
             primary := (primary = "") ? t : primary
         }
     }
@@ -164,6 +169,8 @@ ToggleIntraGroup()
     {
         WinActivate, %primary%
         WinWaitActive, %primary%,, 1
+        if (primary = pickupTitle)
+            WinMaximize, %primary%
     }
 }
 

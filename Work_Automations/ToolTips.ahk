@@ -224,6 +224,10 @@ return
         Gosub, HideTooltips
         Return
     }
+    CoordMode, Mouse, Screen
+    WinGetPos, winX, winY, winW, winH, A
+    if (winW && winH)
+        MouseMove, % (winX + winW//2), % (winY + winH//2)
     TooltipActive := true
     tooltipText =
     (
@@ -232,6 +236,8 @@ Alt+A   - Paste @amazon.com
 Alt+Tab - Jump forward 6 tabs
 Alt+1   - Tab forward 2
 Alt+2   - Tab forward 8
+Alt+P   - Copy Ship To phone -> Ship From phone
+Alt+N   - Copy Ship From company -> Ref2
 Ctrl+Alt+T - Show this tooltip again
     )
     Tooltip, %tooltipText%
@@ -254,12 +260,24 @@ return
         Gosub, HideTooltips
         Return
     }
+    CoordMode, Mouse, Screen
+    WinGetPos, winX, winY, winW, winH, A
+    if (winW && winH)
+        MouseMove, % (winX + winW//2), % (winY + winH//2)
     TooltipActive := true
     tooltipText =
     (
 Slack Hotkeys
+Alt+0 - daveyuan
 Alt+1 - leona-array
 Alt+2 - sps-byod
+Alt+3 - sea124_ouroboros
+Alt+4 - acp_bsc_comms
+Alt+S - felsusad grovfred
+Alt+A - tstepama grovfred
+Alt+J - @jssjens
+Alt+L - @leobanks
+Alt+R - @grovfred
 Ctrl+Alt+T - Show this tooltip again
     )
     Tooltip, %tooltipText%
@@ -269,8 +287,15 @@ return
 #If
 
 #If (TooltipActive && WinActive("ahk_exe slack.exe"))
+~!0::Gosub HideTooltips
 ~!1::Gosub HideTooltips
 ~!2::Gosub HideTooltips
+~!3::Gosub HideTooltips
+~!s::Gosub HideTooltips
+~!a::Gosub HideTooltips
+~!j::Gosub HideTooltips
+~!l::Gosub HideTooltips
+~!r::Gosub HideTooltips
 #If
 
 ; Intra Window Switch hotkeys (global trigger, guarded against other tooltip scopes)

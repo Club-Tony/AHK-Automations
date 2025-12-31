@@ -52,6 +52,8 @@ ArrangeIntraWindows()
     ; 1) Maximize Pickup.
     WinActivate, %pickupTitle%
     WinWaitActive, %pickupTitle%,, 1
+    WinRestore, %pickupTitle%
+    Sleep 50
     WinMaximize, %pickupTitle%
     Sleep 100
 
