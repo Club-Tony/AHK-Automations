@@ -23,7 +23,7 @@ browserExes := ["firefox.exe", "chrome.exe", "msedge.exe"]
 #p::ToggleFocusOrMinimize(pickupTitle)
 #f::ToggleFirefox()
 #s::ToggleFocusOrMinimizeExe("slack.exe")
-#w::ToggleFocusOrMinimize(worldShipTitle)
+#w::ToggleWorldShip()
 #o::ToggleOutlookPwa()
 #e::ToggleExplorer()
 #!e::OpenNewExplorer()
@@ -349,6 +349,17 @@ ToggleOutlookPwa()
             return
         }
     }
+}
+
+ToggleWorldShip()
+{
+    global worldShipTitle
+    if WinExist(worldShipTitle)
+    {
+        ToggleFocusOrMinimize(worldShipTitle)
+        return
+    }
+    Run, WorldShipTD.exe
 }
 
 ToggleExplorer()

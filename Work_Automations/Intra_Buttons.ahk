@@ -12,6 +12,7 @@ OnMessage(posterMsgId, "HandlePosterMessage")
 interofficeTitle := "Intra: Interoffice Request"
 interofficeExes := ["firefox.exe", "chrome.exe", "msedge.exe"]
 homeTitle := "Intra: Home"
+searchTitle := "Intra: Search"
 exportedReportTitle := "ExportedReport.pdf"
 ctrlWRunning := false
 exportedReportTitle := "ExportedReport.pdf"
@@ -418,6 +419,24 @@ DoHomeAlt1()
     MouseClick, left, 340, 490, 2
 }
 
+DoHomeAlt2()
+{
+    EnsureHomeWindow()
+    Sleep 100
+    CoordMode, Mouse, Screen
+    MouseClick, left, 2600, 1000, 2
+    CoordMode, Mouse, Window
+}
+
+DoSearchAltZ()
+{
+    EnsureSearchWindow()
+    Sleep 100
+    CoordMode, Mouse, Screen
+    MouseClick, left, 2000, 150, 2
+    CoordMode, Mouse, Window
+}
+
 GetFieldText(scrollPos, xRatio, yRatio, promptText := "")
 {
     text := CopyFieldText(scrollPos, xRatio, yRatio)
@@ -438,6 +457,15 @@ HideSpecialTooltip()
 EnsureHomeWindow()
 {
     title := GetHomeWinTitle()
+    if (title = "")
+        return
+    WinActivate, %title%
+    WinWaitActive, %title%,, 1
+}
+
+EnsureSearchWindow()
+{
+    title := GetSearchWinTitle()
     if (title = "")
         return
     WinActivate, %title%
@@ -477,6 +505,24 @@ IsInterofficeActive()
 IsHomeActive()
 {
     title := GetHomeWinTitle()
+    return (title != "" && WinActive(title))
+}
+
+GetSearchWinTitle()
+{
+    global searchTitle, interofficeExes
+    for _, exe in interofficeExes
+    {
+        candidate := searchTitle " ahk_exe " exe
+        if (WinExist(candidate))
+            return candidate
+    }
+    return ""
+}
+
+IsSearchActive()
+{
+    title := GetSearchWinTitle()
     return (title != "" && WinActive(title))
 }
 
@@ -581,6 +627,21 @@ WaitForCloseTabsChoice()
 !i::
 !z::
     DoHomeAlt1()
+return
+
+!o::
+!x::
+    DoHomeAlt2()
+return
+#If
+
+#If IsSearchActive()
+!z::
+    DoSearchAltZ()
+return
+
+!h::
+    DoSearchAltZ()
 return
 #If
 

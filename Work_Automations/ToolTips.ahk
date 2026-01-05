@@ -327,6 +327,7 @@ return
     (
 Intra Home Hotkeys
 Alt+I / Alt+Z - Interoffice Request anchor click (340,490)
+Alt+O / Alt+X - Secondary anchor click (2600,1000)
 Ctrl+Alt+T - Show this tooltip again
     )
     Tooltip, %tooltipText%
@@ -338,6 +339,8 @@ return
 #If (TooltipActive && WinActive("Intra: Home"))
 ~!i::Gosub HideTooltips
 ~!z::Gosub HideTooltips
+~!o::Gosub HideTooltips
+~!x::Gosub HideTooltips
 #If
 
 ; Intra Window Switch hotkeys (global trigger, guarded against other tooltip scopes)
@@ -368,11 +371,13 @@ Intra Window/Focus/Other Hotkeys
 Win+A / Win+U / Win+P - Focus/Minimize Assign / Update / Pickup
 Win+F - Focus/Minimize Firefox
 Win+S - Focus/Minimize Slack
-Win+W - Focus/Minimize UPS WorldShip
+Win+W - Launch/Focus/Minimize UPS WorldShip
 Win+E - Focus/Minimize/Cycle Explorer
 Win+Alt+E - Open new Explorer window
 Win+I - Focus/Minimize all Intra windows
 Win+Alt+M - Minimize all, then focus Firefox, Outlook PWA, Slack
+Alt+O / Alt+X - Intra Home secondary anchor (2600,1000)
+Alt+Z / Alt+H - Intra Home anchor (340,490) / Intra Search anchor (2000,150)
 Ctrl+Alt+W - Intra Desktop Window Organizing
 Ctrl+Shift+Alt+O - Toggle coord.txt open/close (Coord Capture helper)
 Ctrl+Alt+T - Show this tooltip again
