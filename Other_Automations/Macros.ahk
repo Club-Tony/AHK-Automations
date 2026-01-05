@@ -349,13 +349,19 @@ StartHoldMacroSetup()
     tooltipText := "Input key to hold down (15s timeout)."
     ToolTip, %tooltipText%
     SetTimer, HideTempTip, -15000
-    holdKey := ""
-    Input, holdKey, L1 T15 V
+    ; Use InputHook so non-text keys (F-keys, arrows, etc.) are captured via EndKey.
+    ih := InputHook("L1 T15 V")
+    ih.Start()
+    ih.Wait()
     SetTimer, HideTempTip, Off
     ToolTip
+    holdKey := ih.Input
+    if (holdKey = "")
+        holdKey := ih.EndKey
+    holdKey := GetKeyName(holdKey)
     if (holdKey = "")
     {
-        ShowMacroToggledTip("Keyhold canceled (no key)")
+        ShowMacroToggledTip("Keyhold canceled (invalid key)")
         return
     }
     holdMacroKey := holdKey
