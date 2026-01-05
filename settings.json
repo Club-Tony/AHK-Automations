@@ -3,4 +3,6 @@
         "*.ahk": "ahk"
     },
     "terminal.integrated.cwd": "C:/Users/Davey/Documents/GitHub/Repositories/AHK-Automations"
+    // Note the above line needs to be in different settings.json in VScode's launch folder location
+    // Default directory for this is: C:\Users\<Local_User>\AppData\Roaming\Code\User\settings.json
 }
