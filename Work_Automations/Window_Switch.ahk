@@ -5,10 +5,12 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 SetTitleMatchMode, 2  ; Allow partial title matches for Intra windows.
+SetWinDelay, 0  ; Speed up window commands
 
 assignTitle := "Intra Desktop Client - Assign Recip"
 updateTitle := "Intra Desktop Client - Update"
 pickupTitle := "Intra Desktop Client - Pickup"
+updatePos := {x: 1713, y: 0, w: 1734, h: 1399}    ; Match Ctrl+Alt+W sizing for Update
 worldShipTitle := "UPS WorldShip"
 qvnTitle := "Quantum View Notify Recipients"
 exportedReportTitle := "ExportedReport.pdf"
@@ -141,6 +143,21 @@ MinimizeIfExists(title)
         WinMinimize, %title%
 }
 
+ActivateFast(title, timeout := 0.35)
+{
+    WinActivate, %title%
+    WinWaitActive, %title%,, %timeout%
+}
+
+EnsureUpdatePlacement()
+{
+    global updateTitle, updatePos
+    if !WinExist(updateTitle)
+        return
+    WinRestore, %updateTitle%
+    WinMove, %updateTitle%,, % updatePos.x, % updatePos.y, % updatePos.w, % updatePos.h
+}
+
 ToggleIntraGroup()
 {
     global assignTitle, updateTitle, pickupTitle
@@ -154,21 +171,57 @@ ToggleIntraGroup()
 
     titles := [assignTitle, updateTitle, pickupTitle]
     primary := ""
+    assignExists := WinExist(assignTitle)
+    updateExists := WinExist(updateTitle)
+    pickupExists := WinExist(pickupTitle)
+
+    ; When all three are present (typical minimize/restore), bring them up in a predictable order.
+    if (assignExists && updateExists && pickupExists)
+    {
+        WinRestore, %pickupTitle%
+        WinMaximize, %pickupTitle%
+        ActivateFast(pickupTitle)
+
+        EnsureUpdatePlacement()
+        ActivateFast(updateTitle)
+
+        WinRestore, %assignTitle%
+        ActivateFast(assignTitle)
+        return
+    }
+
     Loop % titles.Length()
     {
         t := titles[A_Index]
         if (WinExist(t))
         {
-            WinRestore, %t%
-            if (t = pickupTitle)
-                WinMaximize, %t%
+            if (t = updateTitle)
+            {
+                EnsureUpdatePlacement()
+            }
+            else
+            {
+                WinRestore, %t%
+                if (t = pickupTitle)
+                    WinMaximize, %t%
+            }
             primary := (primary = "") ? t : primary
         }
     }
-    if (primary != "")
+    if (updateExists)
+        EnsureUpdatePlacement()
+
+    if (assignExists)
     {
-        WinActivate, %primary%
-        WinWaitActive, %primary%,, 1
+        ActivateFast(assignTitle)
+    }
+    else if (updateExists)
+    {
+        ActivateFast(updateTitle)
+    }
+    else if (primary != "")
+    {
+        ActivateFast(primary)
         if (primary = pickupTitle)
             WinMaximize, %primary%
     }
