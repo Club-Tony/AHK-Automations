@@ -159,7 +159,7 @@ Ctrl+Alt+S - Fill Special Instructions
 Ctrl+Alt+A - ACP preset -> Alias
 Alt+P  - Load "posters" preset -> Name field
 Ctrl+Alt+P - Poster full automation
-Alt+Z / Alt+H - Intra Home anchor click
+Alt+Z / Alt+H - Intra Online: Home button anchor
 Alt+1  - Focus "# of Packages"
 Alt+2  - Focus Package Type
 Alt+L  - Click Load button
@@ -327,7 +327,7 @@ return
     (
 Intra Home Hotkeys
 Alt+Z / Alt+I - Interoffice Request anchor click (340,490)
-Alt+X / Alt+O - Secondary anchor click (2600,1000)
+Alt+X / Alt+O - Intra Online: Outbound Shipping Requests button anchor
 Ctrl+Alt+T - Show this tooltip again
     )
     Tooltip, %tooltipText%
@@ -376,8 +376,8 @@ Win+E - Focus/Minimize/Cycle Explorer
 Win+Alt+E - Open new Explorer window
 Win+I - Focus/Minimize all Intra windows
 Win+Alt+M - Minimize all, then focus Firefox, Outlook PWA, Slack
-Alt+X / Alt+O - Intra Home secondary anchor (2600,1000)
-Alt+Z / Alt+H - Intra Home anchor (340,490) / Intra Search anchor (2000,150)
+Alt+X / Alt+O - Intra Online: Outbound Shipping Requests button anchor
+Alt+Z / Alt+H - Intra Online: Home button anchor
 Ctrl+Alt+W - Intra Desktop Window Organizing
 Ctrl+Shift+Alt+O - Toggle coord.txt open/close (Coord Capture helper)
 Ctrl+Alt+T - Show this tooltip again
