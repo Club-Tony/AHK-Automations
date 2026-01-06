@@ -123,13 +123,15 @@ FocusWindow(title)
 
 ToggleFocusOrMinimize(title)
 {
-    global pickupTitle
+    global pickupTitle, updateTitle
     if WinActive(title)
     {
         WinMinimize, %title%
     }
     else if WinExist(title)
     {
+        if (title = updateTitle)
+            EnsureUpdatePlacement()
         WinActivate, %title%
         WinWaitActive, %title%,, 1
         if (title = pickupTitle)

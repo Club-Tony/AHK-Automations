@@ -57,7 +57,7 @@ Ctrl+Alt+F - Launch Intra Search Shortcuts
 Ctrl+Alt+I - Launch Intra Extensive Automations
 Ctrl+Alt+C - Launch DSRF to WorldShip Script
 Ctrl+Alt+L - Launch Daily Audit + Smartsheet
-Ctrl+Shift+Alt+Z - Launch Macros script
+Ctrl+Shift+Alt+C - Launch Coord Capture helper
 Ctrl+Alt+W - Intra Desktop Window Organizing
 Ctrl+Alt+T - Show this tooltip again
     )
@@ -159,7 +159,7 @@ Ctrl+Alt+S - Fill Special Instructions
 Ctrl+Alt+A - ACP preset -> Alias
 Alt+P  - Load "posters" preset -> Name field
 Ctrl+Alt+P - Poster full automation
-Alt+H / Alt+Z - Intra Home anchor click
+Alt+Z / Alt+H - Intra Home anchor click
 Alt+1  - Focus "# of Packages"
 Alt+2  - Focus Package Type
 Alt+L  - Click Load button
@@ -326,8 +326,8 @@ return
     tooltipText =
     (
 Intra Home Hotkeys
-Alt+I / Alt+Z - Interoffice Request anchor click (340,490)
-Alt+O / Alt+X - Secondary anchor click (2600,1000)
+Alt+Z / Alt+I - Interoffice Request anchor click (340,490)
+Alt+X / Alt+O - Secondary anchor click (2600,1000)
 Ctrl+Alt+T - Show this tooltip again
     )
     Tooltip, %tooltipText%
@@ -376,7 +376,7 @@ Win+E - Focus/Minimize/Cycle Explorer
 Win+Alt+E - Open new Explorer window
 Win+I - Focus/Minimize all Intra windows
 Win+Alt+M - Minimize all, then focus Firefox, Outlook PWA, Slack
-Alt+O / Alt+X - Intra Home secondary anchor (2600,1000)
+Alt+X / Alt+O - Intra Home secondary anchor (2600,1000)
 Alt+Z / Alt+H - Intra Home anchor (340,490) / Intra Search anchor (2000,150)
 Ctrl+Alt+W - Intra Desktop Window Organizing
 Ctrl+Shift+Alt+O - Toggle coord.txt open/close (Coord Capture helper)
