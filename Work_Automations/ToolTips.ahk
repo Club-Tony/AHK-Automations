@@ -290,6 +290,7 @@ Alt+1 - leona-array
 Alt+2 - sps-byod
 Alt+3 - sea124_ouroboros
 Alt+4 - acp_bsc_comms
+Alt+5 - spssea124lostnfound
 Alt+S - felsusad grovfred
 Alt+A - tstepama grovfred
 Alt+J - @jssjens
@@ -308,6 +309,7 @@ return
 ~!1::Gosub HideTooltips
 ~!2::Gosub HideTooltips
 ~!3::Gosub HideTooltips
+~!5::Gosub HideTooltips
 ~!s::Gosub HideTooltips
 ~!a::Gosub HideTooltips
 ~!j::Gosub HideTooltips

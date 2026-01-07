@@ -22,6 +22,7 @@ slackWindow := "ahk_exe " slackExe
 !2::JumpToSlackChannel("sps-byod")
 !3::JumpToSlackChannel("sea124_ouroboros")
 !4::JumpToSlackChannel("acp_bsc_comms")
+!5::JumpToSlackChannel("spssea124lostnfound")
 !s::JumpToSlackChannel("felsusad grovfred")
 !a::JumpToSlackChannel("tstepama grovfred")
 !j::JumpToSlackChannel("@jssjens")
