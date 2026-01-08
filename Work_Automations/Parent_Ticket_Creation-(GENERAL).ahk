@@ -4,6 +4,8 @@
 #SingleInstance, Force  ; Reload without prompt when Esc is pressed.
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
+bscLocationWait := ""
+endWaitActive := false
 
 ; Window Coordinates (Intra Desktop Client - Assign Recip):
 ; Window Position: x: -7 y: 0 w: 1322 h: 1339
@@ -48,13 +50,20 @@ SetKeyDelay 150
     MouseClick, left, 930, 830
     Sleep 250
     MouseClick, left, 925, 850, 2
+    Tooltip, Type alias and press Enter to continue script
 
 Return
 
 ; wait for enter input after typing alias
 Enter::
+    if (endWaitActive)
+        Return
+    if (bscLocationWait)
+        Return
+    Tooltip
     SendInput, {enter}
-    Sleep 2000
+    WinWaitActive, Intra Desktop Client - Assign Recip,, 3
+    Sleep 150
     Send, {Down}
     Sleep 250
     MouseClick, left, 1100, 365, 2
@@ -64,7 +73,14 @@ Enter::
     SendInput, {enter}
     MouseClick, left, 1100, 650, 2
     Sleep 250
-    Send SEA124
+    bscLocationWait := "enter"
+    Tooltip, Type BSC Location & press Ctrl+Enter to continue script
+Return
+
+; continue after typing BSC location from Enter hotkey
+ContinueAfterBscEnter:
+    bscLocationWait := ""
+    Tooltip
     Sleep 250
     MouseClick, left, 200, 245, 2
     Sleep 250
@@ -81,13 +97,55 @@ Enter::
     MouseMove, 925, 850
     Sleep 250
     MouseClick, left, , , 2
-    Tooltip, Type alias and hit Ctrl+Enter to continue script
-    Sleep, 5000  ; shows for 5 seconds
-    Tooltip  ; removes it
+    Tooltip, Type alias & press Ctrl+Enter to continue script
+Return
+
+; continue after typing BSC location from Ctrl+Enter hotkey
+ContinueAfterBscCtrl:
+    bscLocationWait := ""
+    Tooltip
+    Sleep 250
+    MouseClick, left, 300, 120
+    Sleep 250
+    MouseClick, left, 725, 190, 2
+    Sleep 250
+    endWaitActive := true
+    Tooltip, Scan into Parent field - Script Done
+    MouseGetPos, startX, startY
+    lastIdle := A_TimeIdlePhysical
+    Loop 300  ; ~60 seconds total at 200 ms intervals
+    {
+        Sleep 200
+        if (GetKeyState("Esc", "P"))
+            break
+        currentIdle := A_TimeIdlePhysical
+        if (currentIdle < lastIdle)
+            break
+        lastIdle := currentIdle
+        MouseGetPos, curX, curY
+        if (curX != startX || curY != startY)
+            break
+    }
+    endWaitActive := false
+    Tooltip
+    ExitApp
 Return
 
 ; wait for enter input after typing alias
 ^Enter::
+    if (endWaitActive)
+        Return
+    if (bscLocationWait = "enter")
+    {
+        Gosub, ContinueAfterBscEnter
+        Return
+    }
+    if (bscLocationWait = "ctrl")
+    {
+        Gosub, ContinueAfterBscCtrl
+        Return
+    }
+    Tooltip
     SendInput, {Enter}
     Sleep 250
     SendInput, {Down}
@@ -99,12 +157,11 @@ Return
     SendInput, {enter}
     MouseClick, left, 1100, 650, 2
     Sleep 250
-    Send SEA124
-    MouseClick, left, 300, 120
-    Sleep 250
-    MouseClick, left, 725, 190, 2
-    Sleep 250
-    ExitApp
+    bscLocationWait := "ctrl"
+    Tooltip, Type BSC Location & press Ctrl+Enter to continue script
 Return
 
 #IfWinActive
+
+
+
