@@ -19,6 +19,7 @@ worldShipTabs.ShipFrom := {x: 99,  y: 162}
 worldShipTabs.Service := {x: 323, y: 162}
 worldShipFields := {}
 worldShipFields.STPhone := {x: 85,  y: 485}   ; Ship To Phone
+worldShipFields.STEmail := {x: 210, y: 485}   ; Ship To Email
 worldShipFields.SFPhone := {x: 85,  y: 485}   ; Ship From Phone (same coords)
 worldShipFields.STName  := {x: 85,  y: 280}   ; Attention / Name
 worldShipFields.Company := {x: 78,  y: 241}   ; Company (Ship From)
@@ -49,6 +50,29 @@ return
     KeyWait, Alt
     Sleep 50
     SendInput, @amazon.com
+return
+
+!e::
+    SendInput, {Alt up}
+    EnsureWorldShipTop()
+    MouseClick, left, % worldShipTabs.ShipTo.x, % worldShipTabs.ShipTo.y
+    Sleep 50
+    copiedText := CopyFieldAt(worldShipFields.STEmail.x, worldShipFields.STEmail.y)
+    Clipboard := copiedText
+    Sleep 100
+    MouseClick, left, % worldShipTabs.Options.x, % worldShipTabs.Options.y
+    Sleep 150
+    MouseClick, left, % worldShipTabs.QVN.x, % worldShipTabs.QVN.y
+    Sleep 150
+    MouseClick, left, % worldShipTabs.Recipients.x, % worldShipTabs.Recipients.y
+    Sleep 200
+    WinWaitActive, %qvnTitle%,, 2
+    Sleep 100
+    Loop 2
+    {
+        SendInput, {Tab}
+        Sleep 40
+    }
 return
 
 !1::

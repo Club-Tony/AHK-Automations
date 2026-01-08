@@ -237,6 +237,7 @@ return
     (
 UPS WorldShip Hotkeys
 Alt+A   - Paste @amazon.com
+Alt+E   - Copy Ship To email -> QVN Recipients
 Alt+N   - Copy Ship From company -> Ref2
 Alt+P   - Copy Ship To phone -> Ship From phone
 Alt+D   - Focus Package Weight (double-click)
@@ -260,6 +261,7 @@ return
 
 #If (TooltipActive && (WinActive("UPS WorldShip") || WinActive("Quantum View Notify Recipients")))
 ~!a::Gosub HideTooltips
+~!e::Gosub HideTooltips
 ~!Tab::Gosub HideTooltips
 ~!1::Gosub HideTooltips
 ~!2::Gosub HideTooltips
@@ -268,6 +270,33 @@ return
 ~!g::Gosub HideTooltips
 ~!p::Gosub HideTooltips
 ~!n::Gosub HideTooltips
+#If
+
+; VS Code shortcuts when VS Code is active
+#IfWinActive, ahk_exe Code.exe
+^!t::
+    if (TooltipActive) {
+        Gosub, HideTooltips
+        Return
+    }
+    TooltipActive := true
+    tooltipText =
+    (
+VS Code Shortcuts
+Ctrl+Alt+P - Command Palette
+Ctrl+`` - Toggle terminal
+Ctrl+P - Quick Open
+Ctrl+Shift+E - Explorer
+Ctrl+Shift+F - Search
+Ctrl+Shift+G - Source Control
+Ctrl+Shift+X - Extensions
+Ctrl+K Ctrl+S - Keyboard Shortcuts
+Ctrl+Alt+T - Show this tooltip again
+    )
+    Tooltip, %tooltipText%
+    Hotkey, Esc, HideTooltips, On
+    SetTimer, HideTooltips, -15000
+return
 #If
 
 ; Slack shortcuts when Slack is active
@@ -354,6 +383,7 @@ return
         || WinActive("Intra Desktop Client - Update")
         || WinActive("Intra Desktop Client - Pickup")
         || WinActive("UPS WorldShip")
+        || WinActive("ahk_exe Code.exe")
         || WinActive("ahk_exe slack.exe")
         || WinActive("Intra: Home"))
         return

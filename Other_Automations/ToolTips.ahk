@@ -11,6 +11,32 @@ TooltipActive := false
 
 ^Esc::Reload
 
+#IfWinActive, ahk_exe Code.exe
+^!t::
+    if (TooltipActive) {
+        Gosub, HideTooltips
+        Return
+    }
+    TooltipActive := true
+    tooltipText =
+    (
+VS Code Shortcuts
+Ctrl+Alt+P - Command Palette
+Ctrl+`` - Toggle terminal
+Ctrl+P - Quick Open
+Ctrl+Shift+E - Explorer
+Ctrl+Shift+F - Search
+Ctrl+Shift+G - Source Control
+Ctrl+Shift+X - Extensions
+Ctrl+K Ctrl+S - Keyboard Shortcuts
+Ctrl+Alt+T - Show this tooltip again
+    )
+    Tooltip, %tooltipText%
+    Hotkey, Esc, HideTooltips, On
+    SetTimer, HideTooltips, -15000
+return
+#If
+
 ^!t::
     if (TooltipActive) {
         Gosub, HideTooltips
