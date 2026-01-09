@@ -28,7 +28,7 @@
 ## Launcher_Script_Other.ahk
 
 - `Ctrl+Alt+R` — launch RuneScape focus helper (Focus_RS_Window.ahk).
-- `Ctrl+Shift+Alt+C` — launch Coordinate Capture Helper (Coord_Capture.ahk) and show click-to-capture tip.
+- `Ctrl+Shift+Alt+C` — launch Coordinate Capture Helper (Alt+C starts capture, Alt+I shows more info).
 - `Ctrl+Shift+Alt+O` — open the saved `coord.txt` capture file.
 
 ---

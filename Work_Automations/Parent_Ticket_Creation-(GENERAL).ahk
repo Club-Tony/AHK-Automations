@@ -6,6 +6,15 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 bscLocationWait := ""
 endWaitActive := false
+aliasStage := 1
+finalTooltipActive := false
+finalTooltipText := "Scan into Parent field - Script Done"
+finalTooltipId := 20
+finalTooltipMaxMs := 15000
+finalTooltipStartTick := 0
+finalTooltipLastIdle := 0
+finalTooltipMouseX := 0
+finalTooltipMouseY := 0
 
 ; Window Coordinates (Intra Desktop Client - Assign Recip):
 ; Window Position: x: -7 y: 0 w: 1322 h: 1339
@@ -25,6 +34,9 @@ Esc::ExitApp
 SetKeyDelay 150
 
 ^!p::
+    bscLocationWait := ""
+    endWaitActive := false
+    aliasStage := 1
     SetTitleMatchMode, 2
     DetectHiddenWindows, On
     WinGet, myPID, PID, Parent_Ticket_Creation-(BYOD)
@@ -60,26 +72,14 @@ Enter::
         Return
     if (bscLocationWait)
         Return
-    Tooltip
-    SendInput, {enter}
-    WinWaitActive, Intra Desktop Client - Assign Recip,, 3
-    Sleep 150
-    Send, {Down}
-    Sleep 250
-    MouseClick, left, 1100, 365, 2
-    Sleep 250
-    Send mid
-    Sleep 250
-    SendInput, {enter}
-    MouseClick, left, 1100, 650, 2
-    Sleep 250
-    bscLocationWait := "enter"
-    Tooltip, Type BSC Location & press Ctrl+Enter to continue script
+    waitMode := (aliasStage >= 2) ? "ctrl" : "enter"
+    AdvanceToBscLocation(waitMode)
 Return
 
 ; continue after typing BSC location from Enter hotkey
 ContinueAfterBscEnter:
     bscLocationWait := ""
+    aliasStage := 2
     Tooltip
     Sleep 250
     MouseClick, left, 200, 245, 2
@@ -110,25 +110,12 @@ ContinueAfterBscCtrl:
     MouseClick, left, 725, 190, 2
     Sleep 250
     endWaitActive := true
-    Tooltip, Scan into Parent field - Script Done
-    MouseGetPos, startX, startY
-    lastIdle := A_TimeIdlePhysical
-    Loop 300  ; ~60 seconds total at 200 ms intervals
-    {
-        Sleep 200
-        if (GetKeyState("Esc", "P"))
-            break
-        currentIdle := A_TimeIdlePhysical
-        if (currentIdle < lastIdle)
-            break
-        lastIdle := currentIdle
-        MouseGetPos, curX, curY
-        if (curX != startX || curY != startY)
-            break
-    }
-    endWaitActive := false
-    Tooltip
-    ExitApp
+    ToolTip, %finalTooltipText%, , , %finalTooltipId%
+    finalTooltipActive := true
+    finalTooltipStartTick := A_TickCount
+    finalTooltipLastIdle := A_TimeIdlePhysical
+    MouseGetPos, finalTooltipMouseX, finalTooltipMouseY
+    SetTimer, FinalTooltipWatch, 100
 Return
 
 ; wait for enter input after typing alias
@@ -145,23 +132,58 @@ Return
         Gosub, ContinueAfterBscCtrl
         Return
     }
+    AdvanceToBscLocation("ctrl")
+Return
+
+AdvanceToBscLocation(waitMode)
+{
+    global bscLocationWait
     Tooltip
     SendInput, {Enter}
-    Sleep 250
-    SendInput, {Down}
+    WinWaitActive, Intra Desktop Client - Assign Recip,, 3
+    Sleep 150
+    Send, {Down}
     Sleep 250
     MouseClick, left, 1100, 365, 2
     Sleep 250
     Send mid
     Sleep 250
-    SendInput, {enter}
+    SendInput, {Enter}
     MouseClick, left, 1100, 650, 2
     Sleep 250
-    bscLocationWait := "ctrl"
+    bscLocationWait := waitMode
     Tooltip, Type BSC Location & press Ctrl+Enter to continue script
+}
+
+FinalTooltipWatch:
+    if (!finalTooltipActive)
+        Return
+    if ((A_TickCount - finalTooltipStartTick) >= finalTooltipMaxMs)
+    {
+        Gosub, FinalTooltipExit
+        Return
+    }
+    currentIdle := A_TimeIdlePhysical
+    if (currentIdle < finalTooltipLastIdle)
+    {
+        Gosub, FinalTooltipExit
+        Return
+    }
+    finalTooltipLastIdle := currentIdle
+    MouseGetPos, curX, curY
+    if (curX != finalTooltipMouseX || curY != finalTooltipMouseY)
+    {
+        Gosub, FinalTooltipExit
+        Return
+    }
+Return
+
+FinalTooltipExit:
+    SetTimer, FinalTooltipWatch, Off
+    finalTooltipActive := false
+    endWaitActive := false
+    ToolTip, , , , %finalTooltipId%
+    ExitApp
 Return
 
 #IfWinActive
-
-
-

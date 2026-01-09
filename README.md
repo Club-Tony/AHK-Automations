@@ -36,4 +36,4 @@
 #### -`Ctrl+Alt+I` - Launch SSJ desktop client scripts bundle
 #### -`Ctrl+Alt+F` - Launch/reload Search shortcuts script and show search hotkey tooltip
 ## Other Hotkeys:
-#### -`Ctrl+Shift+Alt+C` - Launch Window Coordinate Capture Helper and show click-to-capture tooltip
+#### -`Ctrl+Shift+Alt+C` - Launch Window Coordinate Capture Helper (Alt+C starts capture, Alt+I shows more info)

@@ -12,7 +12,10 @@ intraWinExes := ["firefox.exe", "chrome.exe", "msedge.exe"]  ; priority order
 TooltipActive := false
 searchWinTitle := "Search - General"
 searchShortcutsLaunched := false
+showSearchTooltip := true
 fastAssignPrevRunning := false
+autoSmartsheetRunning := false
+autoSmartsheetCancelled := false
 tooltipMouseX := 0
 tooltipMouseY := 0
 SetTimer, DetectSearchWindow, 500  ; Watch for first appearance of Search - General
@@ -21,7 +24,12 @@ SetTimer, DetectFastAssignClosed, 1000
 ; Launch: Coordinate Helper ; Keybind: Ctrl+Shift+Alt+C
 ^+!c::
     Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Other_Automations\Coordinate Capture Helper\Coord_Capture.ahk"
-    ShowTooltip("Coord Helper: Click to capture", 4000)
+    ShowTooltip("Coord Helper: Alt+C to capture, Alt+I for more info", 4000)
+return
+
+; Launch: Window Spy ; Keybind: Ctrl+Shift+Alt+W
+^+!w::
+    ToggleWindowSpy()
 return
 
 ^+!o::
@@ -30,6 +38,11 @@ return
 
 ; Launch: Smartsheets ; Keybind: Ctrl+Alt+L
 ^!l:: 
+    if !(WinActive("Daily BSC Audit") || WinActive("Ouroboros BSC - SEA124"))
+    {
+        ShowTooltip("Smartsheets must be open in browser before continuing", 5000)
+        Return
+    }
     Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Daily_Audit.ahk ; Keybind: Ctrl+Alt+D
     Sleep 150
     Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Daily_Smartsheet.ahk ; Keybind: Ctrl+Alt+S
@@ -40,6 +53,11 @@ Ctrl+Alt+D: Daily Audit
 Ctrl+Alt+S: Daily Smartsheet
     )
     ShowTooltip(TooltipText, 5000)
+Return
+
+; Launch: Smartsheets (Auto) ; Keybind: Ctrl+Shift+Alt+L
+^+!l::
+    RunSmartsheetsAuto()
 Return
 
 ; Launch: Super Saiyan Intra ; Keybind: Ctrl+Alt+I
@@ -69,6 +87,7 @@ Return
 
 ; Launch: Intra SSJ Search ; Keybind: Ctrl+Alt+F
 ^!f::
+    showSearchTooltip := true
     Gosub, LaunchIntraSearchShortcuts
 Return
 
@@ -294,8 +313,246 @@ ToggleCoordTxt()
     WinWaitActive, %captureTitle%,, 2
 }
 
+ToggleWindowSpy()
+{
+    DetectHiddenWindows, On
+    hwnd := WinExist("Window Spy")
+    DetectHiddenWindows, Off
+    if (hwnd)
+    {
+        WinClose, ahk_id %hwnd%
+        return
+    }
+
+    spyExe := ""
+    spyPath := ""
+    if (GetWindowSpyLaunch(spyExe, spyPath))
+        Run, "%spyExe%" "%spyPath%"
+    else
+        Run, WindowSpy.ahk
+}
+
+GetWindowSpyLaunch(ByRef spyExe, ByRef spyPath)
+{
+    v2Base := "C:\Program Files\AutoHotkey"
+    v2Spy := v2Base "\WindowSpy.ahk"
+    if (FileExist(v2Spy))
+    {
+        if (FileExist(v2Base "\v2\AutoHotkey64.exe"))
+            spyExe := v2Base "\v2\AutoHotkey64.exe"
+        else if (FileExist(v2Base "\v2\AutoHotkey32.exe"))
+            spyExe := v2Base "\v2\AutoHotkey32.exe"
+        else if (FileExist(v2Base "\v2\AutoHotkey.exe"))
+            spyExe := v2Base "\v2\AutoHotkey.exe"
+        if (spyExe != "")
+        {
+            spyPath := v2Spy
+            return true
+        }
+    }
+
+    SplitPath, A_AhkPath,, ahkDir
+    candidate := ahkDir "\WindowSpy.ahk"
+    if (FileExist(candidate))
+    {
+        spyExe := A_AhkPath
+        spyPath := candidate
+        return true
+    }
+    return false
+}
+
+RunSmartsheetsAuto()
+{
+    global autoSmartsheetRunning, autoSmartsheetCancelled
+    if (autoSmartsheetRunning)
+        return
+    autoSmartsheetRunning := true
+    autoSmartsheetCancelled := false
+    if (!FocusPreferredBrowser())
+    {
+        ShowTooltip("No web browsers open", 5000)
+        autoSmartsheetRunning := false
+        return
+    }
+
+    if (!OpenDailyTabs())
+    {
+        autoSmartsheetRunning := false
+        return
+    }
+
+    if (!RunDailyForActiveTab())
+    {
+        autoSmartsheetRunning := false
+        return
+    }
+
+    SendEvent, ^{Tab}
+    if (!SleepWithCancel(600))
+    {
+        autoSmartsheetRunning := false
+        return
+    }
+    RunDailyForActiveTab()
+    autoSmartsheetRunning := false
+}
+
+FocusPreferredBrowser()
+{
+    if WinExist("ahk_exe firefox.exe")
+    {
+        if (!WinActive("ahk_exe firefox.exe"))
+            SendEvent, #f
+        WinWaitActive, ahk_exe firefox.exe,, 1
+        if WinActive("ahk_exe firefox.exe")
+            return true
+        WinActivate, ahk_exe firefox.exe
+        WinWaitActive, ahk_exe firefox.exe,, 1
+        return WinActive("ahk_exe firefox.exe")
+    }
+    if WinExist("ahk_exe chrome.exe")
+    {
+        WinActivate, ahk_exe chrome.exe
+        WinWaitActive, ahk_exe chrome.exe,, 1
+        return WinActive("ahk_exe chrome.exe")
+    }
+    if WinExist("ahk_exe msedge.exe")
+    {
+        WinActivate, ahk_exe msedge.exe
+        WinWaitActive, ahk_exe msedge.exe,, 1
+        return WinActive("ahk_exe msedge.exe")
+    }
+    return false
+}
+
+OpenDailyTabs()
+{
+    SendEvent, ^t
+    if (!SleepWithCancel(200))
+        return false
+    SendEvent, ^t
+    if (!SleepWithCancel(250))
+        return false
+
+    SendEvent, ^l
+    if (!SleepWithCancel(120))
+        return false
+    SendInput, {Raw}*daily
+    if (!SleepWithCancel(250))
+        return false
+    SendEvent, {Down 2}
+    if (!SleepWithCancel(250))
+        return false
+    SendEvent, {Enter}
+    if (!SleepWithCancel(400))
+        return false
+
+    ; Previous tab (switch back to the first new tab).
+    SendEvent, ^+{Tab}
+    if (!SleepWithCancel(250))
+        return false
+    SendEvent, ^l
+    if (!SleepWithCancel(120))
+        return false
+    SendInput, {Raw}*daily
+    if (!SleepWithCancel(250))
+        return false
+    SendEvent, {Down}
+    if (!SleepWithCancel(250))
+        return false
+    SendEvent, {Enter}
+    if (!SleepWithCancel(800))
+        return false
+    return true
+}
+
+RunDailyForActiveTab()
+{
+    global autoSmartsheetCancelled
+    if (autoSmartsheetCancelled)
+        return false
+    dailyType := GetDailyPageType()
+    if (dailyType = "")
+    {
+        ShowTooltip("Smartsheets must be open in browser before continuing", 5000)
+        return false
+    }
+
+    EnsureDailyScriptsRunningAll()
+    if (!SleepWithCancel(2000))
+        return false
+    EnsureDailyScriptRunning(dailyType)
+    if (!SleepWithCancel(1500))
+        return false
+    if (dailyType = "audit")
+        PostSendHotkey("^!d")
+    else
+        PostSendHotkey("^!s")
+
+    if (!SleepWithCancel(5000))
+        return false
+    return true
+}
+
+GetDailyPageType()
+{
+    WinGetTitle, title, A
+    if (InStr(title, "Daily BSC Audit"))
+        return "audit"
+    if (InStr(title, "Ouroboros BSC - SEA124"))
+        return "smartsheet"
+    return ""
+}
+
+EnsureDailyScriptRunning(dailyType)
+{
+    DetectHiddenWindows, On
+    if (dailyType = "audit")
+    {
+        if (!WinExist("Daily_Audit.ahk ahk_class AutoHotkey"))
+            Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Daily_Audit.ahk
+    }
+    else
+    {
+        if (!WinExist("Daily_Smartsheet.ahk ahk_class AutoHotkey"))
+            Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Daily_Smartsheet.ahk
+    }
+    DetectHiddenWindows, Off
+}
+
+EnsureDailyScriptsRunningAll()
+{
+    DetectHiddenWindows, On
+    if (!WinExist("Daily_Audit.ahk ahk_class AutoHotkey"))
+        Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Daily_Audit.ahk
+    if (!WinExist("Daily_Smartsheet.ahk ahk_class AutoHotkey"))
+        Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Daily_Smartsheet.ahk
+    DetectHiddenWindows, Off
+}
+
+PostSendHotkey(keys)
+{
+    ; Use SendEvent so another script can receive the hotkey reliably.
+    SendEvent, %keys%
+}
+
+SleepWithCancel(totalMs)
+{
+    global autoSmartsheetCancelled
+    elapsed := 0
+    while (elapsed < totalMs)
+    {
+        if (autoSmartsheetCancelled)
+            return false
+        Sleep 50
+        elapsed += 50
+    }
+    return true
+}
+
 LaunchIntraSearchShortcuts:
-    global searchShortcutsLaunched
+    global searchShortcutsLaunched, showSearchTooltip
     searchShortcutsLaunched := true
     Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Intra_Desktop_Search_Shortcuts.ahk
     Sleep 150
@@ -311,15 +568,19 @@ Alt+A: Arrived at BSC
 Alt+P: Pickup from BSC
 Alt+Space: Search Windows Quick Resize
     )
-    ShowTooltip(TooltipText, 7000)
+    if (showSearchTooltip)
+        ShowTooltip(TooltipText, 7000)
 Return
 
 DetectSearchWindow:
-    global searchShortcutsLaunched, searchWinTitle
+    global searchShortcutsLaunched, searchWinTitle, showSearchTooltip
     if (searchShortcutsLaunched)
         Return
     if WinExist(searchWinTitle)
+    {
+        showSearchTooltip := false
         Gosub, LaunchIntraSearchShortcuts
+    }
 Return
 
 DetectFastAssignClosed:
@@ -331,6 +592,12 @@ DetectFastAssignClosed:
         ShowTooltip("Fast-Assign Script Closed", 1500)
     fastAssignPrevRunning := running
 Return
+
+#If (autoSmartsheetRunning)
+Esc::
+    autoSmartsheetCancelled := true
+return
+#If
 
 #If (TooltipActive)
 ~Esc::Gosub HideLauncherTooltip

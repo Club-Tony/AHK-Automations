@@ -57,7 +57,9 @@ Ctrl+Alt+F - Launch Intra Search Shortcuts
 Ctrl+Alt+I - Launch Intra Extensive Automations
 Ctrl+Alt+C - Launch DSRF to WorldShip Script
 Ctrl+Alt+L - Launch Daily Audit + Smartsheet
+Ctrl+Shift+Alt+L - Auto Daily Audit + Smartsheet
 Ctrl+Shift+Alt+C - Launch Coord Capture helper
+Ctrl+Shift+Alt+W - Toggle Window Spy
 Ctrl+Alt+W - Intra Desktop Window Organizing
 Ctrl+Alt+T - Show this tooltip again
     )
@@ -87,6 +89,7 @@ Return
 ~^!c::Gosub HideTooltips
 ~^!f::Gosub HideTooltips
 ~^!d::Gosub HideTooltips
+~^+!w::Gosub HideTooltips
 ~^!w::Gosub HideTooltips
 ~^!t::Gosub HideTooltips
 ~^!i::Gosub HideTooltips
@@ -399,7 +402,7 @@ return
     TooltipActive := true
     tooltipText =
     (
-Intra Window/Focus/Other Hotkeys
+Global Hotkeys
 Win+A / Win+U / Win+P - Focus/Minimize Assign / Update / Pickup
 Win+F - Focus/Minimize Firefox
 Win+S - Focus/Minimize Slack
@@ -410,8 +413,11 @@ Win+I - Focus/Minimize all Intra windows
 Win+Alt+M - Minimize all, then focus Firefox, Outlook PWA, Slack
 Alt+X / Alt+O - Intra Online: Outbound Shipping Requests button anchor
 Alt+Z / Alt+H - Intra Online: Home button anchor
+Ctrl+Alt+L - Launch Daily Audit + Smartsheet
 Ctrl+Alt+W - Intra Desktop Window Organizing
+Ctrl+Shift+Alt+C - Launch Coord Capture helper
 Ctrl+Shift+Alt+O - Toggle coord.txt open/close (Coord Capture helper)
+Ctrl+Shift+Alt+W - Toggle Window Spy
 Ctrl+Alt+T - Show this tooltip again
     )
     Tooltip, %tooltipText%

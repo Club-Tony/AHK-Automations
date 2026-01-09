@@ -12,6 +12,7 @@ updateTitle := "Intra Desktop Client - Update"
 pickupTitle := "Intra Desktop Client - Pickup"
 updatePos := {x: 1713, y: 0, w: 1734, h: 1399}    ; Match Ctrl+Alt+W sizing for Update
 worldShipTitle := "UPS WorldShip"
+worldShipPos := {x: 1204, y: 711, w: 814, h: 688} ; Window Spy sizing for UPS WorldShip
 qvnTitle := "Quantum View Notify Recipients"
 exportedReportTitle := "ExportedReport.pdf"
 browserExes := ["firefox.exe", "chrome.exe", "msedge.exe"]
@@ -158,6 +159,15 @@ EnsureUpdatePlacement()
         return
     WinRestore, %updateTitle%
     WinMove, %updateTitle%,, % updatePos.x, % updatePos.y, % updatePos.w, % updatePos.h
+}
+
+EnsureWorldShipPlacement()
+{
+    global worldShipTitle, worldShipPos
+    if !WinExist(worldShipTitle)
+        return
+    WinRestore, %worldShipTitle%
+    WinMove, %worldShipTitle%,, % worldShipPos.x, % worldShipPos.y, % worldShipPos.w, % worldShipPos.h
 }
 
 ToggleIntraGroup()
@@ -358,7 +368,14 @@ ToggleWorldShip()
     global worldShipTitle
     if WinExist(worldShipTitle)
     {
-        ToggleFocusOrMinimize(worldShipTitle)
+        if WinActive(worldShipTitle)
+        {
+            WinMinimize, %worldShipTitle%
+            return
+        }
+        EnsureWorldShipPlacement()
+        WinActivate, %worldShipTitle%
+        WinWaitActive, %worldShipTitle%,, 1
         return
     }
     Run, WorldShipTD.exe
