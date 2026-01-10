@@ -109,7 +109,6 @@ CollectIntraDataLegacy(mode)
     {
         SendInput, {WheelUp 15}
         Sleep 120
-        MouseClick, left, %BusinessButtonX%, %BusinessButtonY%, 2
     }
     else
     {

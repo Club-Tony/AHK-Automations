@@ -24,7 +24,7 @@ SetTimer, DetectFastAssignClosed, 1000
 ; Launch: Coordinate Helper ; Keybind: Ctrl+Shift+Alt+C
 ^+!c::
     Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Other_Automations\Coordinate Capture Helper\Coord_Capture.ahk"
-    ShowTooltip("Coord Helper: Alt+C to capture, Alt+I for more info", 4000)
+    ShowTooltip("Coord Helper: Alt+C to capture, Alt+I for more info, Alt+G toggle bg", 4000)
 return
 
 ; Launch: Window Spy ; Keybind: Ctrl+Shift+Alt+W
@@ -371,7 +371,18 @@ RunSmartsheetsAuto()
     autoSmartsheetCancelled := false
     if (!FocusPreferredBrowser())
     {
-        ShowTooltip("No web browsers open", 5000)
+        ShowTooltip("Failed, ensure web browser active", 5000)
+        autoSmartsheetRunning := false
+        return
+    }
+    if (!SleepWithCancel(2500))
+    {
+        autoSmartsheetRunning := false
+        return
+    }
+    if (!EnsureFirefoxActive())
+    {
+        ShowTooltip("Failed, ensure Firefox active", 5000)
         autoSmartsheetRunning := false
         return
     }
@@ -382,19 +393,11 @@ RunSmartsheetsAuto()
         return
     }
 
-    if (!RunDailyForActiveTab())
+    if (!RunDailyAuditThenSmartsheet())
     {
         autoSmartsheetRunning := false
         return
     }
-
-    SendEvent, ^{Tab}
-    if (!SleepWithCancel(600))
-    {
-        autoSmartsheetRunning := false
-        return
-    }
-    RunDailyForActiveTab()
     autoSmartsheetRunning := false
 }
 
@@ -411,58 +414,103 @@ FocusPreferredBrowser()
         WinWaitActive, ahk_exe firefox.exe,, 1
         return WinActive("ahk_exe firefox.exe")
     }
-    if WinExist("ahk_exe chrome.exe")
-    {
-        WinActivate, ahk_exe chrome.exe
-        WinWaitActive, ahk_exe chrome.exe,, 1
-        return WinActive("ahk_exe chrome.exe")
-    }
-    if WinExist("ahk_exe msedge.exe")
-    {
-        WinActivate, ahk_exe msedge.exe
-        WinWaitActive, ahk_exe msedge.exe,, 1
-        return WinActive("ahk_exe msedge.exe")
-    }
+    return false
+}
+
+EnsureFirefoxActive()
+{
+    if WinActive("ahk_exe firefox.exe")
+        return true
+    return false
+}
+
+EnsureFirefoxActiveOrWarn()
+{
+    if WinActive("ahk_exe firefox.exe")
+        return true
+    WinActivate, ahk_exe firefox.exe
+    WinWaitActive, ahk_exe firefox.exe,, 1
+    if WinActive("ahk_exe firefox.exe")
+        return true
+    ShowTooltip("Failed, ensure Firefox active", 5000)
     return false
 }
 
 OpenDailyTabs()
 {
-    SendEvent, ^t
-    if (!SleepWithCancel(200))
+    if (!EnsureFirefoxActiveOrWarn())
         return false
     SendEvent, ^t
     if (!SleepWithCancel(250))
         return false
-
-    SendEvent, ^l
-    if (!SleepWithCancel(120))
+    if (!EnsureFirefoxActiveOrWarn())
         return false
-    SendInput, {Raw}*daily
+    MouseClick, left, 607, 63, 2
     if (!SleepWithCancel(250))
-        return false
-    SendEvent, {Down 2}
-    if (!SleepWithCancel(250))
-        return false
-    SendEvent, {Enter}
-    if (!SleepWithCancel(400))
         return false
 
-    ; Previous tab (switch back to the first new tab).
-    SendEvent, ^+{Tab}
-    if (!SleepWithCancel(250))
+    if (!EnsureFirefoxActiveOrWarn())
         return false
-    SendEvent, ^l
-    if (!SleepWithCancel(120))
-        return false
-    SendInput, {Raw}*daily
+    SendInput, {Raw}*daily bsc audit
     if (!SleepWithCancel(250))
         return false
     SendEvent, {Down}
     if (!SleepWithCancel(250))
         return false
     SendEvent, {Enter}
-    if (!SleepWithCancel(800))
+    if (!SleepWithCancel(250))
+        return false
+
+    if (!EnsureFirefoxActiveOrWarn())
+        return false
+    SendEvent, ^t
+    if (!SleepWithCancel(250))
+        return false
+
+    if (!EnsureFirefoxActiveOrWarn())
+        return false
+    MouseClick, left, 607, 63, 2
+    if (!SleepWithCancel(250))
+        return false
+
+    if (!EnsureFirefoxActiveOrWarn())
+        return false
+    SendInput, {Raw}*smartsheet daily task
+    if (!SleepWithCancel(250))
+        return false
+    SendEvent, {Down}
+    if (!SleepWithCancel(250))
+        return false
+    SendEvent, {Enter}
+    if (!SleepWithCancel(250))
+        return false
+
+    SendEvent, ^+{Tab}
+    if (!SleepWithCancel(250))
+        return false
+    return true
+}
+
+RunDailyAuditThenSmartsheet()
+{
+    global autoSmartsheetCancelled
+    if (autoSmartsheetCancelled)
+        return false
+    PostSendHotkey("^!l")
+    if (!SleepWithCancel(1500))
+        return false
+    if (!WaitForAuditWindowActive(10000))
+        return false
+    PostSendHotkey("^!d")
+    if (!SleepWithCancel(8000))
+        return false
+    SendEvent, ^{Tab}
+    if (!SleepWithCancel(600))
+        return false
+    if (!WaitForSmartsheetWindowActive(10000))
+        return false
+    PostSendHotkey("^!s")
+    if (!SleepWithCancel(5000))
         return false
     return true
 }
@@ -503,6 +551,52 @@ GetDailyPageType()
     if (InStr(title, "Ouroboros BSC - SEA124"))
         return "smartsheet"
     return ""
+}
+
+WaitForDailyWindowActive(timeoutMs)
+{
+    global autoSmartsheetCancelled
+    startTick := A_TickCount
+    Loop
+    {
+        if (autoSmartsheetCancelled)
+            return false
+        if (WinActive("Daily BSC Audit") || WinActive("Ouroboros BSC - SEA124"))
+            return true
+        if ((A_TickCount - startTick) >= timeoutMs)
+            break
+        Sleep 100
+    }
+    ShowTooltip("Smartsheets must be open in browser before continuing", 5000)
+    return false
+}
+
+WaitForAuditWindowActive(timeoutMs)
+{
+    return WaitForWindowActiveTitle("Daily BSC Audit", timeoutMs)
+}
+
+WaitForSmartsheetWindowActive(timeoutMs)
+{
+    return WaitForWindowActiveTitle("Ouroboros BSC - SEA124", timeoutMs)
+}
+
+WaitForWindowActiveTitle(title, timeoutMs)
+{
+    global autoSmartsheetCancelled
+    startTick := A_TickCount
+    Loop
+    {
+        if (autoSmartsheetCancelled)
+            return false
+        if (WinActive(title))
+            return true
+        if ((A_TickCount - startTick) >= timeoutMs)
+            break
+        Sleep 100
+    }
+    ShowTooltip("Smartsheets must be open in browser before continuing", 5000)
+    return false
 }
 
 EnsureDailyScriptRunning(dailyType)

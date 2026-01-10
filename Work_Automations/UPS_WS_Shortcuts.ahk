@@ -62,7 +62,7 @@ return
     Sleep 100
     MouseClick, left, % worldShipTabs.Options.x, % worldShipTabs.Options.y
     Sleep 150
-    MouseClick, left, % worldShipTabs.QVN.x, % worldShipTabs.QVN.y
+    MouseClick, left, % worldShipTabs.QVN.x, % worldShipTabs.QVN.y, 2
     Sleep 150
     MouseClick, left, % worldShipTabs.Recipients.x, % worldShipTabs.Recipients.y
     Sleep 200

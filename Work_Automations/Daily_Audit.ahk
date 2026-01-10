@@ -2,10 +2,9 @@
 #NoEnv ; Prevents Unnecessary Environment Variable lookup
 #Warn ; Warn All (All Warnings Enabled)
 #SingleInstance, Force  ; Reload without prompt when Esc is pressed.
-SendMode Input ; Overrided by SendMode Event below
+SendMode Event 
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
-SendMode Event ; Since target app is ignoring SendMode, Input
 SetKeyDelay 50
 SetTitleMatchMode, 2
 auditWinTitle := "Daily BSC Audit"
@@ -14,9 +13,11 @@ Esc::ExitApp
 ^!d:: 
     if (!RequireAuditWindow())
         Return
-    Send {Tab 3}  
-    Send {Space}
-    Send {Tab 2} 
+    Mouseclick, left, 1392, 230
+    Sleep 100
+    Mouseclick, left, 1318, 540
+    Sleep 100
+    Send {Tab} 
     Send {Space}
     Send {Tab} 
     Send {Down 3}

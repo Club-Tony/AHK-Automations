@@ -94,8 +94,6 @@ Esc::ExitApp
     Sleep 50
     SendInput, {WheelUp 15}
     Sleep 150
-    MouseClick, left, %BusinessButtonX%, %BusinessButtonY%, 2
-    Sleep 150
     FocusIntraWindow()
     costCenter := CopyFieldAt(intraFields.CostCenter.x, intraFields.CostCenter.y)
     FocusWorldShipWindow()

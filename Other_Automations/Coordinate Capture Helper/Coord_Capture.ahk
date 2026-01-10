@@ -19,37 +19,45 @@ idx := 1
 escConfirm := false
 detailsVisible := false
 captureEnabled := false
+solidBackground := true
+guiHwnd := 0
 
 InitializeCapture()
 
 ; overlay with live coords
 Gui, -Caption +AlwaysOnTop +ToolWindow +LastFound
 Gui, Color, Black
-Gui, Font, s10 q3, Arial
-Gui, Add, Text, vTitleText cFFFFFF, Window Coordinates
+Gui, Font, s20 q3, Arial
+Gui, Add, Text, vTitleText cFF0000, Window Coordinates
 Gui, Font, s32 q3, Arial
-Gui, Add, Text, vCoordText c00FF00, X: XXXXX  Y: YYYYY
-Gui, Font, s9 q3, Arial
-Gui, Add, Text, vHintText cAAAAAA, Alt+C to capture | Alt+I for more info
-Gui, Font, s9 q3, Arial
-Gui, Add, Text, vDetailsText cFFFFFF w420 r18 +Wrap,
+Gui, Add, Text, vCoordText cFF0000, X: XXXXX  Y: YYYYY
+Gui, Font, s18 q3, Arial
+Gui, Add, Text, vHintText cFF0000, Alt+C to capture | Alt+I for more info | Alt+G toggle bg
+Gui, Font, s18 q3, Arial
+Gui, Add, Text, vDetailsText cFF0000 w420 r22 +Wrap,
 GuiControl, Hide, DetailsText
-WinSet, TransColor, Black 150
+ApplyBackground()
 SetTimer, Update, 50
 Gui, Show, x0 y0 NA AutoSize
+guiHwnd := WinExist()
 
 return
 
 ^+!c::Reload
 !c::StartCapture()
 !i::ToggleDetails()
+!g::ToggleBackground()
 Esc::
-    if (captureEnabled)
+    savedCapture := captureEnabled
+    if (savedCapture)
+    {
         WriteCapture()
+        captureEnabled := false
+    }
     if (!escConfirm)
     {
         escConfirm := true
-        if (captureEnabled)
+        if (savedCapture)
             ToolTip, Done. Saved to coord.txt (Shortcut: Ctrl+Shift+Alt+O)
         SetTimer, ClearTip, -3000
         return
@@ -60,7 +68,19 @@ Esc::
     if (!captureEnabled || idx > fields.Length())
         return
     CloseCaptureFile(captureFile)
-    MouseGetPos, x, y
+    CoordMode, Mouse, Screen
+    MouseGetPos, screenX, screenY, mouseWinId
+    if (mouseWinId)
+    {
+        WinGetPos, winX, winY,,, ahk_id %mouseWinId%
+        x := screenX - winX
+        y := screenY - winY
+    }
+    else
+    {
+        x := screenX
+        y := screenY
+    }
     entries[idx] := fields[idx] ": {x: " x ", y: " y "}"
     WriteCapture()
     ToolTip, % "Saved " entries[idx] " (" idx " of " fields.Length() ")"
@@ -82,10 +102,6 @@ Update() {
     global detailsVisible
     CoordMode, Mouse, Screen
     MouseGetPos, screenX, screenY, mouseWinId, controlClassNN
-    GuiControl,, CoordText, % "X: " screenX "  Y: " screenY
-    if (!detailsVisible)
-        return
-
     mouseWinX := ""
     mouseWinY := ""
     mouseWinW := ""
@@ -100,6 +116,15 @@ Update() {
         WinGetPos, mouseWinX, mouseWinY, mouseWinW, mouseWinH, ahk_id %mouseWinId%
         winRelX := screenX - mouseWinX
         winRelY := screenY - mouseWinY
+    }
+
+    GuiControl,, CoordText, % "X: " winRelX "  Y: " winRelY
+
+    if (!detailsVisible)
+        return
+
+    if (mouseWinId)
+    {
         VarSetCapacity(pt, 8, 0)
         NumPut(screenX, pt, 0, "Int")
         NumPut(screenY, pt, 4, "Int")
@@ -160,6 +185,28 @@ ToggleDetails()
     else
         GuiControl, Hide, DetailsText
     Gui, Show, x0 y0 NA AutoSize
+}
+
+ToggleBackground()
+{
+    global solidBackground
+    solidBackground := !solidBackground
+    ApplyBackground()
+}
+
+ApplyBackground()
+{
+    global solidBackground, guiHwnd
+    target := (guiHwnd ? "ahk_id " guiHwnd : "A")
+    if (solidBackground)
+    {
+        WinSet, TransColor, Off, %target%
+        WinSet, Transparent, 255, %target%
+    }
+    else
+    {
+        WinSet, TransColor, Black, %target%
+    }
 }
 
 StartCapture()

@@ -128,7 +128,6 @@ CollectIntraData(mode)
     {
         SendInput, {WheelUp 15}
         Sleep 110
-        MouseClick, left, %BusinessButtonX%, %BusinessButtonY%, 2
     }
     else
     {
