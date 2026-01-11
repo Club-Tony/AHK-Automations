@@ -18,7 +18,7 @@ Return
 
 ^+!c::
     Run, "C:\Users\Davey\Documents\GitHub\Repositories\AHK-Automations\Other_Automations\Coordinate Capture Helper\Coord_Capture.ahk"
-    ToolTip, Coord Helper: Alt+C to capture, Alt+I for more info, Alt+G toggle bg
+    ToolTip, % "Coord Helper: Alt+C to capture, Alt+I for more info, Alt+G toggle bg"
     SetTimer, HideCoordTip, -4000
 Return
 

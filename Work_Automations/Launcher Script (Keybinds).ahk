@@ -406,11 +406,10 @@ FocusPreferredBrowser()
     if WinExist("ahk_exe firefox.exe")
     {
         if (!WinActive("ahk_exe firefox.exe"))
-            SendEvent, #f
-        WinWaitActive, ahk_exe firefox.exe,, 1
-        if WinActive("ahk_exe firefox.exe")
-            return true
-        WinActivate, ahk_exe firefox.exe
+        {
+            WinRestore, ahk_exe firefox.exe
+            WinActivate, ahk_exe firefox.exe
+        }
         WinWaitActive, ahk_exe firefox.exe,, 1
         return WinActive("ahk_exe firefox.exe")
     }

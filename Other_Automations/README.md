@@ -1,27 +1,23 @@
+# Other_Automations-specific README/Instructions
 ## Recommended: add shortcuts for the following files (if needed) into Startup folder [Run Dialog (Win+R - Shell:Startup)], as they are meant to always be running and don't launch through Launcher Script:
 
-- **Launcher_Script_Other.ahk** — hub to launch helper tools (RuneScape focus, coordinate capture, coord.txt viewer).
-- **Macros.ahk** — staged macro menu for fast click, turbo key hold, pure hold, and macro recorder playback.
-- **Window_Switch.ahk** — quick focus/minimize/open for various windows/programs.
-- **ToolTips.ahk** — shows a temporary tooltip of global hotkeys when requested.
-- **Coordinate Capture Helper/Coord_Capture.ahk** — on-screen overlay to click-capture coordinates into `coord.txt`.
-- **Alt+S = Quick Action Keybinds.ahk** — toggles `/` to send a single left click.
-- **Alt+Q Map to Alt+F4.ahk** — remaps Alt+Q to Alt+F4 except on specified Firefox tabs.
-- **Alt+A-WIN_Key_Backup.ahk** — backup Start/Run workflow (Alt+A then Alt+R) when the Win key is blocked.
-- **RK71_Key_Fixes.ahk** — RK71 keyboard-friendly Start/Run helpers (Win+R alias plus Alt+A/Alt+R pairing).
-- **Ctrl+Home key = Sleep.ahk** — puts the machine to sleep with Ctrl+Home.
-- **Focus_RS_Window.ahk** — Alt+Z focuses the RuneScape client.
+- **Quick_Autos.ahk** - lightweight always-on helper (Ctrl+Esc reload).
+- **Macros.ahk** - staged macro menu for fast click, turbo key hold, pure hold, and macro recorder playback.
+- **ToolTips.ahk** - shows a temporary tooltip of global hotkeys when requested.
+- **Window_Switch.ahk** - quick focus/minimize/open for various windows/programs.
+- **Alt+Q Map to Alt+F4.ahk** - remaps Alt+Q to Alt+F4 except on specified Firefox tabs.
+- **Ctrl+Home key = Sleep.ahk** - puts the machine to sleep with Ctrl+Home.
+- **Launcher_Script_Other.ahk** - hub to launch helper tools (RuneScape focus, coordinate capture, coord.txt viewer).
 
 ---
 
 ## Essential Hotkeys
 
-- `Ctrl+Esc` — reloads most scripts in this folder.
-- `Esc` — exits certain launched scripts early
-- `Ctrl+Alt+T` — show/hide global hotkey tooltip (ToolTips.ahk).
-- `Alt+Q` — acts as Alt+F4
-- `Ctrl+Home` — sleep the machine.
-- Start/Run helpers: `Alt+A` then `Alt+R` within 5s (Alt+A-WIN_Key_Backup); `Win+R` or `Alt+A` then `Alt+R` (RK71_Key_Fixes, also `Win+R` via `#r`).
+- `Ctrl+Esc` - reloads most scripts in this folder.
+- `Esc` - exits certain launched scripts early.
+- `Ctrl+Alt+T` - show/hide global hotkey tooltip (ToolTips.ahk).
+- `Alt+Q` - acts as Alt+F4.
+- `Ctrl+Home` - sleep the machine.
 
 ---
 

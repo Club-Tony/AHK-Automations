@@ -49,6 +49,7 @@ Global Hotkeys
 Ctrl+Shift+Alt+Z - Launch Macros script
 Ctrl+Shift+Alt+C - Launch Coord Capture Helper script
 Ctrl+Shift+Alt+W - Toggle Window Spy
+Ctrl+Alt+S  - Toggle sound output device
 Win+Alt+E   - Open new Explorer window
 -
 Window Switch (Personal)
@@ -77,4 +78,5 @@ return
 ~^!t::Gosub HideTooltips
 ~^+!z::Gosub HideTooltips
 ~^+!w::Gosub HideTooltips
+~^!s::Gosub HideTooltips
 #If
