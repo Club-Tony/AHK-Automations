@@ -46,7 +46,6 @@ return
     tooltipText =
     (
 Global Hotkeys
-Ctrl+Shift+Alt+Z - Launch Macros script
 Ctrl+Shift+Alt+C - Launch Coord Capture Helper script
 Ctrl+Shift+Alt+W - Toggle Window Spy
 Ctrl+Alt+S  - Toggle sound output device
@@ -58,6 +57,16 @@ Win+Alt+E   - Open new Explorer window
 Win+Alt+V   - Focus/Minimize VS Code
 Win+F       - Focus/Minimize/Launch Firefox
 Ctrl+Alt+T  - Show this tooltip again
+-
+Macros Script Hotkeys
+Ctrl+Shift+Alt+Z - Launch Macros script
+F5 (Macros menu) - Record macro (kb/mouse + controller)
+F6 (Macros menu) - Record controller
+L1+L2+R1+R2+A - Start/stop controller record or pause playback
+L1+L2+R1+R2+X - Cancel recording (controller)
+Start/Options - Toggle playback pause (controller)
+Share/Back - Cancel recording (controller)
+F12 - Toggle playback (keyboard)
     )
     Tooltip, %tooltipText%
     Hotkey, Esc, HideTooltips, On

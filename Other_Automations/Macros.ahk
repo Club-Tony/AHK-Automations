@@ -1,8 +1,13 @@
 #Requires AutoHotkey v1
 #NoEnv ; Prevents Unnecessary Environment Variable lookup
-#Warn ; Warn All (All Warnings Enabled)
 #SingleInstance, Force ; Removes script already open warning when reloading scripts
 #UseHook
+#Warn, All, Off
+#Include <XInput>
+#Include <VJoy_lib>
+#Warn ; Warn All (All Warnings Enabled)
+#Warn, LocalSameAsGlobal, Off
+#Warn, Unreachable, Off
 SendMode Input
 SetWorkingDir, %A_ScriptDir%
 
@@ -27,13 +32,44 @@ autoClickOn := false
 autoClickInterval := 1000
 recorderActive := false
 recorderPlaying := false
+recorderPaused := false
+recorderPlayIndex := 1
+recorderSuppressStopTip := false
 recorderEvents := []
 recorderStart := 0
 recorderLast := 0
 recorderMouseSampleMs := 40
+recorderControllerSampleMs := 20
+recorderKbMouseEnabled := true
+recorderControllerEnabled := true
+recorderControllerPrevState := ""
+recorderHasControllerEvents := false
+controllerUserIndex := 0
+controllerComboTriggerThreshold := 30
+controllerComboPollMs := 50
+controllerComboLatched := false
+controllerStartLatched := false
+controllerBackLatched := false
+controllerCancelLatched := false
+controllerThumbDeadzone := 2500
+controllerTriggerDeadzone := 5
+controllerThumbStep := 256
+controllerTriggerStep := 4
+controllerXInputReady := false
+vJoyDeviceId := 1
+vJoyReady := false
+vJoyUseContPov := false
+vJoyPovMode := ""
+vJoyAxisMax := {}
+vJoyAxisExists := {}
+vJoyButtonCount := 0
+hVJDLL := 0
 sendMode := "Input"
 sendModeTip := "SendMode: Input (toggle: Ctrl+Alt+P)"
 prevSendMode := "Input"
+
+EnsureXInputReady()
+SetTimer, ControllerComboPoll, % controllerComboPollMs
 
 return
 
@@ -88,6 +124,11 @@ F5::
     CloseMenu()
     StartRecorder()
 return
+
+F6::
+    CloseMenu()
+    StartRecorder("controller")
+return
 #If
 
 #If (slashMacroOn)
@@ -115,12 +156,13 @@ return
 #If (recorderActive && !recorderPlaying)
 Esc::
 F5::
+F6::
     FinalizeRecording()
 return
 #If
 
 #If (recorderEvents.MaxIndex() != "" && !recorderActive)
-$/::ToggleRecorderPlayback()
+F12::ToggleRecorderPlayback()
 #If
 
 #If (!recorderActive && !recorderPlaying && recorderEvents.MaxIndex() != "")
@@ -155,6 +197,84 @@ CloseMenu(reason := "")
 
 HideTimeoutTip:
     ToolTip
+return
+
+ControllerComboPoll:
+    global controllerComboLatched, controllerStartLatched, controllerBackLatched, controllerCancelLatched
+    global recorderActive, recorderPlaying, menuActive, recorderEvents
+    global XINPUT_GAMEPAD_START, XINPUT_GAMEPAD_BACK
+    comboState := ControllerGetState()
+    if (!comboState)
+    {
+        controllerComboLatched := false
+        controllerStartLatched := false
+        controllerBackLatched := false
+        controllerCancelLatched := false
+        return
+    }
+    if (recorderActive && IsControllerCancelComboPressed(comboState))
+    {
+        if (!controllerCancelLatched)
+        {
+            controllerCancelLatched := true
+            recorderSuppressStopTip := true
+            FinalizeRecording()
+            ShowMacroToggledTip("Recording stopped - F12 toggles playback", 1500, false)
+        }
+        return
+    }
+    controllerCancelLatched := false
+    if (recorderActive && IsControllerBackPressed(comboState))
+    {
+        if (!controllerBackLatched)
+        {
+            controllerBackLatched := true
+            FinalizeRecording()
+        }
+        return
+    }
+    controllerBackLatched := false
+    if (IsControllerComboPressed(comboState))
+    {
+        if (!controllerComboLatched)
+        {
+            controllerComboLatched := true
+            if (recorderActive)
+            {
+                FinalizeRecording()
+                return
+            }
+            if (recorderPlaying)
+            {
+                TogglePlaybackPause()
+                return
+            }
+            if (menuActive)
+                CloseMenu()
+            StartRecorder("controller")
+        }
+    }
+    else
+    {
+        controllerComboLatched := false
+    }
+    if (controllerComboLatched)
+        return
+    if (!recorderActive && (comboState.Buttons & XINPUT_GAMEPAD_START))
+    {
+        if (!controllerStartLatched)
+        {
+            controllerStartLatched := true
+            if (recorderPlaying)
+                TogglePlaybackPause()
+            else if (recorderEvents.MaxIndex() != "")
+                ToggleRecorderPlayback()
+        }
+    }
+    else
+    {
+        controllerStartLatched := false
+    }
 return
 
 ActivateSlashMacro()
@@ -233,7 +353,12 @@ MenuTooltipText()
         . "F2 - Stage Autoclicker`n"
         . "F3 - Stage turbo keyhold`n"
         . "F4 - Stage pure key hold`n"
-        . "F5 - Stage Record Macro`n"
+        . "F5 - Stage Record Macro (kb/mouse + controller)`n"
+        . "F6 - Stage Controller Record`n"
+        . "L1+L2+R1+R2+A - Controller record/pause`n"
+        . "L1+L2+R1+R2+X - Cancel recording`n"
+        . "Start/Options - Toggle playback pause`n"
+        . "Share/Back - Cancel recording`n"
         . "^!P - Toggle send mode (" sendMode ")"
 }
 
@@ -332,7 +457,7 @@ return
 #If
 
 #If (recorderPlaying)
-$/::
+F12::
     StopPlayback()
 return
 
@@ -429,36 +554,52 @@ HoldKeyRepeat:
     Send, {%holdMacroKey%}
 return
 
-StartRecorder()
+StartRecorder(mode := "combined")
 {
     global recorderActive, recorderPlaying, recorderEvents, recorderStart, recorderLast, recorderMouseSampleMs
+    global recorderControllerSampleMs, recorderKbMouseEnabled, recorderControllerEnabled
+    global recorderControllerPrevState, recorderHasControllerEvents
     StopRecorder(true)
     recorderActive := true
     recorderPlaying := false
     recorderEvents := []
+    recorderHasControllerEvents := false
     recorderStart := A_TickCount
     recorderLast := recorderStart
-    SetTimer, RecorderSampleMouse, % recorderMouseSampleMs
-    ShowMacroToggledTip("Recording macro... F5 to stop", 3000, true)
+    recorderKbMouseEnabled := (mode = "combined")
+    recorderControllerEnabled := true
+    recorderControllerPrevState := ""
+    if (recorderKbMouseEnabled)
+        SetTimer, RecorderSampleMouse, % recorderMouseSampleMs
+    else
+        SetTimer, RecorderSampleMouse, Off
+    SetTimer, RecorderSampleController, % recorderControllerSampleMs
+    if (mode = "controller")
+        ShowMacroToggledTip("Recording controller... F6 to stop", 3000, true)
+    else
+        ShowMacroToggledTip("Recording macro... F5 to stop", 3000, true)
     ; install low-level hooks for keys via hotkey prefix below
 }
 
 StopRecorder(silent := false)
 {
-    global recorderActive, recorderPlaying
+    global recorderActive, recorderPlaying, recorderControllerPrevState
     if (!recorderActive && !recorderPlaying)
         return
     StopPlayback(true)
     recorderActive := false
     recorderPlaying := false
+    recorderControllerPrevState := ""
     SetTimer, RecorderSampleMouse, Off
+    SetTimer, RecorderSampleController, Off
     if (!silent)
         ShowMacroToggledTip("Macro Toggled Off")
 }
 
 StartPlayback()
 {
-    global recorderEvents, recorderPlaying
+    global recorderEvents, recorderPlaying, recorderHasControllerEvents
+    global recorderPaused, recorderPlayIndex
     if (recorderPlaying)
         return
     if (recorderEvents.MaxIndex() = "")
@@ -466,41 +607,83 @@ StartPlayback()
         ShowMacroToggledTip("No recording to play")
         return
     }
+    if (recorderHasControllerEvents && !EnsureVJoyReady())
+        return
     recorderPlaying := true
-    ShowMacroToggledTip("Playing recorded macro (/ to stop)")
+    recorderPaused := false
+    recorderPlayIndex := 1
+    ShowMacroToggledTip("Playing recorded macro (F12 to stop)")
     SetTimer, RecorderPlayNext, -1
 }
 
 StopPlayback(silent := false)
 {
-    global recorderPlaying
+    global recorderPlaying, recorderHasControllerEvents
+    global recorderPaused, recorderPlayIndex
     if (!recorderPlaying)
         return
     recorderPlaying := false
+    recorderPaused := false
+    recorderPlayIndex := 1
     SetTimer, RecorderPlayNext, Off
+    if (recorderHasControllerEvents)
+        ControllerResetVJoyState()
     if (!silent)
         ShowMacroToggledTip("Macro Toggled Off")
 }
 
+TogglePlaybackPause()
+{
+    global recorderPlaying, recorderPaused
+    if (!recorderPlaying)
+        return
+    if (recorderPaused)
+    {
+        recorderPaused := false
+        ShowMacroToggledTip("Playback resumed", 1000, false)
+        SetTimer, RecorderPlayNext, -1
+    }
+    else
+    {
+        recorderPaused := true
+        ShowMacroToggledTip("Playback paused", 1000, false)
+    }
+}
+
 ClearRecorder()
 {
-    global recorderEvents, recorderStart, recorderLast
+    global recorderEvents, recorderStart, recorderLast, recorderHasControllerEvents
     recorderEvents := []
     recorderStart := 0
     recorderLast := 0
+    recorderHasControllerEvents := false
     ShowMacroToggledTip("Macro Toggled Off")
 }
 
 RecorderPlayNext:
-    global recorderEvents, recorderPlaying, sendMode
+    global recorderEvents, recorderPlaying, recorderPaused, recorderPlayIndex
     if (!recorderPlaying)
         return
-    Loop % recorderEvents.MaxIndex()
+    maxIndex := recorderEvents.MaxIndex()
+    if (maxIndex = "")
+        return
+    idx := recorderPlayIndex
+    while (idx <= maxIndex)
     {
         if (!recorderPlaying)
-            break
-        evt := recorderEvents[A_Index]
+            return
+        if (recorderPaused)
+        {
+            recorderPlayIndex := idx
+            return
+        }
+        evt := recorderEvents[idx]
         Sleep, % evt.delay
+        if (recorderPaused)
+        {
+            recorderPlayIndex := idx
+            return
+        }
         if (evt.type = "key")
         {
             SendEventOrInput("{" evt.code " " evt.state "}", evt.state)
@@ -513,7 +696,13 @@ RecorderPlayNext:
         {
             MouseMove, % evt.x, % evt.y, 0
         }
+        else if (evt.type = "controller")
+        {
+            ControllerApplyStateToVJoy(evt.state)
+        }
+        idx++
     }
+    recorderPlayIndex := 1
     if (recorderPlaying)
         SetTimer, RecorderPlayNext, -1
 return
@@ -553,8 +742,35 @@ RecorderSampleMouse:
     RecorderAddEvent("mousemove", "", "", mx, my)
 return
 
+RecorderSampleController:
+    global recorderActive, recorderControllerEnabled, recorderControllerPrevState
+    global recorderHasControllerEvents
+    if (!recorderActive || !recorderControllerEnabled)
+        return
+    sampleState := ControllerGetState()
+    if (!sampleState)
+        return
+    sampleNorm := NormalizeControllerState(sampleState)
+    if (recorderControllerPrevState = "")
+    {
+        recorderControllerPrevState := sampleNorm
+        if (!ControllerStateIsNeutral(sampleNorm))
+        {
+            RecorderAddEvent("controller", "", "", "", "", sampleNorm)
+            recorderHasControllerEvents := true
+        }
+        return
+    }
+    if (!ControllerStatesEqual(sampleNorm, recorderControllerPrevState))
+    {
+        recorderControllerPrevState := sampleNorm
+        RecorderAddEvent("controller", "", "", "", "", sampleNorm)
+        recorderHasControllerEvents := true
+    }
+return
+
 ; Global hook for keyboard/mouse while recording
-#If (recorderActive)
+#If (recorderActive && recorderKbMouseEnabled)
 ~*LButton::
     RecorderAddEvent("mousebtn", "LButton", "Down")
 return
@@ -673,6 +889,8 @@ return
 ~*Enter up::RecorderAddEvent("key", "Enter", "Up")
 ~*Tab::RecorderAddEvent("key", "Tab", "Down")
 ~*Tab up::RecorderAddEvent("key", "Tab", "Up")
+~*Backspace::RecorderAddEvent("key", "Backspace", "Down")
+~*Backspace up::RecorderAddEvent("key", "Backspace", "Up")
 ~*Esc::RecorderAddEvent("key", "Esc", "Down")
 ~*Esc up::RecorderAddEvent("key", "Esc", "Up")
 ~*Shift::RecorderAddEvent("key", "Shift", "Down")
@@ -729,15 +947,21 @@ return
 
 FinalizeRecording()
 {
-    global recorderActive, recorderEvents
+    global recorderActive, recorderEvents, recorderSuppressStopTip
     if (!recorderActive)
         return
     recorderActive := false
     SetTimer, RecorderSampleMouse, Off
-    ShowMacroToggledTip("Recording stopped - / toggles playback")
+    SetTimer, RecorderSampleController, Off
+    if (recorderSuppressStopTip)
+    {
+        recorderSuppressStopTip := false
+        return
+    }
+    ShowMacroToggledTip("Recording stopped - F12 toggles playback")
 }
 
-RecorderAddEvent(type, code := "", state := "", x := "", y := "")
+RecorderAddEvent(type, code := "", state := "", x := "", y := "", payload := "")
 {
     global recorderEvents, recorderLast
     now := A_TickCount
@@ -755,6 +979,10 @@ RecorderAddEvent(type, code := "", state := "", x := "", y := "")
     {
         recEvt.x := x
         recEvt.y := y
+    }
+    else if (type = "controller")
+    {
+        recEvt.state := payload
     }
     recorderEvents.Push(recEvt)
 }
@@ -827,4 +1055,355 @@ DeactivatePureHold(silent := false)
     BindPureHoldHotkey("", "Off")
     if (!silent)
         ShowMacroToggledTip("Macro Toggled Off")
+}
+
+EnsureXInputReady()
+{
+    global controllerXInputReady, _XInput_hm
+    if (controllerXInputReady)
+        return true
+    XInput_Init()
+    controllerXInputReady := (_XInput_hm != "")
+    return controllerXInputReady
+}
+
+ControllerGetState()
+{
+    global controllerUserIndex
+    if (!EnsureXInputReady())
+        return ""
+    padState := XInput_GetState(controllerUserIndex)
+    if (padState)
+        return padState
+    Loop 4
+    {
+        idx := A_Index - 1
+        if (idx = controllerUserIndex)
+            continue
+        padState := XInput_GetState(idx)
+        if (padState)
+        {
+            controllerUserIndex := idx
+            return padState
+        }
+    }
+    return ""
+}
+
+NormalizeControllerState(state)
+{
+    global controllerThumbDeadzone, controllerTriggerDeadzone
+    global controllerThumbStep, controllerTriggerStep
+    normState := {}
+    normState.Buttons := state.Buttons
+    normState.LeftTrigger := NormalizeTrigger(state.LeftTrigger, controllerTriggerDeadzone, controllerTriggerStep)
+    normState.RightTrigger := NormalizeTrigger(state.RightTrigger, controllerTriggerDeadzone, controllerTriggerStep)
+    normState.ThumbLX := NormalizeThumb(state.ThumbLX, controllerThumbDeadzone, controllerThumbStep)
+    normState.ThumbLY := NormalizeThumb(state.ThumbLY, controllerThumbDeadzone, controllerThumbStep)
+    normState.ThumbRX := NormalizeThumb(state.ThumbRX, controllerThumbDeadzone, controllerThumbStep)
+    normState.ThumbRY := NormalizeThumb(state.ThumbRY, controllerThumbDeadzone, controllerThumbStep)
+    return normState
+}
+
+NormalizeThumb(value, deadzone, step)
+{
+    if (Abs(value) < deadzone)
+        value := 0
+    return Round(value / step) * step
+}
+
+NormalizeTrigger(value, deadzone, step)
+{
+    if (value < deadzone)
+        value := 0
+    return Round(value / step) * step
+}
+
+ControllerStatesEqual(a, b)
+{
+    if (!IsObject(a) || !IsObject(b))
+        return false
+    return (a.Buttons = b.Buttons
+        && a.LeftTrigger = b.LeftTrigger
+        && a.RightTrigger = b.RightTrigger
+        && a.ThumbLX = b.ThumbLX
+        && a.ThumbLY = b.ThumbLY
+        && a.ThumbRX = b.ThumbRX
+        && a.ThumbRY = b.ThumbRY)
+}
+
+ControllerStateIsNeutral(state)
+{
+    if (!IsObject(state))
+        return true
+    return (state.Buttons = 0
+        && state.LeftTrigger = 0
+        && state.RightTrigger = 0
+        && state.ThumbLX = 0
+        && state.ThumbLY = 0
+        && state.ThumbRX = 0
+        && state.ThumbRY = 0)
+}
+
+IsControllerComboPressed(state)
+{
+    global XINPUT_GAMEPAD_LEFT_SHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER
+    global XINPUT_GAMEPAD_A, controllerComboTriggerThreshold
+    return ((state.Buttons & XINPUT_GAMEPAD_LEFT_SHOULDER)
+        && (state.Buttons & XINPUT_GAMEPAD_RIGHT_SHOULDER)
+        && (state.Buttons & XINPUT_GAMEPAD_A)
+        && (state.LeftTrigger >= controllerComboTriggerThreshold)
+        && (state.RightTrigger >= controllerComboTriggerThreshold))
+}
+
+IsControllerCancelComboPressed(state)
+{
+    global XINPUT_GAMEPAD_LEFT_SHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER
+    global XINPUT_GAMEPAD_X, XINPUT_GAMEPAD_Y, XINPUT_GAMEPAD_B
+    global XINPUT_KEYSTROKE_KEYDOWN, VK_PAD_X, VK_PAD_Y, VK_PAD_B
+    global controllerComboTriggerThreshold
+    if (!IsObject(state))
+        return false
+    facePressed := (state.Buttons & XINPUT_GAMEPAD_X)
+        || (state.Buttons & XINPUT_GAMEPAD_Y)
+        || (state.Buttons & XINPUT_GAMEPAD_B)
+    if (!facePressed)
+    {
+        keystroke := XInput_GetKeystroke()
+        if (keystroke && (keystroke.Flags & XINPUT_KEYSTROKE_KEYDOWN))
+            facePressed := (keystroke.VirtualKey = VK_PAD_X)
+                || (keystroke.VirtualKey = VK_PAD_Y)
+                || (keystroke.VirtualKey = VK_PAD_B)
+    }
+    return ((state.Buttons & XINPUT_GAMEPAD_LEFT_SHOULDER)
+        && (state.Buttons & XINPUT_GAMEPAD_RIGHT_SHOULDER)
+        && facePressed
+        && (state.LeftTrigger >= controllerComboTriggerThreshold)
+        && (state.RightTrigger >= controllerComboTriggerThreshold))
+}
+
+IsControllerBackPressed(state)
+{
+    global XINPUT_GAMEPAD_BACK, XINPUT_KEYSTROKE_KEYDOWN, VK_PAD_BACK
+    if (IsObject(state) && (state.Buttons & XINPUT_GAMEPAD_BACK))
+        return true
+    keystroke := XInput_GetKeystroke()
+    if (keystroke && (keystroke.VirtualKey = VK_PAD_BACK)
+        && (keystroke.Flags & XINPUT_KEYSTROKE_KEYDOWN))
+        return true
+    return false
+}
+
+EnsureVJoyReady()
+{
+    global vJoyDeviceId, vJoyReady, vJoyUseContPov, vJoyPovMode, vJoyAxisMax, vJoyAxisExists
+    global vJoyButtonCount
+    if (vJoyReady)
+        return true
+    if (!VJoyRegistryPresent())
+    {
+        if (!TryLoadVJoyDll())
+        {
+            ShowMacroToggledTip("vJoy not installed")
+            return false
+        }
+    }
+    VJoy_init(vJoyDeviceId)
+    if (!VJoy_Ready(vJoyDeviceId))
+    {
+        ShowMacroToggledTip("vJoy not ready")
+        return false
+    }
+    vJoyReady := true
+    vJoyUseContPov := (VJoy_GetContPovNumber(vJoyDeviceId) > 0)
+    if (vJoyUseContPov)
+        vJoyPovMode := "cont"
+    else if (VJoy_GetDiscPovNumber(vJoyDeviceId) > 0)
+        vJoyPovMode := "disc"
+    else
+        vJoyPovMode := ""
+    vJoyAxisExists := {}
+    vJoyAxisMax := {}
+    vJoyButtonCount := VJoy_GetVJDButtonNumber(vJoyDeviceId)
+    vJoyAxisExists.X := VJoy_GetAxisExist_X(vJoyDeviceId)
+    vJoyAxisExists.Y := VJoy_GetAxisExist_Y(vJoyDeviceId)
+    vJoyAxisExists.Z := VJoy_GetAxisExist_Z(vJoyDeviceId)
+    vJoyAxisExists.RX := VJoy_GetAxisExist_RX(vJoyDeviceId)
+    vJoyAxisExists.RY := VJoy_GetAxisExist_RY(vJoyDeviceId)
+    vJoyAxisExists.RZ := VJoy_GetAxisExist_RZ(vJoyDeviceId)
+    vJoyAxisExists.SL0 := VJoy_GetAxisExist_SL0(vJoyDeviceId)
+    vJoyAxisExists.SL1 := VJoy_GetAxisExist_SL1(vJoyDeviceId)
+    vJoyAxisMax.X := VJoy_GetAxisMax_X(vJoyDeviceId)
+    vJoyAxisMax.Y := VJoy_GetAxisMax_Y(vJoyDeviceId)
+    vJoyAxisMax.Z := VJoy_GetAxisMax_Z(vJoyDeviceId)
+    vJoyAxisMax.RX := VJoy_GetAxisMax_RX(vJoyDeviceId)
+    vJoyAxisMax.RY := VJoy_GetAxisMax_RY(vJoyDeviceId)
+    vJoyAxisMax.RZ := VJoy_GetAxisMax_RZ(vJoyDeviceId)
+    vJoyAxisMax.SL0 := VJoy_GetAxisMax_SL0(vJoyDeviceId)
+    vJoyAxisMax.SL1 := VJoy_GetAxisMax_SL1(vJoyDeviceId)
+    return true
+}
+
+VJoyRegistryPresent()
+{
+    install := RegRead64("HKEY_LOCAL_MACHINE"
+        , "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{8E31F76F-74C3-47F1-9550-E041EEDC5FBB}_is1"
+        , "InstallLocation")
+    return (install != "")
+}
+
+TryLoadVJoyDll()
+{
+    global hVJDLL
+    if (hVJDLL)
+        return true
+    pf64 := ""
+    if (A_Is64bitOS)
+        EnvGet, pf64, ProgramW6432
+    bases := []
+    if (A_ProgramFiles != "")
+        bases.Push(A_ProgramFiles)
+    if (pf64 != "" && pf64 != A_ProgramFiles)
+        bases.Push(pf64)
+    candidates := []
+    for index, base in bases
+    {
+        candidates.Push(base "\\vJoy\\x64\\vJoyInterface.dll")
+        candidates.Push(base "\\vJoy\\x86\\vJoyInterface.dll")
+        candidates.Push(base "\\vJoy\\vJoyInterface.dll")
+    }
+    for index, path in candidates
+    {
+        if (FileExist(path))
+        {
+            hVJDLL := DllCall("LoadLibrary", "Str", path)
+            if (hVJDLL)
+                return true
+        }
+    }
+    return false
+}
+
+ControllerApplyStateToVJoy(state)
+{
+    global vJoyDeviceId, vJoyAxisMax, vJoyAxisExists, vJoyPovMode
+    global XINPUT_GAMEPAD_A, XINPUT_GAMEPAD_B, XINPUT_GAMEPAD_X, XINPUT_GAMEPAD_Y
+    global XINPUT_GAMEPAD_LEFT_SHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER
+    global XINPUT_GAMEPAD_BACK, XINPUT_GAMEPAD_START
+    global XINPUT_GAMEPAD_LEFT_THUMB, XINPUT_GAMEPAD_RIGHT_THUMB
+    if (!EnsureVJoyReady())
+        return
+    if (vJoyAxisExists.X)
+        VJoy_SetAxis_X(MapThumbAxis(state.ThumbLX, vJoyAxisMax.X), vJoyDeviceId)
+    if (vJoyAxisExists.Y)
+        VJoy_SetAxis_Y(MapThumbAxis(state.ThumbLY, vJoyAxisMax.Y), vJoyDeviceId)
+    if (vJoyAxisExists.RX)
+        VJoy_SetAxis_RX(MapThumbAxis(state.ThumbRX, vJoyAxisMax.RX), vJoyDeviceId)
+    if (vJoyAxisExists.RY)
+        VJoy_SetAxis_RY(MapThumbAxis(state.ThumbRY, vJoyAxisMax.RY), vJoyDeviceId)
+    if (vJoyAxisExists.Z)
+        VJoy_SetAxis_Z(MapTriggerAxis(state.LeftTrigger, vJoyAxisMax.Z), vJoyDeviceId)
+    else if (vJoyAxisExists.SL0)
+        VJoy_SetAxis_SL0(MapTriggerAxis(state.LeftTrigger, vJoyAxisMax.SL0), vJoyDeviceId)
+    if (vJoyAxisExists.RZ)
+        VJoy_SetAxis_RZ(MapTriggerAxis(state.RightTrigger, vJoyAxisMax.RZ), vJoyDeviceId)
+    else if (vJoyAxisExists.SL1)
+        VJoy_SetAxis_SL1(MapTriggerAxis(state.RightTrigger, vJoyAxisMax.SL1), vJoyDeviceId)
+
+    ControllerApplyPov(state.Buttons, vJoyPovMode)
+    SetVJoyButton(1, state.Buttons & XINPUT_GAMEPAD_A)
+    SetVJoyButton(2, state.Buttons & XINPUT_GAMEPAD_B)
+    SetVJoyButton(3, state.Buttons & XINPUT_GAMEPAD_X)
+    SetVJoyButton(4, state.Buttons & XINPUT_GAMEPAD_Y)
+    SetVJoyButton(5, state.Buttons & XINPUT_GAMEPAD_LEFT_SHOULDER)
+    SetVJoyButton(6, state.Buttons & XINPUT_GAMEPAD_RIGHT_SHOULDER)
+    SetVJoyButton(7, state.Buttons & XINPUT_GAMEPAD_BACK)
+    SetVJoyButton(8, state.Buttons & XINPUT_GAMEPAD_START)
+    SetVJoyButton(9, state.Buttons & XINPUT_GAMEPAD_LEFT_THUMB)
+    SetVJoyButton(10, state.Buttons & XINPUT_GAMEPAD_RIGHT_THUMB)
+}
+
+SetVJoyButton(btnId, pressed)
+{
+    global vJoyDeviceId, vJoyButtonCount
+    if (btnId > vJoyButtonCount)
+        return
+    VJoy_SetBtn(pressed ? 1 : 0, vJoyDeviceId, btnId)
+}
+
+ControllerApplyPov(buttons, mode)
+{
+    global vJoyDeviceId
+    global XINPUT_GAMEPAD_DPAD_UP, XINPUT_GAMEPAD_DPAD_DOWN
+    global XINPUT_GAMEPAD_DPAD_LEFT, XINPUT_GAMEPAD_DPAD_RIGHT
+    if (mode = "")
+        return
+    up := (buttons & XINPUT_GAMEPAD_DPAD_UP)
+    down := (buttons & XINPUT_GAMEPAD_DPAD_DOWN)
+    left := (buttons & XINPUT_GAMEPAD_DPAD_LEFT)
+    right := (buttons & XINPUT_GAMEPAD_DPAD_RIGHT)
+    if (!up && !down && !left && !right)
+    {
+        if (mode = "cont")
+            VJoy_SetContPov(-1, vJoyDeviceId, 1)
+        else
+            VJoy_SetDiscPov(-1, vJoyDeviceId, 1)
+        return
+    }
+    if (mode = "cont")
+    {
+        angle := 0
+        if (up && right)
+            angle := 4500
+        else if (right && down)
+            angle := 13500
+        else if (down && left)
+            angle := 22500
+        else if (left && up)
+            angle := 31500
+        else if (up)
+            angle := 0
+        else if (right)
+            angle := 9000
+        else if (down)
+            angle := 18000
+        else if (left)
+            angle := 27000
+        VJoy_SetContPov(angle, vJoyDeviceId, 1)
+    }
+    else
+    {
+        dir := -1
+        if (up)
+            dir := 0
+        else if (right)
+            dir := 1
+        else if (down)
+            dir := 2
+        else if (left)
+            dir := 3
+        VJoy_SetDiscPov(dir, vJoyDeviceId, 1)
+    }
+}
+
+MapThumbAxis(value, axisMax)
+{
+    if (axisMax <= 0)
+        return 0
+    return Round(((value + 32768) * axisMax) / 65535)
+}
+
+MapTriggerAxis(value, axisMax)
+{
+    if (axisMax <= 0)
+        return 0
+    return Round((value * axisMax) / 255)
+}
+
+ControllerResetVJoyState()
+{
+    global vJoyDeviceId, vJoyReady
+    if (!vJoyReady)
+        return
+    VJoy_ResetVJD(vJoyDeviceId)
 }
