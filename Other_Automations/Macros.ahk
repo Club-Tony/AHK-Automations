@@ -212,14 +212,29 @@ ControllerComboPoll:
         controllerCancelLatched := false
         return
     }
-    if (recorderActive && IsControllerCancelComboPressed(comboState))
+    if (IsControllerCancelComboPressed(comboState))
     {
         if (!controllerCancelLatched)
         {
             controllerCancelLatched := true
-            recorderSuppressStopTip := true
-            FinalizeRecording()
-            ShowMacroToggledTip("Recording stopped - F12 toggles playback", 1500, false)
+            if (recorderActive)
+            {
+                recorderSuppressStopTip := true
+                FinalizeRecording()
+                ShowMacroToggledTip("Recording stopped - F12 toggles playback", 1500, false)
+            }
+            else
+            {
+                DeactivateSlashMacro(true)
+                DeactivateHoldMacro(true)
+                DeactivatePureHold(true)
+                DeactivateAutoclicker(true)
+                StopPlayback(true)
+                StopRecorder(true)
+                if (menuActive)
+                    CloseMenu()
+                ShowMacroToggledTip("Macro Toggled Off", 1500, false)
+            }
         }
         return
     }
@@ -356,7 +371,7 @@ MenuTooltipText()
         . "F5 - Stage Record Macro (kb/mouse + controller)`n"
         . "F6 - Stage Controller Record`n"
         . "L1+L2+R1+R2+A - Controller record/pause`n"
-        . "L1+L2+R1+R2+X - Cancel recording`n"
+        . "L1+L2+R1+R2+X - Kill switch (turn off macros)`n"
         . "Start/Options - Toggle playback pause`n"
         . "Share/Back - Cancel recording`n"
         . "^!P - Toggle send mode (" sendMode ")"
@@ -442,6 +457,22 @@ HideTempTip:
     ToolTip
 return
 
+PromptHoldKey(promptText)
+{
+    ToolTip, %promptText%
+    SetTimer, HideTempTip, -15000
+    ih := InputHook("L1 T15 V")
+    ih.Start()
+    ih.Wait()
+    SetTimer, HideTempTip, Off
+    ToolTip
+    holdKey := ih.Input
+    if (holdKey = "")
+        holdKey := ih.EndKey
+    holdKey := GetKeyName(holdKey)
+    return holdKey
+}
+
 #If (holdMacroReady)
 Esc::
 F3::
@@ -473,18 +504,7 @@ StartHoldMacroSetup()
     ; reset any existing hold macro
     DeactivateHoldMacro(true)
     tooltipText := "Input key to hold down (15s timeout)."
-    ToolTip, %tooltipText%
-    SetTimer, HideTempTip, -15000
-    ; Use InputHook so non-text keys (F-keys, arrows, etc.) are captured via EndKey.
-    ih := InputHook("L1 T15 V")
-    ih.Start()
-    ih.Wait()
-    SetTimer, HideTempTip, Off
-    ToolTip
-    holdKey := ih.Input
-    if (holdKey = "")
-        holdKey := ih.EndKey
-    holdKey := GetKeyName(holdKey)
+    holdKey := PromptHoldKey(tooltipText)
     if (holdKey = "")
     {
         ShowMacroToggledTip("Keyhold canceled (invalid key)")
@@ -992,15 +1012,10 @@ StartPureHoldSetup()
     global holdHoldReady, holdHoldOn, holdHoldKey, holdHoldBoundKey
     DeactivatePureHold(true)
     tooltipText := "Input key to hold down (15s timeout)."
-    ToolTip, %tooltipText%
-    SetTimer, HideTempTip, -15000
-    holdKey := ""
-    Input, holdKey, L1 T15 V
-    SetTimer, HideTempTip, Off
-    ToolTip
+    holdKey := PromptHoldKey(tooltipText)
     if (holdKey = "")
     {
-        ShowMacroToggledTip("Keyhold canceled (no key)")
+        ShowMacroToggledTip("Keyhold canceled (invalid key)")
         return
     }
     holdHoldKey := holdKey

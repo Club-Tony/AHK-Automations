@@ -63,7 +63,7 @@ Ctrl+Shift+Alt+Z - Launch Macros script
 F5 (Macros menu) - Record macro (kb/mouse + controller)
 F6 (Macros menu) - Record controller
 L1+L2+R1+R2+A - Start/stop controller record or pause playback
-L1+L2+R1+R2+X - Cancel recording (controller)
+L1+L2+R1+R2+X - Kill switch (turn off macros)
 Start/Options - Toggle playback pause (controller)
 Share/Back - Cancel recording (controller)
 F12 - Toggle playback (keyboard)
