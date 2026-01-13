@@ -63,9 +63,14 @@ Ctrl+Shift+Alt+Z - Launch Macros script
 F5 (Macros menu) - Record macro (kb/mouse + controller)
 F6 (Macros menu) - Record controller
 L1+L2+R1+R2+A - Start/stop controller record or pause playback
+L1+L2+R1+R2+B - Start turbo keyhold
+L1+L2+R1+R2+Y - Start pure key hold
 L1+L2+R1+R2+X - Kill switch (turn off macros)
 Start/Options - Toggle playback pause (controller)
 Share/Back - Cancel recording (controller)
+Controller map: L1/LB=Left Shoulder, L2/LT=Left Trigger
+R1/RB=Right Shoulder, R2/RT=Right Trigger
+A/Cross, B/Circle, X/Square, Y/Triangle
 F12 - Toggle playback (keyboard)
     )
     Tooltip, %tooltipText%

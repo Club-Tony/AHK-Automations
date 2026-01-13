@@ -34,4 +34,6 @@
 - `Ctrl+Shift+Alt+Z` — open the macro menu overlay; use `Esc` to cancel/timeout.
 - While menu is open: `F1` stage `/` => left-click toggle; `F2` stage autoclicker; `F3` stage turbo key hold; `F4` stage pure key hold; `F5` start recording.
 - When staged/active: `/` toggles slash macro or playback; `F2`/`Esc` stop autoclicker; `F3`/`Esc` stop turbo hold; `F4`/`Esc` stop pure hold; `F5`/`Esc` stop recorder; `/` toggles playback if a recording exists.
+- Controller combos (vJoy + XInput): `L1+L2+R1+R2+B` starts turbo hold; `L1+L2+R1+R2+Y` starts pure hold; `X` is the kill switch.
+- Tooltip will warn if controller support is unavailable (vJoy/XInput missing).
 - `Ctrl+Alt+P` — toggle SendMode (Input/Play) used by the macros.

@@ -27,8 +27,16 @@ ToggleAudioOutput()
 
     if (!SetDefaultPlaybackDeviceByName(target))
     {
-        ToolTip, % "Audio device not found: " target
+        ToolTip, Audio device not found.
         SetTimer, HideAudioTip, -1500
+    }
+    else
+    {
+        if (target = focusrite)
+            ToolTip, Focusrite Speaker Active
+        else
+            ToolTip, High Def Audio Device Active
+        SetTimer, HideAudioTip, -1000
     }
 }
 

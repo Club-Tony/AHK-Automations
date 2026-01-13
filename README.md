@@ -15,6 +15,7 @@
 - **Intra_Buttons** - adds quick-access hotkeys for common Interoffice Form actions
 - **Intra_Desktop_Search_Shortcuts** - hotkeys for desktop client search and navigation
 - **Intra_Focus_Fields** - jump-to-field shortcuts for commonly used desktop client fields
+- **Intra_L&F** - Lost and Found Assign Recip helper flow
 - **Intra_Pickup_Shortcuts** - shortcuts for desktop client's Pickup tab navigation/actions
 - **Intra_Posters_Full_Auto.ahk** - automates the full "poster program" workflow beginning-to-end
 - **Intra_Update_Tab_Shortcuts** - shortcuts for desktop client's Update tab navigation/actions

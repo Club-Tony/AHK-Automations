@@ -39,6 +39,13 @@ Return
     MouseClick, left, 1100, 650, 2
 Return
 
+!4:: ; focus notes field (Assign Recip)
+    MouseClick, left, 1300, 190, 2
+    Sleep 250
+    MouseClick, left, 1150, 213
+Return
+
+#If ( WinActive("Intra Desktop Client - Assign Recip") && !CoordHelperActive() )
 !c:: ; clear all + submit (Assign Recip)
     MouseClick, left, 68, 1345, 2
     Sleep 200
@@ -60,6 +67,7 @@ Return
     Sleep 150
     MouseClick, left, 200, 245, 2  ; return focus to scan field
 Return
+#If WinActive("Intra Desktop Client - Assign Recip")
 
 !d:: ; click item var lookup + apply-all buttons
     Sleep 200
@@ -77,3 +85,11 @@ Return
 
 #If ( WinActive("Intra Desktop Client - Assign Recip")
     || WinActive("Intra Desktop Client - Update") )
+
+CoordHelperActive()
+{
+    DetectHiddenWindows, On
+    running := WinExist("Coord_Capture.ahk ahk_class AutoHotkey")
+    DetectHiddenWindows, Off
+    return running
+}

@@ -73,7 +73,7 @@ Enter::
             scanReady := true
             if (scanReady) {
                 scanReady := false
-                Sleep 250
+                Sleep 500
                 Send, {F5}
                 Sleep 250
                 Gosub, PostF5Recovery

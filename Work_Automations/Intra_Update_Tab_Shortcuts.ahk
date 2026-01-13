@@ -17,6 +17,7 @@ PickupFromBSC := {rx: 174/baseW, ry: 328/baseH}
 FirstDropdown := {rx: 185/baseW, ry: 225/baseH}
 PackageType := {x: 1375, y: 360}    ; absolute for Update window
 BSCLocation := {x: 1375, y: 652}    ; absolute for Update window
+NotesField := {x: 1586, y: 212}     ; absolute for Update window
 PrintLabel := {rx: 300/baseW, ry: 120/baseH}
 ScanField := {rx: 200/baseW, ry: 245/baseH}
 
@@ -142,23 +143,6 @@ return
     Sleep 200
 return
 
-!c::
-    MouseClick, left, 70, 1345, 2
-    Sleep 200
-    Send, {Enter}
-    Sleep 200
-    Loop, 2
-    {
-        SendInput, {Esc}
-        Sleep 50
-    }
-    Sleep 200
-    WinGetPos,,, winW, winH, A
-    mX := Floor(winW * StatusBar.rx)
-    mY := Floor(winH * StatusBar.ry)
-    MouseMove, %mX%, %mY%
-return
-
 !o::
     ; Open Search - General, then mirror search script !o (on-shelf) flow
     ClearUpdatePrompt()
@@ -201,6 +185,25 @@ return
 return
 #If
 
+#If ( (WinActive("Intra Desktop Client - Update") || WinActive("Search - General")) && !CoordHelperActive() )
+!c::
+    MouseClick, left, 70, 1345, 2
+    Sleep 200
+    Send, {Enter}
+    Sleep 200
+    Loop, 2
+    {
+        SendInput, {Esc}
+        Sleep 50
+    }
+    Sleep 200
+    WinGetPos,,, winW, winH, A
+    mX := Floor(winW * StatusBar.rx)
+    mY := Floor(winH * StatusBar.ry)
+    MouseMove, %mX%, %mY%
+return
+#If
+
 #If WinActive("Intra Desktop Client - Update")
 !1::
     MouseClick, left, % PackageType.x, % PackageType.y
@@ -214,6 +217,10 @@ return
     ClickScaled(PrintLabel)
     Sleep 150
     ClickScaled(ScanField, 2)
+return
+
+!4::
+    MouseClick, left, % NotesField.x, % NotesField.y, 2
 return
 
 !s::
@@ -264,4 +271,12 @@ AbortRequested()
 {
     global abortHotkey
     return abortHotkey
+}
+
+CoordHelperActive()
+{
+    DetectHiddenWindows, On
+    running := WinExist("Coord_Capture.ahk ahk_class AutoHotkey")
+    DetectHiddenWindows, Off
+    return running
 }

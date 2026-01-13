@@ -51,10 +51,12 @@ PackagesCountY := 1154
     DoCtrlEnter()
 return
 
+#If (IsInterofficeActive() && !CoordHelperActive())
 !c::
     DoAltC()
 return
 
+#If IsInterofficeActive()
 !s::
 !e::
     DoAltE()
@@ -524,6 +526,14 @@ IsSearchActive()
 {
     title := GetSearchWinTitle()
     return (title != "" && WinActive(title))
+}
+
+CoordHelperActive()
+{
+    DetectHiddenWindows, On
+    running := WinExist("Coord_Capture.ahk ahk_class AutoHotkey")
+    DetectHiddenWindows, Off
+    return running
 }
 
 GetExportedReportWinTitle()

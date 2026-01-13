@@ -14,8 +14,7 @@ interofficeExes := ["firefox.exe", "chrome.exe", "msedge.exe"]
 
 ^Esc::Reload
 
-#If ( WinActive("Intra Desktop Client - Assign Recip")
-    || WinActive("Intra Desktop Client - Update") )
+#If WinActive("Intra Desktop Client - Assign Recip")
 
 ^!t::
     if (TooltipActive) {
@@ -43,7 +42,37 @@ Alt+N - Focus Name Field
 Alt+1 - Focus Package Type
 Alt+2 - Focus BSC Location
 Alt+3 - Print Label Toggle
+Alt+4 - Focus Notes Field
+Alt+L - Lost and Found
 Alt+D - Item Var Lookup + Apply All Toggle
+-
+Additional Scripts Launch Hotkeys:
+Ctrl+Alt+F - Launch Intra Search Shortcuts
+Ctrl+Alt+I - Launch Intra Extensive Automations
+Ctrl+Alt+T - Show this tooltip again
+    )
+    Tooltip, %TooltipText%
+    Hotkey, Esc, HideTooltips, On
+    SetTimer, HideTooltips, -30000
+Return
+#If
+
+#If WinActive("Intra Desktop Client - Update")
+
+^!t::
+    if (TooltipActive) {
+        Gosub, HideTooltips
+        Return
+    }
+    if (TooltipLocked) {
+        Return
+    }
+    TooltipLocked := true
+    SetTimer, UnlockTooltip, % -TooltipCooldownMs
+    TooltipActive := true
+    TooltipText =
+    (
+SSJ-Intra Hotkeys
 -
 Update Tab:
 Alt+P - Status Select -> Pickup from BSC
@@ -51,22 +80,18 @@ Alt+D - Status Select -> Delivery
 Alt+H - Status Select -> Outbound Handed-Off
 Alt+V - Status Select -> Void
 Alt+S - Click Status Field
+Alt+4 - Focus Notes Field
 -
 Additional Scripts Launch Hotkeys:
 Ctrl+Alt+F - Launch Intra Search Shortcuts
 Ctrl+Alt+I - Launch Intra Extensive Automations
-Ctrl+Alt+C - Launch DSRF to WorldShip Script
-Ctrl+Alt+L - Launch Daily Audit + Smartsheet
-Ctrl+Shift+Alt+L - Auto Daily Audit + Smartsheet
-Ctrl+Shift+Alt+C - Launch Coord Capture helper
-Ctrl+Shift+Alt+W - Toggle Window Spy
-Ctrl+Alt+W - Intra Desktop Window Organizing
 Ctrl+Alt+T - Show this tooltip again
     )
     Tooltip, %TooltipText%
     Hotkey, Esc, HideTooltips, On
     SetTimer, HideTooltips, -30000
 Return
+#If
 
 #If TooltipActive
 ~Esc::Gosub HideTooltips
@@ -414,6 +439,7 @@ Win+Alt+M - Minimize all, then focus Firefox, Outlook PWA, Slack
 Alt+X / Alt+O - Intra Online: Outbound Shipping Requests button anchor
 Alt+Z / Alt+H - Intra Online: Home button anchor
 Ctrl+Alt+L - Launch Daily Audit + Smartsheet
+Ctrl+Shift+Alt+L - Auto Daily Audit + Smartsheet
 Ctrl+Alt+W - Intra Desktop Window Organizing
 Ctrl+Shift+Alt+C - Launch Coord Capture helper
 Ctrl+Shift+Alt+O - Toggle coord.txt open/close (Coord Capture helper)
@@ -448,6 +474,7 @@ Intra Pickup Hotkeys
 Alt+1 - Signature Print Name
 Alt+E - Focus Item # / Scan field
 Alt+C - Clear + Return to scan
+Alt+4 - Focus Notes Field
 Ctrl+Alt+T - Show this tooltip again
     )
     Tooltip, %tooltipText%

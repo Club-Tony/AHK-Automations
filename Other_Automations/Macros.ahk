@@ -51,11 +51,14 @@ controllerComboLatched := false
 controllerStartLatched := false
 controllerBackLatched := false
 controllerCancelLatched := false
+controllerTurboLatched := false
+controllerPureHoldLatched := false
 controllerThumbDeadzone := 2500
 controllerTriggerDeadzone := 5
 controllerThumbStep := 256
 controllerTriggerStep := 4
 controllerXInputReady := false
+controllerXInputFailed := false
 vJoyDeviceId := 1
 vJoyReady := false
 vJoyUseContPov := false
@@ -201,6 +204,7 @@ return
 
 ControllerComboPoll:
     global controllerComboLatched, controllerStartLatched, controllerBackLatched, controllerCancelLatched
+    global controllerTurboLatched, controllerPureHoldLatched
     global recorderActive, recorderPlaying, menuActive, recorderEvents
     global XINPUT_GAMEPAD_START, XINPUT_GAMEPAD_BACK
     comboState := ControllerGetState()
@@ -210,6 +214,8 @@ ControllerComboPoll:
         controllerStartLatched := false
         controllerBackLatched := false
         controllerCancelLatched := false
+        controllerTurboLatched := false
+        controllerPureHoldLatched := false
         return
     }
     if (IsControllerCancelComboPressed(comboState))
@@ -249,6 +255,32 @@ ControllerComboPoll:
         return
     }
     controllerBackLatched := false
+    if (IsControllerTurboComboPressed(comboState))
+    {
+        if (!controllerTurboLatched)
+        {
+            controllerTurboLatched := true
+            if (menuActive)
+                CloseMenu()
+            if (!recorderActive && !recorderPlaying)
+                StartHoldMacroSetup()
+        }
+        return
+    }
+    controllerTurboLatched := false
+    if (IsControllerPureHoldComboPressed(comboState))
+    {
+        if (!controllerPureHoldLatched)
+        {
+            controllerPureHoldLatched := true
+            if (menuActive)
+                CloseMenu()
+            if (!recorderActive && !recorderPlaying)
+                StartPureHoldSetup()
+        }
+        return
+    }
+    controllerPureHoldLatched := false
     if (IsControllerComboPressed(comboState))
     {
         if (!controllerComboLatched)
@@ -364,17 +396,37 @@ ClearMacroTips()
 MenuTooltipText()
 {
     global sendMode
-    return "F1 - Stage left click with ""/"" key`n"
+    ctrlSupport := ControllerSupportAvailable()
+    text := "F1 - Stage left click with ""/"" key`n"
         . "F2 - Stage Autoclicker`n"
         . "F3 - Stage turbo keyhold`n"
         . "F4 - Stage pure key hold`n"
-        . "F5 - Stage Record Macro (kb/mouse + controller)`n"
-        . "F6 - Stage Controller Record`n"
-        . "L1+L2+R1+R2+A - Controller record/pause`n"
-        . "L1+L2+R1+R2+X - Kill switch (turn off macros)`n"
-        . "Start/Options - Toggle playback pause`n"
-        . "Share/Back - Cancel recording`n"
-        . "^!P - Toggle send mode (" sendMode ")"
+    if (ctrlSupport)
+    {
+        text .= "F5 - Stage Record Macro (kb/mouse + controller)`n"
+            . "F6 - Stage Controller Record`n"
+            . "L1+L2+R1+R2+A - Controller record/pause`n"
+            . "L1+L2+R1+R2+B - Start turbo keyhold`n"
+            . "L1+L2+R1+R2+Y - Start pure key hold`n"
+            . "L1+L2+R1+R2+X - Kill switch (turn off macros)`n"
+            . "Start/Options - Toggle playback pause`n"
+            . "Share/Back - Cancel recording`n"
+            . "Controller map: L1/LB=Left Shoulder, L2/LT=Left Trigger`n"
+            . "R1/RB=Right Shoulder, R2/RT=Right Trigger`n"
+            . "A/Cross, B/Circle, X/Square, Y/Triangle, Start/Options, Back/Share`n"
+    }
+    else
+    {
+        text .= "F5 - Stage Record Macro (kb/mouse)`n"
+        if (!VJoyAvailable())
+            text .= "vJoy driver not installed on this device, limited to keyboard/mouse recording/playback`n"
+                . "Install vJoy: run vJoySetup.exe, then reboot`n"
+        if (!EnsureXInputReady())
+            text .= "XInput unavailable; controller input disabled`n"
+                . "Install DirectX or copy xinput1_3/xinput1_4.dll`n"
+    }
+    text .= "^!P - Toggle send mode (" sendMode ")"
+    return text
 }
 
 StartAutoclickerSetup()
@@ -383,7 +435,7 @@ StartAutoclickerSetup()
     tooltipText := "Type click frequency in ms and press Enter (15s timeout)."
     ToolTip, %tooltipText%
     SetTimer, HideTempTip, -15000
-    InputBox, newInterval, Autoclicker, % "Enter click interval in ms (e.g., 100).", , , , , , , , 15
+    InputBox, newInterval, Autoclicker, % "Enter click interval in ms (e.g., 100).", , , , , , , 10
     SetTimer, HideTempTip, Off
     ToolTip
     if (ErrorLevel)
@@ -396,8 +448,10 @@ StartAutoclickerSetup()
         ShowMacroToggledTip("Autoclicker canceled (invalid number)")
         return
     }
-    if (newInterval < 1)
-        newInterval := 1
+    if (newInterval < 10)
+        newInterval := 10
+    else if (newInterval > 10000)
+        newInterval := 10000
     autoClickInterval := newInterval
     autoClickOn := false
     autoClickReady := true
@@ -500,9 +554,21 @@ return
 
 StartHoldMacroSetup()
 {
-    global holdMacroReady, holdMacroOn, holdMacroKey, holdMacroBoundKey
+    global holdMacroReady, holdMacroOn, holdMacroKey, holdMacroBoundKey, holdMacroRepeatMs
     ; reset any existing hold macro
     DeactivateHoldMacro(true)
+    InputBox, repeatMs, Turbo Hold, % "Enter repeat interval in ms (default " holdMacroRepeatMs ").", , , , , , , 10, %holdMacroRepeatMs%
+    if (!ErrorLevel && repeatMs != "")
+    {
+        if repeatMs is integer
+        {
+            if (repeatMs < 10)
+                repeatMs := 10
+            else if (repeatMs > 10000)
+                repeatMs := 10000
+            holdMacroRepeatMs := repeatMs
+        }
+    }
     tooltipText := "Input key to hold down (15s timeout)."
     holdKey := PromptHoldKey(tooltipText)
     if (holdKey = "")
@@ -790,180 +856,7 @@ RecorderSampleController:
 return
 
 ; Global hook for keyboard/mouse while recording
-#If (recorderActive && recorderKbMouseEnabled)
-~*LButton::
-    RecorderAddEvent("mousebtn", "LButton", "Down")
-return
-
-~*LButton Up::
-    RecorderAddEvent("mousebtn", "LButton", "Up")
-return
-
-~*RButton::
-    RecorderAddEvent("mousebtn", "RButton", "Down")
-return
-
-~*RButton Up::
-    RecorderAddEvent("mousebtn", "RButton", "Up")
-return
-
-~*MButton::
-    RecorderAddEvent("mousebtn", "MButton", "Down")
-return
-
-~*MButton Up::
-    RecorderAddEvent("mousebtn", "MButton", "Up")
-return
-
-~*WheelUp::
-    RecorderAddEvent("mousebtn", "WheelUp", "")
-return
-
-~*WheelDown::
-    RecorderAddEvent("mousebtn", "WheelDown", "")
-return
-
-~*WheelLeft::
-    RecorderAddEvent("mousebtn", "WheelLeft", "")
-return
-
-~*WheelRight::
-    RecorderAddEvent("mousebtn", "WheelRight", "")
-return
-
-~*a::RecorderAddEvent("key", "a", "Down")
-~*a up::RecorderAddEvent("key", "a", "Up")
-~*b::RecorderAddEvent("key", "b", "Down")
-~*b up::RecorderAddEvent("key", "b", "Up")
-~*c::RecorderAddEvent("key", "c", "Down")
-~*c up::RecorderAddEvent("key", "c", "Up")
-~*d::RecorderAddEvent("key", "d", "Down")
-~*d up::RecorderAddEvent("key", "d", "Up")
-~*e::RecorderAddEvent("key", "e", "Down")
-~*e up::RecorderAddEvent("key", "e", "Up")
-~*f::RecorderAddEvent("key", "f", "Down")
-~*f up::RecorderAddEvent("key", "f", "Up")
-~*g::RecorderAddEvent("key", "g", "Down")
-~*g up::RecorderAddEvent("key", "g", "Up")
-~*h::RecorderAddEvent("key", "h", "Down")
-~*h up::RecorderAddEvent("key", "h", "Up")
-~*i::RecorderAddEvent("key", "i", "Down")
-~*i up::RecorderAddEvent("key", "i", "Up")
-~*j::RecorderAddEvent("key", "j", "Down")
-~*j up::RecorderAddEvent("key", "j", "Up")
-~*k::RecorderAddEvent("key", "k", "Down")
-~*k up::RecorderAddEvent("key", "k", "Up")
-~*l::RecorderAddEvent("key", "l", "Down")
-~*l up::RecorderAddEvent("key", "l", "Up")
-~*m::RecorderAddEvent("key", "m", "Down")
-~*m up::RecorderAddEvent("key", "m", "Up")
-~*n::RecorderAddEvent("key", "n", "Down")
-~*n up::RecorderAddEvent("key", "n", "Up")
-~*o::RecorderAddEvent("key", "o", "Down")
-~*o up::RecorderAddEvent("key", "o", "Up")
-~*p::RecorderAddEvent("key", "p", "Down")
-~*p up::RecorderAddEvent("key", "p", "Up")
-~*q::RecorderAddEvent("key", "q", "Down")
-~*q up::RecorderAddEvent("key", "q", "Up")
-~*r::RecorderAddEvent("key", "r", "Down")
-~*r up::RecorderAddEvent("key", "r", "Up")
-~*s::RecorderAddEvent("key", "s", "Down")
-~*s up::RecorderAddEvent("key", "s", "Up")
-~*t::RecorderAddEvent("key", "t", "Down")
-~*t up::RecorderAddEvent("key", "t", "Up")
-~*u::RecorderAddEvent("key", "u", "Down")
-~*u up::RecorderAddEvent("key", "u", "Up")
-~*v::RecorderAddEvent("key", "v", "Down")
-~*v up::RecorderAddEvent("key", "v", "Up")
-~*w::RecorderAddEvent("key", "w", "Down")
-~*w up::RecorderAddEvent("key", "w", "Up")
-~*x::RecorderAddEvent("key", "x", "Down")
-~*x up::RecorderAddEvent("key", "x", "Up")
-~*y::RecorderAddEvent("key", "y", "Down")
-~*y up::RecorderAddEvent("key", "y", "Up")
-~*z::RecorderAddEvent("key", "z", "Down")
-~*z up::RecorderAddEvent("key", "z", "Up")
-~*1::RecorderAddEvent("key", "1", "Down")
-~*1 up::RecorderAddEvent("key", "1", "Up")
-~*2::RecorderAddEvent("key", "2", "Down")
-~*2 up::RecorderAddEvent("key", "2", "Up")
-~*3::RecorderAddEvent("key", "3", "Down")
-~*3 up::RecorderAddEvent("key", "3", "Up")
-~*4::RecorderAddEvent("key", "4", "Down")
-~*4 up::RecorderAddEvent("key", "4", "Up")
-~*5::RecorderAddEvent("key", "5", "Down")
-~*5 up::RecorderAddEvent("key", "5", "Up")
-~*6::RecorderAddEvent("key", "6", "Down")
-~*6 up::RecorderAddEvent("key", "6", "Up")
-~*7::RecorderAddEvent("key", "7", "Down")
-~*7 up::RecorderAddEvent("key", "7", "Up")
-~*8::RecorderAddEvent("key", "8", "Down")
-~*8 up::RecorderAddEvent("key", "8", "Up")
-~*9::RecorderAddEvent("key", "9", "Down")
-~*9 up::RecorderAddEvent("key", "9", "Up")
-~*0::RecorderAddEvent("key", "0", "Down")
-~*0 up::RecorderAddEvent("key", "0", "Up")
-~*Space::RecorderAddEvent("key", "Space", "Down")
-~*Space up::RecorderAddEvent("key", "Space", "Up")
-~*Enter::RecorderAddEvent("key", "Enter", "Down")
-~*Enter up::RecorderAddEvent("key", "Enter", "Up")
-~*Tab::RecorderAddEvent("key", "Tab", "Down")
-~*Tab up::RecorderAddEvent("key", "Tab", "Up")
-~*Backspace::RecorderAddEvent("key", "Backspace", "Down")
-~*Backspace up::RecorderAddEvent("key", "Backspace", "Up")
-~*Esc::RecorderAddEvent("key", "Esc", "Down")
-~*Esc up::RecorderAddEvent("key", "Esc", "Up")
-~*Shift::RecorderAddEvent("key", "Shift", "Down")
-~*Shift up::RecorderAddEvent("key", "Shift", "Up")
-~*Ctrl::RecorderAddEvent("key", "Ctrl", "Down")
-~*Ctrl up::RecorderAddEvent("key", "Ctrl", "Up")
-~*Alt::RecorderAddEvent("key", "Alt", "Down")
-~*Alt up::RecorderAddEvent("key", "Alt", "Up")
-~*LShift::RecorderAddEvent("key", "LShift", "Down")
-~*LShift up::RecorderAddEvent("key", "LShift", "Up")
-~*RShift::RecorderAddEvent("key", "RShift", "Down")
-~*RShift up::RecorderAddEvent("key", "RShift", "Up")
-~*LControl::RecorderAddEvent("key", "LControl", "Down")
-~*LControl up::RecorderAddEvent("key", "LControl", "Up")
-~*RControl::RecorderAddEvent("key", "RControl", "Down")
-~*RControl up::RecorderAddEvent("key", "RControl", "Up")
-~*LAlt::RecorderAddEvent("key", "LAlt", "Down")
-~*LAlt up::RecorderAddEvent("key", "LAlt", "Up")
-~*RAlt::RecorderAddEvent("key", "RAlt", "Down")
-~*RAlt up::RecorderAddEvent("key", "RAlt", "Up")
-~*Up::RecorderAddEvent("key", "Up", "Down")
-~*Up up::RecorderAddEvent("key", "Up", "Up")
-~*Down::RecorderAddEvent("key", "Down", "Down")
-~*Down up::RecorderAddEvent("key", "Down", "Up")
-~*Left::RecorderAddEvent("key", "Left", "Down")
-~*Left up::RecorderAddEvent("key", "Left", "Up")
-~*Right::RecorderAddEvent("key", "Right", "Down")
-~*Right up::RecorderAddEvent("key", "Right", "Up")
-~*F1::RecorderAddEvent("key", "F1", "Down")
-~*F1 up::RecorderAddEvent("key", "F1", "Up")
-~*F2::RecorderAddEvent("key", "F2", "Down")
-~*F2 up::RecorderAddEvent("key", "F2", "Up")
-~*F3::RecorderAddEvent("key", "F3", "Down")
-~*F3 up::RecorderAddEvent("key", "F3", "Up")
-~*F4::RecorderAddEvent("key", "F4", "Down")
-~*F4 up::RecorderAddEvent("key", "F4", "Up")
-~*F5::RecorderAddEvent("key", "F5", "Down")
-~*F5 up::RecorderAddEvent("key", "F5", "Up")
-~*F6::RecorderAddEvent("key", "F6", "Down")
-~*F6 up::RecorderAddEvent("key", "F6", "Up")
-~*F7::RecorderAddEvent("key", "F7", "Down")
-~*F7 up::RecorderAddEvent("key", "F7", "Up")
-~*F8::RecorderAddEvent("key", "F8", "Down")
-~*F8 up::RecorderAddEvent("key", "F8", "Up")
-~*F9::RecorderAddEvent("key", "F9", "Down")
-~*F9 up::RecorderAddEvent("key", "F9", "Up")
-~*F10::RecorderAddEvent("key", "F10", "Down")
-~*F10 up::RecorderAddEvent("key", "F10", "Up")
-~*F11::RecorderAddEvent("key", "F11", "Down")
-~*F11 up::RecorderAddEvent("key", "F11", "Up")
-~*F12::RecorderAddEvent("key", "F12", "Down")
-~*F12 up::RecorderAddEvent("key", "F12", "Up")
-#If
+#Include <Recorder_Keys>
 
 FinalizeRecording()
 {
@@ -1074,11 +967,25 @@ DeactivatePureHold(silent := false)
 
 EnsureXInputReady()
 {
-    global controllerXInputReady, _XInput_hm
+    global controllerXInputReady, controllerXInputFailed, _XInput_hm
     if (controllerXInputReady)
         return true
-    XInput_Init()
+    if (controllerXInputFailed)
+        return false
+    dll := GetXInputDllName()
+    if (dll = "")
+    {
+        controllerXInputFailed := true
+        return false
+    }
+    if (!XInput_Init(dll, true))
+    {
+        controllerXInputFailed := true
+        return false
+    }
     controllerXInputReady := (_XInput_hm != "")
+    if (!controllerXInputReady)
+        controllerXInputFailed := true
     return controllerXInputReady
 }
 
@@ -1171,24 +1078,42 @@ IsControllerComboPressed(state)
         && (state.RightTrigger >= controllerComboTriggerThreshold))
 }
 
+IsControllerTurboComboPressed(state)
+{
+    global XINPUT_GAMEPAD_LEFT_SHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER
+    global XINPUT_GAMEPAD_B, controllerComboTriggerThreshold
+    return ((state.Buttons & XINPUT_GAMEPAD_LEFT_SHOULDER)
+        && (state.Buttons & XINPUT_GAMEPAD_RIGHT_SHOULDER)
+        && (state.Buttons & XINPUT_GAMEPAD_B)
+        && (state.LeftTrigger >= controllerComboTriggerThreshold)
+        && (state.RightTrigger >= controllerComboTriggerThreshold))
+}
+
+IsControllerPureHoldComboPressed(state)
+{
+    global XINPUT_GAMEPAD_LEFT_SHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER
+    global XINPUT_GAMEPAD_Y, controllerComboTriggerThreshold
+    return ((state.Buttons & XINPUT_GAMEPAD_LEFT_SHOULDER)
+        && (state.Buttons & XINPUT_GAMEPAD_RIGHT_SHOULDER)
+        && (state.Buttons & XINPUT_GAMEPAD_Y)
+        && (state.LeftTrigger >= controllerComboTriggerThreshold)
+        && (state.RightTrigger >= controllerComboTriggerThreshold))
+}
+
 IsControllerCancelComboPressed(state)
 {
     global XINPUT_GAMEPAD_LEFT_SHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER
-    global XINPUT_GAMEPAD_X, XINPUT_GAMEPAD_Y, XINPUT_GAMEPAD_B
-    global XINPUT_KEYSTROKE_KEYDOWN, VK_PAD_X, VK_PAD_Y, VK_PAD_B
+    global XINPUT_GAMEPAD_X
+    global XINPUT_KEYSTROKE_KEYDOWN, VK_PAD_X
     global controllerComboTriggerThreshold
     if (!IsObject(state))
         return false
     facePressed := (state.Buttons & XINPUT_GAMEPAD_X)
-        || (state.Buttons & XINPUT_GAMEPAD_Y)
-        || (state.Buttons & XINPUT_GAMEPAD_B)
-    if (!facePressed)
+    if (!facePressed && EnsureXInputReady())
     {
         keystroke := XInput_GetKeystroke()
         if (keystroke && (keystroke.Flags & XINPUT_KEYSTROKE_KEYDOWN))
             facePressed := (keystroke.VirtualKey = VK_PAD_X)
-                || (keystroke.VirtualKey = VK_PAD_Y)
-                || (keystroke.VirtualKey = VK_PAD_B)
     }
     return ((state.Buttons & XINPUT_GAMEPAD_LEFT_SHOULDER)
         && (state.Buttons & XINPUT_GAMEPAD_RIGHT_SHOULDER)
@@ -1202,10 +1127,13 @@ IsControllerBackPressed(state)
     global XINPUT_GAMEPAD_BACK, XINPUT_KEYSTROKE_KEYDOWN, VK_PAD_BACK
     if (IsObject(state) && (state.Buttons & XINPUT_GAMEPAD_BACK))
         return true
-    keystroke := XInput_GetKeystroke()
-    if (keystroke && (keystroke.VirtualKey = VK_PAD_BACK)
-        && (keystroke.Flags & XINPUT_KEYSTROKE_KEYDOWN))
-        return true
+    if (EnsureXInputReady())
+    {
+        keystroke := XInput_GetKeystroke()
+        if (keystroke && (keystroke.VirtualKey = VK_PAD_BACK)
+            && (keystroke.Flags & XINPUT_KEYSTROKE_KEYDOWN))
+            return true
+    }
     return false
 }
 
@@ -1265,6 +1193,38 @@ VJoyRegistryPresent()
         , "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{8E31F76F-74C3-47F1-9550-E041EEDC5FBB}_is1"
         , "InstallLocation")
     return (install != "")
+}
+
+ControllerSupportAvailable()
+{
+    return (EnsureXInputReady() && VJoyAvailable())
+}
+
+XInputDllAvailable()
+{
+    return (GetXInputDllName() != "")
+}
+
+GetXInputDllName()
+{
+    candidates := ["xinput1_4.dll", "xinput1_3.dll"]
+    dirs := [A_WinDir "\System32", A_WinDir "\SysWOW64"]
+    for _, dir in dirs
+    {
+        for _, dll in candidates
+        {
+            if (FileExist(dir "\\" dll))
+                return dll
+        }
+    }
+    return ""
+}
+
+VJoyAvailable()
+{
+    if (VJoyRegistryPresent())
+        return true
+    return TryLoadVJoyDll()
 }
 
 TryLoadVJoyDll()

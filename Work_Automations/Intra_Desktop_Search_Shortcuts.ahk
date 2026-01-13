@@ -77,12 +77,6 @@ return
     MouseMove, 945, 70
 return
 
-!c::  ; Clear search and focus Tracking #
-    MouseClick, left, % ClearSearchBtn.x, % ClearSearchBtn.y, 2
-    Sleep 200
-    MouseClick, left, % TrackingNumField.x, % TrackingNumField.y
-return
-
 !o::  ; On-shelf items
     MouseClick, left, % ClearSearchBtn.x, % ClearSearchBtn.y, 3
     Sleep 250
@@ -276,3 +270,19 @@ return
     MouseClick, left, % StatusSelect.x, % StatusSelect.y
 return
 #If
+
+#If (IsIntraSearchWin() && !CoordHelperActive())
+!c::  ; Clear search and focus Tracking #
+    MouseClick, left, % ClearSearchBtn.x, % ClearSearchBtn.y, 2
+    Sleep 200
+    MouseClick, left, % TrackingNumField.x, % TrackingNumField.y
+return
+#If
+
+CoordHelperActive()
+{
+    DetectHiddenWindows, On
+    running := WinExist("Coord_Capture.ahk ahk_class AutoHotkey")
+    DetectHiddenWindows, Off
+    return running
+}

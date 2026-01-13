@@ -9,10 +9,12 @@ SetTitleMatchMode, 2  ; Allow partial matches for Intra window names.
 CoordMode, Mouse, Window  ; Use window-relative coords with ControlClick.
 ; Screen coordinates (Pickup):
 SigPrintName := {x: 3250, y: 267}
+NotesField   := {x: 3255, y: 212}
 ClearBtn     := {x: 380,  y: 1350}
 ; From Window Spy, Item # scan field (client coords)
 ScanField    := {x: 513,  y: 246}
 sigX := SigPrintName.x, sigY := SigPrintName.y
+notesX := NotesField.x, notesY := NotesField.y
 clearX := ClearBtn.x, clearY := ClearBtn.y
 scanX := ScanField.x, scanY := ScanField.y
 clearClass := "WindowsForms10.Window.8.app.0.38248fc_r8_ad11294"
@@ -33,6 +35,11 @@ return
     MouseClick, left,,, 2
 return
 
+!4::  ; focus notes field
+    ControlClick, x%notesX% y%notesY%, Intra Desktop Client - Pickup,, Left, 2, NA
+return
+
+#If ( WinActive("Intra Desktop Client - Pickup") && !CoordHelperActive() )
 !c::  ; clear all + return to scan field (Pickup)
     if (clearClass != "")
         ControlClick, %clearClass%, Intra Desktop Client - Pickup,, Left, 1, NA
@@ -50,6 +57,7 @@ return
     FocusScanField()
     MouseClick, left,,, 2
 return
+#If WinActive("Intra Desktop Client - Pickup")
 #If
 
 ShowTempTooltip(msg, duration := 3000)
@@ -109,4 +117,12 @@ FindScanControl()
             return class
     }
     return ""
+}
+
+CoordHelperActive()
+{
+    DetectHiddenWindows, On
+    running := WinExist("Coord_Capture.ahk ahk_class AutoHotkey")
+    DetectHiddenWindows, Off
+    return running
 }
