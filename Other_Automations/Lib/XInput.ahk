@@ -170,7 +170,7 @@ XInput_Init(dll="xinput1_3.dll", silent := false)
     
     if !_XInput_hm {
         if (!silent)
-            MsgBox, Failed to initialize XInput: %dll%.dll not found.
+            MsgBox, Failed to initialize XInput: %dll% not found.
         return false
     }
 
@@ -428,3 +428,4 @@ XInput_GetBatteryInformation(UserIndex = 0, DevType = 1)
             BatteryLevel : NumGet(xiBattery, 1, "UChar")
         )}
 }
+

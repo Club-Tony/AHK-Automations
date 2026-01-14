@@ -972,21 +972,23 @@ EnsureXInputReady()
         return true
     if (controllerXInputFailed)
         return false
-    dll := GetXInputDllName()
-    if (dll = "")
+    dlls := GetXInputDllPaths()
+    if (!IsObject(dlls) || dlls.MaxIndex() = "")
     {
         controllerXInputFailed := true
         return false
     }
-    if (!XInput_Init(dll, true))
+    for _, dll in dlls
     {
-        controllerXInputFailed := true
-        return false
+        if (XInput_Init(dll, true))
+        {
+            controllerXInputReady := (_XInput_hm != "")
+            if (controllerXInputReady)
+                return true
+        }
     }
-    controllerXInputReady := (_XInput_hm != "")
-    if (!controllerXInputReady)
-        controllerXInputFailed := true
-    return controllerXInputReady
+    controllerXInputFailed := true
+    return false
 }
 
 ControllerGetState()
@@ -1202,22 +1204,35 @@ ControllerSupportAvailable()
 
 XInputDllAvailable()
 {
-    return (GetXInputDllName() != "")
+    dlls := GetXInputDllPaths()
+    return (IsObject(dlls) && dlls.MaxIndex() != "")
 }
 
-GetXInputDllName()
+GetXInputDllPaths()
 {
-    candidates := ["xinput1_4.dll", "xinput1_3.dll"]
-    dirs := [A_WinDir "\System32", A_WinDir "\SysWOW64"]
+    candidates := ["xinput1_4.dll", "xinput1_3.dll", "xinput9_1_0.dll"]
+    dirs := []
+    if (A_PtrSize = 8)
+    {
+        dirs.Push(A_WinDir "\System32")
+    }
+    else
+    {
+        dirs.Push(A_WinDir "\SysWOW64")
+        dirs.Push(A_WinDir "\System32")
+    }
+    dirs.Push(A_ScriptDir)
+    paths := []
     for _, dir in dirs
     {
         for _, dll in candidates
         {
-            if (FileExist(dir "\\" dll))
-                return dll
+            path := dir "\\" dll
+            if (FileExist(path))
+                paths.Push(path)
         }
     }
-    return ""
+    return paths
 }
 
 VJoyAvailable()
