@@ -49,6 +49,7 @@ Global Hotkeys
 Ctrl+Shift+Alt+C - Launch Coord Capture Helper script
 Ctrl+Shift+Alt+W - Toggle Window Spy
 Ctrl+Alt+S  - Toggle sound output device
+Ctrl+Alt+E  - Reset Explorer tab scaling (reopen tab)
 Win+Alt+E   - Open new Explorer window
 -
 Window Switch (Personal)
@@ -93,4 +94,5 @@ return
 ~^+!z::Gosub HideTooltips
 ~^+!w::Gosub HideTooltips
 ~^!s::Gosub HideTooltips
+~^!e::Gosub HideTooltips
 #If

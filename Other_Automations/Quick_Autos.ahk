@@ -13,6 +13,125 @@ SetKeyDelay, 25
     ToggleAudioOutput()
 return
 
+; Explorer tab reset (scaling fix) Ctrl+Alt+E
+#If (WinActive("ahk_class CabinetWClass") || WinActive("ahk_class ExploreWClass"))
+^!e::
+    ExplorerResetAbort := false
+    Hotkey, Esc, ExplorerResetCancel, On
+    ClipSaved := ClipboardAll
+    path := GetExplorerPath()
+    if (ExplorerResetAbort)
+        goto ExplorerResetCleanup
+    if (path = "")
+        goto ExplorerResetCleanup
+    originalPath := RTrim(path, "\")
+    ; Move focus away from address bar after getting path
+    Send, {F6}
+    Sleep, 80
+    Send, {F6}
+    Sleep, 80
+    if (ExplorerResetAbort)
+        goto ExplorerResetCleanup
+    Send, ^t
+    Sleep, 200
+    if (ExplorerResetAbort)
+        goto ExplorerResetCleanup
+    Send, ^l
+    Sleep, 80
+    if (ExplorerResetAbort)
+        goto ExplorerResetCleanup
+    SendInput, {Raw}%path%
+    Sleep, 50
+    if (ExplorerResetAbort)
+        goto ExplorerResetCleanup
+    Send, {Enter}
+    Sleep, 400
+    if (ExplorerResetAbort)
+        goto ExplorerResetCleanup
+    ; CRITICAL: Move focus away from address bar before cycling tabs
+    Send, {F6}
+    Sleep, 80
+    Send, {F6}
+    Sleep, 80
+    if (ExplorerResetAbort)
+        goto ExplorerResetCleanup
+    ; New tab opens at the end; search backward to find the original tab
+    tabsSearched := 0
+    maxTabs := 10
+    foundOriginal := false
+    Loop, %maxTabs%
+    {
+        if (ExplorerResetAbort)
+            goto ExplorerResetCleanup
+        SendInput, {Ctrl down}{Shift down}{Tab}{Shift up}{Ctrl up}
+        Sleep, 250
+        if (ExplorerResetAbort)
+            goto ExplorerResetCleanup
+        tabsSearched++
+        currPath := GetExplorerPath(2, 0.8)
+        if (ExplorerResetAbort)
+            goto ExplorerResetCleanup
+        ; Move focus away from address bar after reading path
+        Send, {F6}
+        Sleep, 80
+        Send, {F6}
+        Sleep, 80
+        if (ExplorerResetAbort)
+            goto ExplorerResetCleanup
+        if (currPath = "")
+            continue
+        currPath := RTrim(currPath, "\")
+        if (currPath = originalPath)
+        {
+            Send, ^w
+            Sleep, 200
+            if (ExplorerResetAbort)
+                goto ExplorerResetCleanup
+            foundOriginal := true
+            if (tabsSearched > 0)
+            {
+                Loop, % tabsSearched
+                {
+                    if (ExplorerResetAbort)
+                        goto ExplorerResetCleanup
+                    SendInput, {Ctrl down}{Tab}{Ctrl up}
+                    Sleep, 150
+                    if (ExplorerResetAbort)
+                        goto ExplorerResetCleanup
+                }
+            }
+            break
+        }
+    }
+    goto ExplorerResetCleanup
+#If
+
+ExplorerResetCancel:
+    ExplorerResetAbort := true
+return
+
+ExplorerResetCleanup:
+    Hotkey, Esc, ExplorerResetCancel, Off
+    Clipboard := ClipSaved
+    ExplorerResetAbort := false
+return
+
+GetExplorerPath(attempts := 2, waitSec := 0.7)
+{
+    Loop, %attempts%
+    {
+        Clipboard := ""
+        Send, ^l
+        Sleep, 80
+        Send, ^c
+        ClipWait, %waitSec%
+        if (!ErrorLevel && Clipboard != "")
+            return Clipboard
+        Sleep, 80
+    }
+    return ""
+}
+
 ToggleAudioOutput()
 {
     focusrite := "Speakers (Focusrite USB Audio)"
