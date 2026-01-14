@@ -42,6 +42,7 @@ recorderMouseSampleMs := 40
 recorderControllerSampleMs := 20
 recorderKbMouseEnabled := true
 recorderControllerEnabled := true
+recorderSendMode := ""
 recorderControllerPrevState := ""
 recorderHasControllerEvents := false
 controllerUserIndex := 0
@@ -432,9 +433,9 @@ MenuTooltipText()
 StartAutoclickerSetup()
 {
     global autoClickInterval, autoClickReady, autoClickOn
-    tooltipText := "Type click frequency in ms and press Enter (15s timeout)."
+    tooltipText := "Type click frequency in ms and press Enter (10s timeout)."
     ToolTip, %tooltipText%
-    SetTimer, HideTempTip, -15000
+    SetTimer, HideTempTip, -10000
     InputBox, newInterval, Autoclicker, % "Enter click interval in ms (e.g., 100).", , , , , , , 10
     SetTimer, HideTempTip, Off
     ToolTip
@@ -644,7 +645,8 @@ StartRecorder(mode := "combined")
 {
     global recorderActive, recorderPlaying, recorderEvents, recorderStart, recorderLast, recorderMouseSampleMs
     global recorderControllerSampleMs, recorderKbMouseEnabled, recorderControllerEnabled
-    global recorderControllerPrevState, recorderHasControllerEvents
+    global recorderControllerPrevState, recorderHasControllerEvents, recorderSendMode
+    global sendMode
     StopRecorder(true)
     recorderActive := true
     recorderPlaying := false
@@ -652,6 +654,7 @@ StartRecorder(mode := "combined")
     recorderHasControllerEvents := false
     recorderStart := A_TickCount
     recorderLast := recorderStart
+    recorderSendMode := sendMode
     recorderKbMouseEnabled := (mode = "combined")
     recorderControllerEnabled := true
     recorderControllerPrevState := ""
@@ -738,11 +741,12 @@ TogglePlaybackPause()
 
 ClearRecorder()
 {
-    global recorderEvents, recorderStart, recorderLast, recorderHasControllerEvents
+    global recorderEvents, recorderStart, recorderLast, recorderHasControllerEvents, recorderSendMode
     recorderEvents := []
     recorderStart := 0
     recorderLast := 0
     recorderHasControllerEvents := false
+    recorderSendMode := ""
     ShowMacroToggledTip("Macro Toggled Off")
 }
 
@@ -796,7 +800,12 @@ return
 SendEventOrInput(seq, state := "")
 {
     ; Use a stable send path for recorder playback to avoid unexpected window drags.
-    SendInput, %seq%
+    global recorderSendMode, sendMode
+    modeToUse := recorderSendMode != "" ? recorderSendMode : sendMode
+    if (modeToUse = "Play")
+        SendPlay, %seq%
+    else
+        SendInput, %seq%
 }
 
 ToggleSendMode()

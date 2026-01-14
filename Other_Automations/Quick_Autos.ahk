@@ -27,39 +27,78 @@ return
         SetTimer, HideQuickTip, -1500
         return
     }
-    stepDelay := 150
-    ClipSaved := ClipboardAll
-    Clipboard := ""
-    Send, {Esc}
-    Sleep, stepDelay
-    Send, ^l
-    Sleep, stepDelay
-    Send, ^c
-    ClipWait, 1
-    if (ErrorLevel || Clipboard = "")
+
+    originalHwnd := WinExist("A")
+
+    path := ExplorerCapturePath(originalHwnd)
+    if (path = "")
+        path := GetExplorerPath()
+    if (path = "")
     {
-        ToolTip, Could not copy address bar.
+        ToolTip, Could not get current path.
         SetTimer, HideQuickTip, -1200
-        goto ExplorerResetDone
+        return
     }
-    path := Clipboard
-    Send, {Esc}
-    Sleep, stepDelay
+
     Send, ^w
-    Sleep, stepDelay
-    Send, {Esc}
-    Sleep, stepDelay
-    Send, ^t
-    Sleep, stepDelay
-    Send, {Esc}
-    Sleep, stepDelay
-    Send, ^l
-    Sleep, stepDelay
-    SendInput, {Raw}%path%
-    Sleep, stepDelay
-    Send, {Enter}
-ExplorerResetDone:
-    Clipboard := ClipSaved
+    Sleep, 200
+
+    if (WinExist("ahk_id " originalHwnd))
+    {
+        Send, ^t
+        Sleep, 600
+
+        WinActivate, ahk_id %originalHwnd%
+        ExplorerWaitReady(originalHwnd, 2000)
+
+        success := ExplorerNavigateAddressBar(originalHwnd, path, 4)
+
+        if (!success)
+        {
+            ClipSaved := ClipboardAll
+            Clipboard := path
+            Sleep, 50
+
+            Loop, 3
+            {
+                Send, {Esc}
+                Sleep, 50
+                Send, ^l
+                Sleep, 250
+                Send, ^a
+                Sleep, 50
+                Send, ^v
+                Sleep, 100
+                Send, {Enter}
+                Sleep, 400
+
+                observedPath := ExplorerGetAddressBarText(originalHwnd)
+                if (observedPath != "" && observedPath = path)
+                {
+                    success := true
+                    break
+                }
+                Sleep, 200
+            }
+
+            Clipboard := ClipSaved
+        }
+
+        if (success)
+            ExplorerCloseAddressDropdown(originalHwnd)
+        else
+        {
+            ToolTip, Navigation failed. Target: %path%
+            SetTimer, HideQuickTip, -3000
+        }
+    }
+    else
+    {
+        Run, explorer.exe "%path%"
+        WinWait, ahk_class CabinetWClass,, 3
+        if (!ErrorLevel)
+            WinActivate
+    }
 return
 
 ExplorerWindowExists()
@@ -74,6 +113,198 @@ ExplorerWindowExists()
 IsExplorerActive()
 {
     return WinActive("ahk_class CabinetWClass") || WinActive("ahk_class ExploreWClass")
+}
+
+ExplorerGetWindowByHwnd(hwnd)
+{
+    shell := ComObjCreate("Shell.Application")
+    for shellWindow in shell.Windows
+    {
+        try shellHwnd := shellWindow.HWND
+        catch
+            continue
+        if (shellHwnd = hwnd)
+            return shellWindow
+    }
+    return ""
+}
+
+ExplorerWaitReady(hwnd, timeoutMs := 2000)
+{
+    start := A_TickCount
+    while (A_TickCount - start < timeoutMs)
+    {
+        win := ExplorerGetWindowByHwnd(hwnd)
+        if (!win)
+            return false
+        try
+        {
+            if (!win.Busy && win.ReadyState = 4)
+                return true
+        }
+        catch
+            return false
+        Sleep, 50
+    }
+    return false
+}
+
+ExplorerWaitForPath(hwnd, targetPath, timeoutMs := 2000)
+{
+    targetLeaf := PathLeaf(targetPath)
+    start := A_TickCount
+    while (A_TickCount - start < timeoutMs)
+    {
+        capturedPath := ExplorerCapturePath(hwnd)
+        if (capturedPath != "" && (capturedPath = targetPath || capturedPath = targetLeaf))
+            return true
+        barText := ExplorerGetAddressBarText(hwnd)
+        if (barText != "" && (barText = targetPath || barText = targetLeaf))
+            return true
+        Sleep, 100
+    }
+    return false
+}
+
+ExplorerNavigateAddressBar(targetHwnd, targetPath, attempts := 3)
+{
+    navClipSaved := ClipboardAll
+    Clipboard := targetPath
+    Loop, %attempts%
+    {
+        WinActivate, ahk_id %targetHwnd%
+        Sleep, 100
+        Send, {Esc}
+        Sleep, 50
+        Send, !d
+        Sleep, 150
+        Send, ^a
+        Sleep, 50
+        Send, ^v
+        Sleep, 100
+        Send, {Enter}
+
+        if (ExplorerWaitForPath(targetHwnd, targetPath, 2000))
+        {
+            Clipboard := navClipSaved
+            return true
+        }
+        Sleep, 200
+    }
+    Clipboard := navClipSaved
+    return false
+}
+
+ExplorerFindAddressBarControl(targetHwnd)
+{
+    ControlGet, controlList, List,,, ahk_id %targetHwnd%
+    Loop, Parse, controlList, `n
+    {
+        controlName := A_LoopField
+        if (SubStr(controlName, 1, 4) = "Edit")
+            return controlName
+    }
+    return ""
+}
+
+ExplorerCapturePath(targetHwnd)
+{
+    captureClipSaved := ClipboardAll
+    Clipboard := ""
+    WinActivate, ahk_id %targetHwnd%
+    Sleep, 100
+    Send, !d
+    Sleep, 150
+    Send, ^c
+    ClipWait, 0.5
+    capturedPath := Clipboard
+    Clipboard := captureClipSaved
+    return capturedPath
+}
+
+ExplorerCloseAddressDropdown(targetHwnd)
+{
+    WinActivate, ahk_id %targetHwnd%
+    Sleep, 50
+    Send, {Esc}
+}
+
+PathLeaf(path)
+{
+    cleanedPath := RegExReplace(path, "[\\/]$")
+    return RegExReplace(cleanedPath, "^.*[\\/]")
+}
+
+ExplorerGetAddressBarText(targetHwnd)
+{
+    ControlGetFocus, focusCtrlName, ahk_id %targetHwnd%
+    if (focusCtrlName != "")
+    {
+        ControlGetText, focusText, %focusCtrlName%, ahk_id %targetHwnd%
+        if (focusText != "")
+            return focusText
+    }
+    addrCtrl := ExplorerFindAddressBarControl(targetHwnd)
+    if (addrCtrl != "")
+    {
+        ControlGetText, addrText, %addrCtrl%, ahk_id %targetHwnd%
+        return addrText
+    }
+    return ""
+}
+
+IsFilePath(value)
+{
+    return RegExMatch(value, "i)^(?:[a-z]:\\|\\\\)")
+}
+
+GetExplorerPath()
+{
+    try
+    {
+        for explorerWindow in ComObjCreate("Shell.Application").Windows
+        {
+            if (explorerWindow.HWND = WinExist("A"))
+            {
+                try
+                {
+                    resolvedPath := explorerWindow.Document.Folder.Self.Path
+                    if (resolvedPath != "")
+                        return resolvedPath
+                }
+                catch
+                {
+                    try
+                    {
+                        locationUrl := explorerWindow.LocationURL
+                        if (InStr(locationUrl, "file:///"))
+                        {
+                            decodedPath := StrReplace(locationUrl, "file:///", "")
+                            decodedPath := StrReplace(decodedPath, "/", "\")
+                            decodedPath := UriDecode(decodedPath)
+                            return decodedPath
+                        }
+                    }
+                }
+            }
+        }
+    }
+    catch
+    {
+        return ""
+    }
+    return ""
+}
+
+UriDecode(str)
+{
+    Loop
+    {
+        if (!RegExMatch(str, "i)(%[0-9A-F]{2})", hex))
+            break
+        str := StrReplace(str, hex, Chr("0x" . SubStr(hex, 2)))
+    }
+    return str
 }
 
 HideQuickTip:

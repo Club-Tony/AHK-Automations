@@ -147,7 +147,7 @@ CloseScriptIfRunning(name) {
     initialCaptured := false
     initialText := ""
     focusedCtrl := ""
-    Loop 150  ; ~30 seconds total at 200 ms intervals
+    Loop 600  ; ~120 seconds total at 200 ms intervals
     {
         Sleep 200
         ControlGetFocus, loopFocus, A
