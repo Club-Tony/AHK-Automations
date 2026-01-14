@@ -30,7 +30,7 @@ browserExes := ["firefox.exe", "chrome.exe", "msedge.exe"]
 #!e::OpenNewExplorer()
 
 #i::ToggleIntraGroup()
-#!v::ToggleFocusOrMinimizeExe("Code.exe")
+#!v::ToggleVsCode()
 
 #!m::
     WinMinimizeAll
@@ -307,6 +307,45 @@ ToggleFirefox()
     WinActivate, ahk_id %nextId%
     WinWaitActive, ahk_id %nextId%,, 1
     EnsureFirefoxWindow()
+}
+
+ToggleVsCode()
+{
+    if WinActive("ahk_exe Code.exe")
+    {
+        WinMinimize, ahk_exe Code.exe
+        return
+    }
+    if WinExist("ahk_exe Code.exe")
+    {
+        WinActivate  ; last found window
+        WinWaitActive, ahk_exe Code.exe,, 1
+        return
+    }
+    vsExe := GetVsCodeExe()
+    if (vsExe = "code")
+        Run, %vsExe%,, Hide
+    else
+        Run, % """" vsExe """"
+}
+
+GetVsCodeExe()
+{
+    local localAppData, path
+    EnvGet, localAppData, LOCALAPPDATA
+    if (localAppData != "")
+    {
+        path := localAppData "\Programs\Microsoft VS Code\Code.exe"
+        if FileExist(path)
+            return path
+    }
+    path := A_ProgramFiles "\Microsoft VS Code\Code.exe"
+    if FileExist(path)
+        return path
+    path := A_ProgramFiles " (x86)\Microsoft VS Code\Code.exe"
+    if FileExist(path)
+        return path
+    return "code"
 }
 
 EnsureFirefoxWindow()

@@ -434,6 +434,7 @@ Win+S - Focus/Minimize Slack
 Win+W - Launch/Focus/Minimize UPS WorldShip
 Win+E - Focus/Minimize/Cycle Explorer
 Win+Alt+E - Open new Explorer window
+Win+Alt+V - Launch/Focus/Minimize VS Code
 Win+I - Focus/Minimize all Intra windows
 Win+Alt+M - Minimize all, then focus Firefox, Outlook PWA, Slack
 Alt+X / Alt+O - Intra Online: Outbound Shipping Requests button anchor

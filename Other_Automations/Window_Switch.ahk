@@ -12,8 +12,8 @@ CoordMode, Mouse, Window
 #e::ToggleExplorer()
 #!e::Run, explorer.exe
 #f::ToggleFirefox()
-; Win+Alt+V - Focus/Minimize VS Code
-#!v::ToggleFocusOrMinimizeExe("Code.exe")
+; Win+Alt+V - Focus/Minimize/Launch VS Code
+#!v::ToggleVsCode()
 
 ToggleExplorer()
 {
@@ -74,6 +74,45 @@ ToggleFirefox()
         return
     }
     Run, firefox.exe
+}
+
+ToggleVsCode()
+{
+    if WinActive("ahk_exe Code.exe")
+    {
+        WinMinimize, ahk_exe Code.exe
+        return
+    }
+    if WinExist("ahk_exe Code.exe")
+    {
+        WinActivate  ; last found window
+        WinWaitActive, ahk_exe Code.exe,, 1
+        return
+    }
+    vsExe := GetVsCodeExe()
+    if (vsExe = "code")
+        Run, %vsExe%,, Hide
+    else
+        Run, % """" vsExe """"
+}
+
+GetVsCodeExe()
+{
+    local localAppData, path
+    EnvGet, localAppData, LOCALAPPDATA
+    if (localAppData != "")
+    {
+        path := localAppData "\Programs\Microsoft VS Code\Code.exe"
+        if FileExist(path)
+            return path
+    }
+    path := A_ProgramFiles "\Microsoft VS Code\Code.exe"
+    if FileExist(path)
+        return path
+    path := A_ProgramFiles " (x86)\Microsoft VS Code\Code.exe"
+    if FileExist(path)
+        return path
+    return "code"
 }
 
 ToggleFocusOrMinimizeExe(exe)
