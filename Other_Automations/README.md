@@ -16,6 +16,7 @@
 - `Ctrl+Esc` - reloads most scripts in this folder.
 - `Esc` - exits certain launched scripts early.
 - `Ctrl+Alt+T` - show/hide global hotkey tooltip (ToolTips.ahk).
+- `Ctrl+Alt+E` - reset Explorer tab scaling (Quick_Autos.ahk).
 - `Alt+Q` - acts as Alt+F4.
 - `Ctrl+Home` - sleep the machine.
 
