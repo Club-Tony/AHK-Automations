@@ -485,7 +485,7 @@ OpenDailyTabs()
         return false
 
     SendEvent, ^+{Tab}
-    if (!SleepWithCancel(250))
+    if (!WaitForAuditWindowActive(10000))
         return false
     return true
 }
