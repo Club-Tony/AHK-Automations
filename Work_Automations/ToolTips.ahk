@@ -37,6 +37,8 @@ Ctrl+I - Yellow Pouch (multi-piece)
 Alt+R - Clear + Toggle Print Button & Normalize
 Alt+C - Clear All
 Alt+E - Focus Scan Field
+Alt+Shift+E - Paste list into Scan field
+Ctrl+Alt+Shift+E - Paste list into Scan field (fast)
 Alt+A - Focus Alias Field
 Alt+N - Focus Name Field
 Alt+1 - Focus Package Type
@@ -103,6 +105,8 @@ Return
 ~!r::Gosub HideTooltips
 ~!Space::Gosub HideTooltips
 ~!e::Gosub HideTooltips
+~!+e::Gosub HideTooltips
+~^+!e::Gosub HideTooltips
 ~!a::Gosub HideTooltips
 ~!n::Gosub HideTooltips
 ~!1::Gosub HideTooltips
