@@ -45,6 +45,8 @@ recorderControllerEnabled := true
 recorderSendMode := ""
 recorderControllerPrevState := ""
 recorderHasControllerEvents := false
+recorderControllerSuppress := false
+recorderControllerSuppressUntil := 0
 controllerUserIndex := 0
 controllerComboTriggerThreshold := 30
 controllerComboPollMs := 50
@@ -54,6 +56,7 @@ controllerBackLatched := false
 controllerCancelLatched := false
 controllerTurboLatched := false
 controllerPureHoldLatched := false
+controllerInputBoxALatched := false
 controllerThumbDeadzone := 2500
 controllerTriggerDeadzone := 5
 controllerThumbStep := 256
@@ -72,9 +75,21 @@ sendMode := "Input"
 sendModeTip := "SendMode: Input (toggle: Ctrl+Alt+P)"
 prevSendMode := "Input"
 
-EnsureXInputReady()
-SetTimer, ControllerComboPoll, % controllerComboPollMs
+; DEBUG: Test XInput initialization at startup
+xinputReady := EnsureXInputReady()
+if (xinputReady)
+    ToolTip, DEBUG: XInput initialized successfully
+else
+    ToolTip, DEBUG: XInput FAILED to initialize
+SetTimer, HideDebugStartupTip, -3000
 
+SetTimer, ControllerComboPoll, % controllerComboPollMs
+SetTimer, ControllerInputBoxHelper, 100  ; Monitor for InputBoxes and allow A button to confirm
+
+return
+
+HideDebugStartupTip:
+    ToolTip
 return
 
 ^Esc::Reload
@@ -128,11 +143,6 @@ F5::
     CloseMenu()
     StartRecorder()
 return
-
-F6::
-    CloseMenu()
-    StartRecorder("controller")
-return
 #If
 
 #If (slashMacroOn)
@@ -160,7 +170,6 @@ return
 #If (recorderActive && !recorderPlaying)
 Esc::
 F5::
-F6::
     FinalizeRecording()
 return
 #If
@@ -238,9 +247,10 @@ ControllerComboPoll:
                 DeactivateAutoclicker(true)
                 StopPlayback(true)
                 StopRecorder(true)
+                ClearRecorder()  ; Also clear any recorded macro data
                 if (menuActive)
                     CloseMenu()
-                ShowMacroToggledTip("Macro Toggled Off", 1500, false)
+                ShowMacroToggledTip("All macros stopped and cleared", 1500, false)
             }
         }
         return
@@ -261,6 +271,8 @@ ControllerComboPoll:
         if (!controllerTurboLatched)
         {
             controllerTurboLatched := true
+            ToolTip, DEBUG: Turbo combo detected! Starting turbo keyhold setup...
+            SetTimer, HideDebugStartupTip, -2000
             if (menuActive)
                 CloseMenu()
             if (!recorderActive && !recorderPlaying)
@@ -274,6 +286,8 @@ ControllerComboPoll:
         if (!controllerPureHoldLatched)
         {
             controllerPureHoldLatched := true
+            ToolTip, DEBUG: Pure hold combo detected! Starting pure keyhold setup...
+            SetTimer, HideDebugStartupTip, -2000
             if (menuActive)
                 CloseMenu()
             if (!recorderActive && !recorderPlaying)
@@ -282,6 +296,7 @@ ControllerComboPoll:
         return
     }
     controllerPureHoldLatched := false
+    ; L1+L2+R1+R2+A: Start/Stop recording (like F5/F6 for keyboard)
     if (IsControllerComboPressed(comboState))
     {
         if (!controllerComboLatched)
@@ -289,17 +304,20 @@ ControllerComboPoll:
             controllerComboLatched := true
             if (recorderActive)
             {
+                ; Stop recording (like pressing F5/F6 during recording)
                 FinalizeRecording()
                 return
             }
             if (recorderPlaying)
             {
-                TogglePlaybackPause()
+                ; Stop playback if playing (like pressing F12 during playback)
+                StopPlayback()
                 return
             }
             if (menuActive)
                 CloseMenu()
-            StartRecorder("controller")
+            ; Start controller recording with suppression
+            StartRecorder("controller", true)  ; true = suppress combo input
         }
     }
     else
@@ -308,20 +326,50 @@ ControllerComboPoll:
     }
     if (controllerComboLatched)
         return
+
+    ; Start button: Toggle playback (like F12 for keyboard)
     if (!recorderActive && (comboState.Buttons & XINPUT_GAMEPAD_START))
     {
         if (!controllerStartLatched)
         {
             controllerStartLatched := true
             if (recorderPlaying)
+            {
+                ; Pause/Resume playback (like pressing Start during playback)
                 TogglePlaybackPause()
+            }
             else if (recorderEvents.MaxIndex() != "")
+            {
+                ; Start playback (like pressing F12 with recorded macro)
                 ToggleRecorderPlayback()
+            }
         }
     }
     else
     {
         controllerStartLatched := false
+    }
+return
+
+ControllerInputBoxHelper:
+    ; Check if an InputBox or MsgBox is active
+    if (WinExist("ahk_class #32770"))  ; Standard Windows dialog
+    {
+        global XINPUT_GAMEPAD_A, controllerInputBoxALatched
+        ctrlState := ControllerGetState()
+        if (ctrlState && (ctrlState.Buttons & XINPUT_GAMEPAD_A))
+        {
+            if (!controllerInputBoxALatched)
+            {
+                controllerInputBoxALatched := true
+                ; Send Enter to confirm the dialog
+                ControlSend,, {Enter}, ahk_class #32770
+            }
+        }
+        else
+        {
+            controllerInputBoxALatched := false
+        }
     }
 return
 
@@ -404,13 +452,12 @@ MenuTooltipText()
         . "F4 - Stage pure key hold`n"
     if (ctrlSupport)
     {
-        text .= "F5 - Stage Record Macro (kb/mouse + controller)`n"
-            . "F6 - Stage Controller Record`n"
-            . "L1+L2+R1+R2+A - Controller record/pause`n"
+        text .= "F5 - Record Macro (kb/mouse + controller)`n"
+            . "L1+L2+R1+R2+A - Controller record/stop`n"
             . "L1+L2+R1+R2+B - Start turbo keyhold`n"
             . "L1+L2+R1+R2+Y - Start pure key hold`n"
-            . "L1+L2+R1+R2+X - Kill switch (turn off macros)`n"
-            . "Start/Options - Toggle playback pause`n"
+            . "L1+L2+R1+R2+X - Kill switch (stop & clear all macros)`n"
+            . "Start/Options - Toggle playback/pause`n"
             . "Share/Back - Cancel recording`n"
             . "Controller map: L1/LB=Left Shoulder, L2/LT=Left Trigger`n"
             . "R1/RB=Right Shoulder, R2/RT=Right Trigger`n"
@@ -418,9 +465,9 @@ MenuTooltipText()
     }
     else
     {
-        text .= "F5 - Stage Record Macro (kb/mouse)`n"
+        text .= "F5 - Record Macro (kb/mouse)`n"
         if (!VJoyAvailable())
-            text .= "vJoy driver not installed on this device, limited to keyboard/mouse recording/playback`n"
+            text .= "vJoy driver not installed, limited to keyboard/mouse recording/playback`n"
                 . "Install vJoy: run vJoySetup.exe, then reboot`n"
         if (!EnsureXInputReady())
             text .= "XInput unavailable; controller input disabled`n"
@@ -514,17 +561,86 @@ return
 
 PromptHoldKey(promptText)
 {
-    ToolTip, %promptText%
+    global XINPUT_GAMEPAD_A, XINPUT_GAMEPAD_B, XINPUT_GAMEPAD_X, XINPUT_GAMEPAD_Y
+    global XINPUT_GAMEPAD_LEFT_SHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER
+    global XINPUT_GAMEPAD_DPAD_UP, XINPUT_GAMEPAD_DPAD_DOWN, XINPUT_GAMEPAD_DPAD_LEFT, XINPUT_GAMEPAD_DPAD_RIGHT
+
+    ToolTip, %promptText%`n(Controller buttons also supported)
     SetTimer, HideTempTip, -15000
+
+    ; Start keyboard input hook
     ih := InputHook("L1 T15 V")
     ih.Start()
-    ih.Wait()
+
+    ; Also monitor controller input
+    startTime := A_TickCount
+    controllerDetected := false
+    detectedButton := ""
+
+    ; Poll for both keyboard and controller input
+    Loop
+    {
+        ; Check if keyboard input received
+        if (ih.EndReason != "")
+        {
+            ih.Stop()
+            holdKey := ih.Input
+            if (holdKey = "")
+                holdKey := ih.EndKey
+            holdKey := GetKeyName(holdKey)
+            break
+        }
+
+        ; Check controller input
+        ctrlState := ControllerGetState()
+        if (ctrlState && ctrlState.Buttons != 0)
+        {
+            ; Map controller buttons to names
+            if (ctrlState.Buttons & XINPUT_GAMEPAD_A)
+                detectedButton := "Joy1"
+            else if (ctrlState.Buttons & XINPUT_GAMEPAD_B)
+                detectedButton := "Joy2"
+            else if (ctrlState.Buttons & XINPUT_GAMEPAD_X)
+                detectedButton := "Joy3"
+            else if (ctrlState.Buttons & XINPUT_GAMEPAD_Y)
+                detectedButton := "Joy4"
+            else if (ctrlState.Buttons & XINPUT_GAMEPAD_LEFT_SHOULDER)
+                detectedButton := "Joy5"
+            else if (ctrlState.Buttons & XINPUT_GAMEPAD_RIGHT_SHOULDER)
+                detectedButton := "Joy6"
+            else if (ctrlState.Buttons & XINPUT_GAMEPAD_DPAD_UP)
+                detectedButton := "JoyPOVUp"
+            else if (ctrlState.Buttons & XINPUT_GAMEPAD_DPAD_DOWN)
+                detectedButton := "JoyPOVDown"
+            else if (ctrlState.Buttons & XINPUT_GAMEPAD_DPAD_LEFT)
+                detectedButton := "JoyPOVLeft"
+            else if (ctrlState.Buttons & XINPUT_GAMEPAD_DPAD_RIGHT)
+                detectedButton := "JoyPOVRight"
+
+            if (detectedButton != "")
+            {
+                ih.Stop()
+                holdKey := detectedButton
+                controllerDetected := true
+                ToolTip, Controller button detected: %holdKey%
+                Sleep, 1000
+                break
+            }
+        }
+
+        ; Check timeout
+        if (A_TickCount - startTime > 15000)
+        {
+            ih.Stop()
+            holdKey := ""
+            break
+        }
+
+        Sleep, 50
+    }
+
     SetTimer, HideTempTip, Off
     ToolTip
-    holdKey := ih.Input
-    if (holdKey = "")
-        holdKey := ih.EndKey
-    holdKey := GetKeyName(holdKey)
     return holdKey
 }
 
@@ -641,12 +757,13 @@ HoldKeyRepeat:
     Send, {%holdMacroKey%}
 return
 
-StartRecorder(mode := "combined")
+StartRecorder(mode := "combined", suppressCombo := false)
 {
     global recorderActive, recorderPlaying, recorderEvents, recorderStart, recorderLast, recorderMouseSampleMs
     global recorderControllerSampleMs, recorderKbMouseEnabled, recorderControllerEnabled
     global recorderControllerPrevState, recorderHasControllerEvents, recorderSendMode
-    global sendMode
+    global sendMode, debugControllerSampleCount
+    global recorderControllerSuppress, recorderControllerSuppressUntil
     StopRecorder(true)
     recorderActive := true
     recorderPlaying := false
@@ -658,13 +775,50 @@ StartRecorder(mode := "combined")
     recorderKbMouseEnabled := (mode = "combined")
     recorderControllerEnabled := true
     recorderControllerPrevState := ""
+    debugControllerSampleCount := 0  ; DEBUG: Reset sample counter
+
+    ; Suppress controller input for 500ms if triggered by combo (prevents recording the combo itself)
+    if (suppressCombo)
+    {
+        recorderControllerSuppress := true
+        recorderControllerSuppressUntil := A_TickCount + 500
+        ToolTip, DEBUG: Controller input suppressed for 500ms (combo grace period)
+        SetTimer, HideDebugStartupTip, -1500
+    }
+    else
+    {
+        recorderControllerSuppress := false
+        recorderControllerSuppressUntil := 0
+    }
+
+    ; DEBUG: Check XInput and controller state before starting
+    if (!EnsureXInputReady())
+    {
+        ToolTip, DEBUG: XInput NOT READY! Cannot record controller.
+        SetTimer, HideDebugStartupTip, -3000
+        return
+    }
+    testState := ControllerGetState()
+    if (!testState)
+    {
+        ToolTip, DEBUG: NO CONTROLLER DETECTED! Make sure controller is connected and recognized by Windows.
+        SetTimer, HideDebugStartupTip, -5000
+        return
+    }
+    else
+    {
+        testButtons := testState.Buttons
+        ToolTip, DEBUG: Controller detected! Buttons: %testButtons% - Starting recording...
+        SetTimer, HideDebugStartupTip, -2000
+    }
+
     if (recorderKbMouseEnabled)
         SetTimer, RecorderSampleMouse, % recorderMouseSampleMs
     else
         SetTimer, RecorderSampleMouse, Off
     SetTimer, RecorderSampleController, % recorderControllerSampleMs
     if (mode = "controller")
-        ShowMacroToggledTip("Recording controller... F6 to stop", 3000, true)
+        ShowMacroToggledTip("Recording controller... (L1+L2+R1+R2+A to stop)", 3000, true)
     else
         ShowMacroToggledTip("Recording macro... F5 to stop", 3000, true)
     ; install low-level hooks for keys via hotkey prefix below
@@ -697,10 +851,21 @@ StartPlayback()
         return
     }
     if (recorderHasControllerEvents && !EnsureVJoyReady())
+    {
+        ; DEBUG: vJoy not ready for controller playback
+        ToolTip, DEBUG: vJoy NOT READY! Controller playback requires vJoy driver.`nInstall vJoySetup.exe and reboot.
+        SetTimer, HideDebugStartupTip, -5000
         return
+    }
     recorderPlaying := true
     recorderPaused := false
     recorderPlayIndex := 1
+    ; DEBUG: Show what type of events will play
+    if (recorderHasControllerEvents)
+    {
+        ToolTip, DEBUG: Starting playback with CONTROLLER events (vJoy active)
+        SetTimer, HideDebugStartupTip, -2000
+    }
     ShowMacroToggledTip("Playing recorded macro (F12 to stop)")
     SetTimer, RecorderPlayNext, -1
 }
@@ -780,14 +945,30 @@ RecorderPlayNext:
         }
         else if (evt.type = "mousebtn")
         {
+            ; DEBUG: Show mouse button playback
+            evtCode := evt.code
+            evtState := evt.state
+            ToolTip, DEBUG PLAYBACK: Mouse %evtCode% %evtState%
+            SetTimer, HideDebugStartupTip, -500
             SendEventOrInput("{" evt.code " " evt.state "}")
         }
         else if (evt.type = "mousemove")
         {
+            ; DEBUG: Show mouse movement playback
+            evtX := evt.x
+            evtY := evt.y
+            MouseGetPos, currentX, currentY
+            ToolTip, DEBUG PLAYBACK: Moving from (%currentX%`, %currentY%) to (%evtX%`, %evtY%)
+            SetTimer, HideDebugStartupTip, -300
+            ; Use original syntax - force expression mode with %
             MouseMove, % evt.x, % evt.y, 0
         }
         else if (evt.type = "controller")
         {
+            ; DEBUG: Show controller playback
+            ctrlButtons := evt.state.Buttons
+            ToolTip, DEBUG PLAYBACK: Controller buttons: %ctrlButtons%
+            SetTimer, HideDebugStartupTip, -500
             ControllerApplyStateToVJoy(evt.state)
         }
         idx++
@@ -839,12 +1020,49 @@ return
 
 RecorderSampleController:
     global recorderActive, recorderControllerEnabled, recorderControllerPrevState
-    global recorderHasControllerEvents
+    global recorderHasControllerEvents, debugControllerSampleCount
+    global recorderControllerSuppress, recorderControllerSuppressUntil
     if (!recorderActive || !recorderControllerEnabled)
         return
+
+    ; DEBUG: Increment sample counter
+    debugControllerSampleCount++
+
+    ; Check if we're in suppression period (grace period after combo press)
+    if (recorderControllerSuppress && A_TickCount < recorderControllerSuppressUntil)
+    {
+        ; Still suppressing - don't record
+        if (Mod(debugControllerSampleCount, 25) = 0)  ; Every 0.5 seconds
+        {
+            remaining := Round((recorderControllerSuppressUntil - A_TickCount) / 1000, 1)
+            ToolTip, DEBUG: Suppression active (%remaining%s remaining)
+        }
+        return
+    }
+    else if (recorderControllerSuppress)
+    {
+        ; Suppression period ended
+        recorderControllerSuppress := false
+        ToolTip, DEBUG: Suppression ended - now recording controller input!
+        SetTimer, HideDebugStartupTip, -1500
+    }
+
     sampleState := ControllerGetState()
     if (!sampleState)
+    {
+        ; DEBUG: Show that we're not getting controller state
+        if (Mod(debugControllerSampleCount, 50) = 0)  ; Every 50 samples (1 second)
+            ToolTip, DEBUG: Controller state is EMPTY (sample %debugControllerSampleCount%)
         return
+    }
+
+    ; DEBUG: Show we got controller state
+    if (Mod(debugControllerSampleCount, 50) = 0)
+    {
+        sampleButtons := sampleState.Buttons
+        ToolTip, DEBUG: Got controller state! Buttons: %sampleButtons% (sample %debugControllerSampleCount%)
+    }
+
     sampleNorm := NormalizeControllerState(sampleState)
     if (recorderControllerPrevState = "")
     {
@@ -853,6 +1071,7 @@ RecorderSampleController:
         {
             RecorderAddEvent("controller", "", "", "", "", sampleNorm)
             recorderHasControllerEvents := true
+            ToolTip, DEBUG: First controller event recorded!
         }
         return
     }
@@ -861,6 +1080,7 @@ RecorderSampleController:
         recorderControllerPrevState := sampleNorm
         RecorderAddEvent("controller", "", "", "", "", sampleNorm)
         recorderHasControllerEvents := true
+        ToolTip, DEBUG: Controller state change recorded! Total events: %recorderHasControllerEvents%
     }
 return
 
@@ -869,12 +1089,38 @@ return
 
 FinalizeRecording()
 {
-    global recorderActive, recorderEvents, recorderSuppressStopTip
+    global recorderActive, recorderEvents, recorderSuppressStopTip, recorderHasControllerEvents
     if (!recorderActive)
         return
     recorderActive := false
     SetTimer, RecorderSampleMouse, Off
     SetTimer, RecorderSampleController, Off
+
+    ; DEBUG: Show recording results and breakdown
+    totalEvents := recorderEvents.MaxIndex()
+    if (totalEvents = "")
+        totalEvents := 0
+
+    ; Count event types
+    keyCount := 0
+    mouseCount := 0
+    mouseMoveCount := 0
+    controllerCount := 0
+    for idx, evt in recorderEvents
+    {
+        if (evt.type = "key")
+            keyCount++
+        else if (evt.type = "mousebtn")
+            mouseCount++
+        else if (evt.type = "mousemove")
+            mouseMoveCount++
+        else if (evt.type = "controller")
+            controllerCount++
+    }
+
+    ToolTip, DEBUG: Recording stopped!`nTotal: %totalEvents% | Keys: %keyCount% | Mouse buttons: %mouseCount% | Mouse moves: %mouseMoveCount% | Controller: %controllerCount%
+    SetTimer, HideDebugStartupTip, -5000
+
     if (recorderSuppressStopTip)
     {
         recorderSuppressStopTip := false
@@ -984,18 +1230,35 @@ EnsureXInputReady()
     dlls := GetXInputDllPaths()
     if (!IsObject(dlls) || dlls.MaxIndex() = "")
     {
+        ; DEBUG: No DLLs found
+        ToolTip, DEBUG: No XInput DLLs found in system!
+        SetTimer, HideDebugStartupTip, -3000
         controllerXInputFailed := true
         return false
     }
+
+    ; DEBUG: Show which DLLs were found
+    dllList := ""
+    for idx, dll in dlls
+        dllList .= dll "`n"
+    ToolTip, DEBUG: Found XInput DLLs:`n%dllList%
+    SetTimer, HideDebugStartupTip, -3000
+
     for _, dll in dlls
     {
         if (XInput_Init(dll, true))
         {
             controllerXInputReady := (_XInput_hm != "")
             if (controllerXInputReady)
+            {
+                ToolTip, DEBUG: Successfully loaded: %dll%
+                SetTimer, HideDebugStartupTip, -2000
                 return true
+            }
         }
     }
+    ToolTip, DEBUG: Failed to initialize any XInput DLL!
+    SetTimer, HideDebugStartupTip, -3000
     controllerXInputFailed := true
     return false
 }

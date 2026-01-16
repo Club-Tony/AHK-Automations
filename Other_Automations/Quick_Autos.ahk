@@ -30,74 +30,52 @@ return
 
     originalHwnd := WinExist("A")
 
-    path := ExplorerCapturePath(originalHwnd)
-    if (path = "")
-        path := GetExplorerPath()
-    if (path = "")
+    ; Get current path using PostMessage to avoid beeps
+    path := ExplorerCapturePathSilent(originalHwnd)
+
+    if (path = "" || !IsFilePath(path))
     {
         ToolTip, Could not get current path.
         SetTimer, HideQuickTip, -1200
         return
     }
 
-    Send, ^w
-    Sleep, 200
-
-    if (WinExist("ahk_id " originalHwnd))
+    ; Close current tab/window and open fresh one at same path
+    ; Ensure window is still active
+    if (!WinActive("ahk_id " originalHwnd))
     {
-        Send, ^t
-        Sleep, 600
-
         WinActivate, ahk_id %originalHwnd%
-        ExplorerWaitReady(originalHwnd, 2000)
+        WinWaitActive, ahk_id %originalHwnd%,, 0.5
+    }
 
-        success := ExplorerNavigateAddressBar(originalHwnd, path, 4)
+    ; Send Ctrl+W with SendInput (faster and more reliable than PostMessage)
+    SendInput, ^w
+    Sleep, 150
 
-        if (!success)
-        {
-            ClipSaved := ClipboardAll
-            Clipboard := path
-            Sleep, 50
+    ; If close dialog appears, dismiss it with SendInput
+    if WinExist("ahk_class #32770 ahk_exe explorer.exe")
+    {
+        WinActivate, ahk_class #32770 ahk_exe explorer.exe
+        Sleep, 50
+        SendInput, {Enter}
+        Sleep, 100
+    }
 
-            Loop, 3
-            {
-                Send, {Esc}
-                Sleep, 50
-                Send, ^l
-                Sleep, 250
-                Send, ^a
-                Sleep, 50
-                Send, ^v
-                Sleep, 100
-                Send, {Enter}
-                Sleep, 400
+    ; Open new Explorer window at the saved path
+    Run, explorer.exe "%path%"
 
-                observedPath := ExplorerGetAddressBarText(originalHwnd)
-                if (observedPath != "" && observedPath = path)
-                {
-                    success := true
-                    break
-                }
-                Sleep, 200
-            }
-
-            Clipboard := ClipSaved
-        }
-
-        if (success)
-            ExplorerCloseAddressDropdown(originalHwnd)
-        else
-        {
-            ToolTip, Navigation failed. Target: %path%
-            SetTimer, HideQuickTip, -3000
-        }
+    ; Wait for new window and activate it
+    WinWait, ahk_class CabinetWClass,, 2
+    if (!ErrorLevel)
+    {
+        WinActivate
+        ToolTip, Explorer tab reset.
+        SetTimer, HideQuickTip, -800
     }
     else
     {
-        Run, explorer.exe "%path%"
-        WinWait, ahk_class CabinetWClass,, 3
-        if (!ErrorLevel)
-            WinActivate
+        ToolTip, Failed to open new window.
+        SetTimer, HideQuickTip, -1500
     }
 return
 
@@ -222,6 +200,72 @@ ExplorerCapturePath(targetHwnd)
     return capturedPath
 }
 
+ExplorerCapturePathSilent(targetHwnd)
+{
+    ; Capture address bar using SendInput (more reliable than PostMessage for Explorer)
+    captureClipSaved := ClipboardAll
+    Clipboard := ""
+
+    ToolTip, DEBUG: Starting path capture...
+    Sleep, 500
+
+    ; Ensure window is active and ready
+    if (!WinActive("ahk_id " targetHwnd))
+    {
+        ToolTip, DEBUG: Window not active - activating...
+        Sleep, 500
+        WinActivate, ahk_id %targetHwnd%
+        WinWaitActive, ahk_id %targetHwnd%,, 0.5
+        if (ErrorLevel)
+        {
+            ToolTip, DEBUG: Failed to activate window!
+            Sleep, 2000
+            ToolTip
+            return ""
+        }
+    }
+
+    ToolTip, DEBUG: Window active - waiting...
+    Sleep, 500
+
+    ; Use SendInput - it's fast and reliable, shouldn't cause beeps on active windows
+    ToolTip, DEBUG: Sending Alt+D...
+    Sleep, 500
+    SendInput, !d
+    Sleep, 300
+
+    ToolTip, DEBUG: Sending Ctrl+C...
+    Sleep, 500
+    SendInput, ^c
+
+    ToolTip, DEBUG: Waiting for clipboard...
+    Sleep, 500
+    ClipWait, 0.8
+    if (ErrorLevel)
+    {
+        ; Clipboard didn't receive data, restore and return empty
+        ToolTip, DEBUG: ClipWait timed out - no data received!
+        Sleep, 2000
+        Clipboard := captureClipSaved
+        SendInput, {Esc}
+        ToolTip
+        return ""
+    }
+
+    capturedPath := Clipboard
+    ToolTip, DEBUG: Captured path: %capturedPath%
+    Sleep, 1500
+
+    Clipboard := captureClipSaved
+
+    ; Close address bar dropdown
+    SendInput, {Esc}
+    Sleep, 50
+
+    ToolTip
+    return capturedPath
+}
+
 ExplorerCloseAddressDropdown(targetHwnd)
 {
     WinActivate, ahk_id %targetHwnd%
@@ -237,6 +281,43 @@ PathLeaf(path)
 
 ExplorerGetAddressBarText(targetHwnd)
 {
+    ; First try: Get path from COM interface for the specific window handle
+    ; This should work correctly with tabs in Windows 11
+    try
+    {
+        shell := ComObjCreate("Shell.Application")
+        for window in shell.Windows
+        {
+            try
+            {
+                if (window.HWND = targetHwnd)
+                {
+                    ; Try to get the document path
+                    try
+                    {
+                        docPath := window.Document.Folder.Self.Path
+                        if (docPath != "")
+                            return docPath
+                    }
+                    catch
+                    {
+                        ; Try LocationURL as fallback
+                        locationUrl := window.LocationURL
+                        if (InStr(locationUrl, "file:///"))
+                        {
+                            decodedPath := StrReplace(locationUrl, "file:///", "")
+                            decodedPath := StrReplace(decodedPath, "/", "\")
+                            decodedPath := UriDecode(decodedPath)
+                            if (decodedPath != "")
+                                return decodedPath
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    ; Second try: ControlGetText on address bar
     ControlGetFocus, focusCtrlName, ahk_id %targetHwnd%
     if (focusCtrlName != "")
     {
