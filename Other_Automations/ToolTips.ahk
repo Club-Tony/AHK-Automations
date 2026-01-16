@@ -21,7 +21,8 @@ TooltipActive := false
     tooltipText =
     (
 VS Code Shortcuts
-Ctrl+Alt+P - Command Palette
+Ctrl+Shift+P - Command Palette
+Restarting Extensions - Ctrl+Shift+P - type Restart Extension Host
 Ctrl+`` - Toggle terminal
 Ctrl+P - Quick Open
 Ctrl+Shift+E - Explorer

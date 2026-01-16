@@ -36,6 +36,21 @@ return
     Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Other_Automations\Coordinate Capture Helper\coord.txt"
 return
 
+; Toggle: Tracking Numbers File ; Keybind: Ctrl+Alt+E
+^!e::
+    ToggleTrackingNumbersFile()
+return
+
+; Toggle: Tracking CSV File ; Keybind: Alt+Shift+C
+!+c::
+    ToggleTrackingCSVFile()
+return
+
+; Clear: Both Tracking Files ; Keybind: Ctrl+Alt+Shift+Delete
+^!+Delete::
+    ClearTrackingFiles()
+return
+
 ; Launch: Smartsheets ; Keybind: Ctrl+Alt+L
 ^!l:: 
     if !(WinActive("Daily BSC Audit") || WinActive("Ouroboros BSC - SEA124"))
@@ -707,3 +722,192 @@ TooltipMouseCheck:
     if (curX != tooltipMouseX || curY != tooltipMouseY)
         Gosub, HideLauncherTooltip
 return
+
+ToggleTrackingNumbersFile()
+{
+    ; Close any open tracking files first
+    CloseTrackingFiles()
+    Sleep 200
+
+    ; Prompt user to choose TXT or CSV
+    ToolTip, Press 1 for TXT or 2 for CSV (5s timeout)
+    startTime := A_TickCount
+    choice := ""
+
+    while (A_TickCount - startTime < 5000)
+    {
+        if GetKeyState("1", "P")
+        {
+            choice := "txt"
+            break
+        }
+        if GetKeyState("2", "P")
+        {
+            choice := "csv"
+            break
+        }
+        Sleep 50
+    }
+    ToolTip
+
+    ; Default to TXT on timeout
+    if (choice = "")
+        choice := "txt"
+
+    ; Call appropriate toggle function
+    if (choice = "txt")
+        ToggleTrackingTxtFile()
+    else
+        ToggleTrackingCSVFile()
+}
+
+CloseTrackingFiles()
+{
+    ; Close tracking_numbers.txt if open in Notepad (use Ctrl+W to close tab, not whole window)
+    DetectHiddenWindows, On
+    txtTitle := "tracking_numbers.txt - Notepad"
+    hwndTxt := WinExist(txtTitle)
+    if (hwndTxt)
+    {
+        WinActivate, ahk_id %hwndTxt%
+        Sleep 50
+        Send ^w
+        Sleep 100
+    }
+
+    ; Close tracking_numbers.csv if open in Notepad (use Ctrl+W to close tab, not whole window)
+    csvTitleNotepad := "tracking_numbers.csv - Notepad"
+    hwndCsvNotepad := WinExist(csvTitleNotepad)
+    if (hwndCsvNotepad)
+    {
+        WinActivate, ahk_id %hwndCsvNotepad%
+        Sleep 50
+        Send ^w
+        Sleep 100
+    }
+
+    ; Close tracking_numbers.csv if open in Excel
+    csvTitleExcel := "tracking_numbers.csv"
+    hwndCsvExcel := WinExist(csvTitleExcel " ahk_exe EXCEL.EXE")
+    if (hwndCsvExcel)
+    {
+        WinClose, ahk_id %hwndCsvExcel%
+        Sleep 100
+    }
+    DetectHiddenWindows, Off
+}
+
+ToggleTrackingTxtFile()
+{
+    trackingFile := A_ScriptDir "\Bulk_Tracking_Export_to_Intra\tracking_numbers.txt"
+    trackingTitle := "tracking_numbers.txt - Notepad"
+
+    ; Check if file exists, create if not
+    if (!FileExist(trackingFile))
+    {
+        FileAppend,, %trackingFile%
+        if (ErrorLevel)
+        {
+            ShowTooltip("Error creating tracking_numbers.txt", 3000)
+            return
+        }
+    }
+
+    ; Open in Notepad (CloseTrackingFiles already closed it if it was open)
+    Run, notepad.exe "%trackingFile%"
+    WinWaitActive, %trackingTitle%,, 2
+    if (!ErrorLevel)
+        ShowTooltip("Opened tracking_numbers.txt", 1500)
+}
+
+ToggleTrackingCSVFile()
+{
+    csvFile := A_ScriptDir "\Bulk_Tracking_Export_to_Intra\tracking_numbers.csv"
+
+    ; Create if doesn't exist
+    if (!FileExist(csvFile))
+    {
+        FileAppend,, %csvFile%
+        if (ErrorLevel)
+        {
+            ShowTooltip("Error creating tracking_numbers.csv", 3000)
+            return
+        }
+    }
+
+    ; Try to open in Excel first (CloseTrackingFiles already closed it if it was open)
+    Run, "%csvFile%",, UseErrorLevel
+    if (ErrorLevel)
+    {
+        ; Excel not available, fallback to Notepad
+        csvTitleNotepad := "tracking_numbers.csv - Notepad"
+        Run, notepad.exe "%csvFile%"
+        WinWaitActive, %csvTitleNotepad%,, 2
+        if (!ErrorLevel)
+            ShowTooltip("Opened tracking_numbers.csv in Notepad", 1500)
+        return
+    }
+
+    ; Wait longer for Excel to open and check if it succeeded
+    Sleep 1500
+    DetectHiddenWindows, On
+    excelHwnd := WinExist("ahk_exe EXCEL.EXE")
+    DetectHiddenWindows, Off
+
+    if (excelHwnd)
+    {
+        ShowTooltip("Opened tracking_numbers.csv in Excel", 1500)
+    }
+    else
+    {
+        ; Excel didn't open, fallback to Notepad
+        csvTitleNotepad := "tracking_numbers.csv - Notepad"
+        Run, notepad.exe "%csvFile%"
+        WinWaitActive, %csvTitleNotepad%,, 2
+        if (!ErrorLevel)
+            ShowTooltip("Opened tracking_numbers.csv in Notepad", 1500)
+    }
+}
+
+ClearTrackingFiles()
+{
+    trackingDir := A_ScriptDir "\Bulk_Tracking_Export_to_Intra"
+    txtFile := trackingDir "\tracking_numbers.txt"
+    csvFile := trackingDir "\tracking_numbers.csv"
+
+    txtCleared := false
+    csvCleared := false
+
+    ; Clear TXT file
+    if FileExist(txtFile)
+    {
+        FileDelete, %txtFile%
+        FileAppend,, %txtFile%
+        if (!ErrorLevel)
+            txtCleared := true
+    }
+
+    ; Clear CSV file
+    if FileExist(csvFile)
+    {
+        FileDelete, %csvFile%
+        FileAppend,, %csvFile%
+        if (!ErrorLevel)
+            csvCleared := true
+    }
+
+    ; Create CSV if doesn't exist
+    if (!FileExist(csvFile))
+    {
+        FileAppend,, %csvFile%
+        csvCleared := true
+    }
+
+    ; Show result
+    msg := "Cleared tracking files:`n"
+    if (txtCleared)
+        msg .= "✓ tracking_numbers.txt`n"
+    if (csvCleared)
+        msg .= "✓ tracking_numbers.csv"
+    ShowTooltip(msg, 3000)
+}

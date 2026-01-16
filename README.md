@@ -12,6 +12,7 @@
 - **Launcher Script (Keybinds)** - loads global hotkeys and launcher bindings
 - **Alt+Q Map to Alt+F4** - remaps `Alt+Q` to behave like `Alt+F4`
 - **Alt+R_Post_Parent_Normalize** - restores Assign Recip window buttons/settings back to default state after Parent ticket automations
+- **Bulk_Tracking_Export_to_Intra** - bulk tracking number export hotkeys (Alt+Shift+E, Ctrl+Shift+Alt+E)
 - **Intra_Buttons** - adds quick-access hotkeys for common Interoffice Form actions
 - **Intra_Desktop_Search_Shortcuts** - hotkeys for desktop client search and navigation
 - **Intra_Focus_Fields** - jump-to-field shortcuts for commonly used desktop client fields
@@ -36,5 +37,21 @@
 #### -`Ctrl+Alt+C` - Launch DSRF-to-UPS_WS Script for shipping request form to UPS WorldShip field transfer automation
 #### -`Ctrl+Alt+I` - Launch SSJ desktop client scripts bundle
 #### -`Ctrl+Alt+F` - Launch/reload Search shortcuts script and show search hotkey tooltip
+#### -`Ctrl+Alt+E` - Toggle tracking file (press 1 for TXT, 2 for CSV)
+#### -`Ctrl+Shift+Alt+W` - Toggle Window Spy
+#### -`Ctrl+Shift+Alt+O` - Toggle coord.txt open/close (Coord Capture helper)
+## Bulk Tracking Export to Intra
+#### -`Alt+Shift+E` - Paste list into Assign Recip scan field (normal speed)
+#### -`Ctrl+Shift+Alt+E` - Paste list into Assign Recip scan field (fast speed)
+#### -`Ctrl+Alt+E` - Toggle tracking file (press 1 for TXT, 2 for CSV)
+#### -`Alt+Shift+C` - Toggle tracking_numbers.csv (direct access)
+#### -`Ctrl+Alt+Shift+Delete` - Clear both tracking files
+
+**Formats Supported:**
+- **TXT**: One tracking number per line in tracking_numbers.txt
+- **CSV**: Paste Excel/CSV column into tracking_numbers.csv (first column extracted)
+
+If both files have content when running export, you'll be prompted to choose which to use (press 1 for TXT, 2 for CSV).
+CSV headers are auto-detected and skipped automatically.
 ## Other Hotkeys:
 #### -`Ctrl+Shift+Alt+C` - Launch Window Coordinate Capture Helper (Alt+C starts capture, Alt+I shows more info)

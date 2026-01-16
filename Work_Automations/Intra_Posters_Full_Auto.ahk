@@ -84,9 +84,10 @@ posterActionCtrlW := 8
 
     EnsureIntraButtonsScript()
 
+    ; Already at tab 1 after "Return to the original tab" loop above
     ; Add further poster automation steps here (form fills, clicks, etc.)
-    
-    ; Mid-Size Boxes
+
+    ; Mid-Size Boxes (tabs 1-3)
     Loop, 3
     {
         CallIntraButtonsHotkey(posterActionAltP)
@@ -99,18 +100,46 @@ posterActionCtrlW := 8
         Sleep 100
         Send ^{Tab}
         Sleep 100
+        if (!VerifyPosterTab())
+        {
+            ShowTimedTooltip("Lost Intra tab during Mid-Size Boxes loop", 5000)
+            Gosub, PosterHotkeyCleanup
+            return
+        }
     }
 
-    ; Envelopes
+    ; Envelopes (tabs 4-16)
     Loop, 13
     {
         CallIntraButtonsHotkey(posterActionAltP)
         Sleep 2000
         Send ^{Tab}
         Sleep 100
+        if (!VerifyPosterTab())
+        {
+            ShowTimedTooltip("Lost Intra tab during Envelopes loop", 5000)
+            Gosub, PosterHotkeyCleanup
+            return
+        }
     }
 
-    ; Name Fields
+    ; Position back to first tab before Name Fields operations
+    ; Go back 15 tabs from wherever we are to get to tab 1
+    Loop, 15
+    {
+        Send ^+{Tab}
+        Sleep 50
+    }
+    Sleep 500
+
+    if (!VerifyPosterTab())
+    {
+        ShowTimedTooltip("Lost Intra tab after Envelopes, before Name Fields", 5000)
+        Gosub, PosterHotkeyCleanup
+        return
+    }
+
+    ; Name Fields (all 16 tabs)
     names := [107,83,33,129,129,129,99,99,132,125,114,111,109,74,93,69]
     Loop % names.Length()
     {
@@ -125,6 +154,12 @@ posterActionCtrlW := 8
         Sleep 300
         Send ^{Tab}
         Sleep 150
+        if (!VerifyPosterTab())
+        {
+            ShowTimedTooltip("Lost Intra tab during Name Fields loop", 5000)
+            Gosub, PosterHotkeyCleanup
+            return
+        }
     }
      ; Close relevant tabs/end the script
     CallIntraButtonsHotkey(posterActionCtrlW)
@@ -158,6 +193,23 @@ GetPosterWindowTitle()
             return candidate
     }
     return ""
+}
+
+VerifyPosterTab()
+{
+    ; Check if still on Intra: Interoffice Request tab
+    ; If not, send Ctrl+Shift+Tab to go back once and check again
+    local checkTitle
+    checkTitle := GetPosterWindowTitle()
+    if (checkTitle = "" || !WinActive(checkTitle))
+    {
+        Send ^+{Tab}
+        Sleep 150
+        checkTitle := GetPosterWindowTitle()
+        if (checkTitle = "" || !WinActive(checkTitle))
+            return false
+    }
+    return true
 }
 
 GetExportedReportWindow()

@@ -49,6 +49,9 @@ Alt+L - Lost and Found
 Alt+D - Item Var Lookup + Apply All Toggle
 -
 Additional Scripts Launch Hotkeys:
+Ctrl+Alt+E - Toggle tracking file (1=TXT, 2=CSV)
+Alt+Shift+C - Toggle tracking_numbers.csv file
+Ctrl+Alt+Shift+Delete - Clear both tracking files
 Ctrl+Alt+F - Launch Intra Search Shortcuts
 Ctrl+Alt+I - Launch Intra Extensive Automations
 Ctrl+Alt+T - Show this tooltip again
@@ -116,6 +119,9 @@ Return
 ~!h::Gosub HideTooltips
 ~!c::Gosub HideTooltips
 ~^!c::Gosub HideTooltips
+~^!e::Gosub HideTooltips
+~!+c::Gosub HideTooltips
+~^!+Delete::Gosub HideTooltips
 ~^!f::Gosub HideTooltips
 ~^!d::Gosub HideTooltips
 ~^+!w::Gosub HideTooltips
@@ -315,7 +321,8 @@ return
     tooltipText =
     (
 VS Code Shortcuts
-Ctrl+Alt+P - Command Palette
+Ctrl+Shift+P - Command Palette
+Restarting Extensions - Ctrl+Shift+P - type Restart Extension Host
 Ctrl+`` - Toggle terminal
 Ctrl+P - Quick Open
 Ctrl+Shift+E - Explorer
@@ -443,6 +450,9 @@ Win+I - Focus/Minimize all Intra windows
 Win+Alt+M - Minimize all, then focus Firefox, Outlook PWA, Slack
 Alt+X / Alt+O - Intra Online: Outbound Shipping Requests button anchor
 Alt+Z / Alt+H - Intra Online: Home button anchor
+Ctrl+Alt+E - Toggle tracking file (1=TXT, 2=CSV)
+Alt+Shift+C - Toggle tracking_numbers.csv file
+Ctrl+Alt+Shift+Delete - Clear both tracking files
 Ctrl+Alt+L - Launch Daily Audit + Smartsheet
 Ctrl+Shift+Alt+L - Auto Daily Audit + Smartsheet
 Ctrl+Alt+W - Intra Desktop Window Organizing
