@@ -7,11 +7,17 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 SetKeyDelay 50
 SetTitleMatchMode, 2
+CoordMode, Mouse, Window
 auditWinTitle := "Daily BSC Audit"
-auditFocusTip := "Smartsheet window inactive, try again"
+auditFocusTip := "Audit window inactive, try again"
+; Expected minimum window dimensions for coordinate clicks to be valid
+expectedMinWidth := 1400
+expectedMinHeight := 600
 Esc::ExitApp
-^!d:: 
+^!d::
     if (!RequireAuditWindow())
+        Return
+    if (!CheckWindowGeometry())
         Return
     Mouseclick, left, 1392, 230
     Sleep 100
@@ -73,13 +79,20 @@ Esc::ExitApp
     
     if (!RequireAuditWindow())
         Return
-    Send {Tab 2} 
+    Send {Tab 2}
     Send Anthony Davey
-    Send {Tab} 
-    Send {Space} 
-    Send {Tab} 
-    Send ouroboros-bsc@amazon.com
+    Sleep 100  ; Allow name field to process
+    if (!RequireAuditWindow())
+        Return
     Send {Tab}
+    Send {Space}
+    Send {Tab}
+    Send ouroboros-bsc@amazon.com
+    Sleep 150  ; Allow email field to process
+    if (!RequireAuditWindow())
+        Return
+    Send {Tab}
+    ShowCompletionTip("Daily Audit form completed")
 Return
 
 RequireAuditWindow()
@@ -95,3 +108,22 @@ RequireAuditWindow()
 ClearAuditTip:
     ToolTip
 Return
+
+CheckWindowGeometry()
+{
+    global auditWinTitle, expectedMinWidth, expectedMinHeight
+    WinGetPos, winX, winY, winW, winH, %auditWinTitle%
+    if (winW < expectedMinWidth || winH < expectedMinHeight)
+    {
+        ToolTip, Window too small (%winW%x%winH%). Expected at least %expectedMinWidth%x%expectedMinHeight%
+        SetTimer, ClearAuditTip, -5000
+        return false
+    }
+    return true
+}
+
+ShowCompletionTip(msg)
+{
+    ToolTip, %msg%
+    SetTimer, ClearAuditTip, -4000
+}

@@ -207,19 +207,19 @@ DoCtrlAltN()
 DoAltP()
 {
     EnsureIntraWindow()
-    Sleep 50
+    Sleep 150
     MouseClick, left, 1400, 850, 2
-    Sleep 50
+    Sleep 150
     SendInput, ^{Home}
-    Sleep 150
+    Sleep 250
     Gosub, HandleEnvelopeClick
-    Sleep, 350
+    Sleep 1000
     SendInput, post
-    Sleep 150
+    Sleep 500
     SendInput, {Enter}
-    Sleep 200
+    Sleep 250
     MouseClick, left, 880, 815
-    Sleep 150
+    Sleep 250
     MouseClick, left, 485, 860
 }
 
@@ -234,9 +234,9 @@ DoCtrlAltA()
     Gosub, HandleEnvelopeClick
     Sleep, 500
     SendInput, ACP
-    Sleep 150
+    Sleep 250
     SendInput, {Enter}
-    Sleep 200
+    Sleep 250
     MouseClick, left, 880, 815
     Sleep 500
     MouseClick, left, 1005, 860
@@ -267,6 +267,7 @@ DoAlt2()
     }
     Sleep 100
     MouseClick, left, 480, 1246, 2
+    Sleep 50
 }
 
 DoCtrlEnter()
@@ -597,6 +598,20 @@ DoCtrlW()
             break
         SendInput, ^w
         Sleep 120
+    }
+
+    ; If the active tab isn't Intra Home or Interoffice after bulk close, re-open Intra Home.
+    if (!IsHomeActive() && !IsInterofficeActive())
+    {
+        SendInput, ^t
+        Sleep 150
+        SendInput, ^l
+        Sleep 100
+        SendInput, {Raw}*Intra: Home
+        Sleep 350
+        SendInput, {Down}
+        Sleep 100
+        SendInput, {Enter}
     }
 }
 

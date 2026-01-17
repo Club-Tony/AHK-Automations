@@ -8,7 +8,7 @@ SetWorkingDir %A_ScriptDir%
 SetTitleMatchMode, 2
 TooltipActive := false
 TooltipLocked := false
-TooltipCooldownMs := 30000 ; 30 seconds
+TooltipCooldownMs := 1500 ; 1.5 seconds (prevent accidental double-tap)
 ButtonsTooltipActive := false
 interofficeExes := ["firefox.exe", "chrome.exe", "msedge.exe"]
 
@@ -156,6 +156,15 @@ return
 ; Intra Search - show SSJ search hotkeys when Search - General is active
 #IfWinActive, Search - General
 ^!t::
+    if (TooltipActive) {
+        Gosub, HideTooltips
+        Return
+    }
+    if (TooltipLocked) {
+        Return
+    }
+    TooltipLocked := true
+    SetTimer, UnlockTooltip, % -TooltipCooldownMs
     ButtonsTooltipActive := true
     TooltipActive := true
     tooltipText =
@@ -184,6 +193,15 @@ Return
 #If InterofficeActive()
 
 ^!t::
+    if (TooltipActive) {
+        Gosub, HideTooltips
+        Return
+    }
+    if (TooltipLocked) {
+        Return
+    }
+    TooltipLocked := true
+    SetTimer, UnlockTooltip, % -TooltipCooldownMs
     ButtonsTooltipActive := true
     TooltipActive := true
     tooltipText =

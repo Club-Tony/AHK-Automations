@@ -7,16 +7,22 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 SetKeyDelay 50
 SetTitleMatchMode, 2
+CoordMode, Mouse, Window
 smartsheetWinTitle := "Ouroboros BSC - SEA124"
 smartsheetFocusTip := "Smartsheet window inactive, try again"
+; Expected minimum window dimensions for coordinate clicks to be valid
+expectedMinWidth := 1100
+expectedMinHeight := 800
 tabAssistActive := false
 tabAssistStep := 0
 Esc::ExitApp
 
-^!s:: 
+^!s::
     tabAssistActive := false
     tabAssistStep := 0
     if (!RequireSmartsheetWindow())
+        Return
+    if (!CheckWindowGeometry())
         Return
     Mouseclick, left, 1013, 455
     Sleep 100
@@ -39,9 +45,13 @@ Esc::ExitApp
     Send {Space}
     Send {Tab}
     Send ouroboros-bsc@amazon.com
+    Sleep 150  ; Allow email field to process
+    if (!RequireSmartsheetWindow())
+        Return
     Send +{Tab 13}
     tabAssistActive := true
     tabAssistStep := 0
+    ShowCompletionTip("Smartsheet form ready - Tab Assist active")
 Return
 
 #If (tabAssistActive && WinActive(smartsheetWinTitle))
@@ -85,3 +95,22 @@ RequireSmartsheetWindow()
 ClearSmartsheetTip:
     ToolTip
 Return
+
+CheckWindowGeometry()
+{
+    global smartsheetWinTitle, expectedMinWidth, expectedMinHeight
+    WinGetPos, winX, winY, winW, winH, %smartsheetWinTitle%
+    if (winW < expectedMinWidth || winH < expectedMinHeight)
+    {
+        ToolTip, Window too small (%winW%x%winH%). Expected at least %expectedMinWidth%x%expectedMinHeight%
+        SetTimer, ClearSmartsheetTip, -5000
+        return false
+    }
+    return true
+}
+
+ShowCompletionTip(msg)
+{
+    ToolTip, %msg%
+    SetTimer, ClearSmartsheetTip, -4000
+}

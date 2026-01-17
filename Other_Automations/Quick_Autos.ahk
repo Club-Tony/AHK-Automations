@@ -30,29 +30,37 @@ return
 
     originalHwnd := WinExist("A")
 
-    ; Get current path using PostMessage to avoid beeps
+    ; Capture path from address bar
     path := ExplorerCapturePathSilent(originalHwnd)
 
-    if (path = "" || !IsFilePath(path))
+    if (path = "")
     {
         ToolTip, Could not get current path.
         SetTimer, HideQuickTip, -1200
         return
     }
 
-    ; Close current tab/window and open fresh one at same path
-    ; Ensure window is still active
+    ; Resolve special folder names to actual paths
+    if (!IsFilePath(path))
+        path := ResolveSpecialFolder(path)
+
+    if (path = "" || !IsFilePath(path))
+    {
+        ToolTip, Unsupported folder: %path%
+        SetTimer, HideQuickTip, -1500
+        return
+    }
+
+    ; Close current tab
     if (!WinActive("ahk_id " originalHwnd))
     {
         WinActivate, ahk_id %originalHwnd%
         WinWaitActive, ahk_id %originalHwnd%,, 0.5
     }
-
-    ; Send Ctrl+W with SendInput (faster and more reliable than PostMessage)
     SendInput, ^w
     Sleep, 150
 
-    ; If close dialog appears, dismiss it with SendInput
+    ; If close dialog appears, dismiss it
     if WinExist("ahk_class #32770 ahk_exe explorer.exe")
     {
         WinActivate, ahk_class #32770 ahk_exe explorer.exe
@@ -61,14 +69,45 @@ return
         Sleep, 100
     }
 
+    ; Get list of existing Explorer windows before opening new one
+    existingWindows := {}
+    WinGet, preList, List, ahk_class CabinetWClass
+    Loop, %preList%
+        existingWindows[preList%A_Index%] := true
+
     ; Open new Explorer window at the saved path
     Run, explorer.exe "%path%"
 
-    ; Wait for new window and activate it
-    WinWait, ahk_class CabinetWClass,, 2
-    if (!ErrorLevel)
+    ; Wait for new window to appear
+    newHwnd := ""
+    Loop, 20  ; Try for up to 2 seconds
     {
-        WinActivate
+        Sleep, 100
+        WinGet, postList, List, ahk_class CabinetWClass
+        Loop, %postList%
+        {
+            thisHwnd := postList%A_Index%
+            if (!existingWindows[thisHwnd])
+            {
+                newHwnd := thisHwnd
+                break 2
+            }
+        }
+    }
+
+    if (newHwnd)
+    {
+        WinActivate, ahk_id %newHwnd%
+        WinWaitActive, ahk_id %newHwnd%,, 1
+        Sleep, 1000  ; Wait for window to fully render
+
+        ; Find another Explorer window to merge into (the pre-existing one)
+        targetMergeHwnd := FindOtherExplorerWindow(newHwnd)
+        if (targetMergeHwnd)
+        {
+            MergeExplorerWindows(newHwnd, targetMergeHwnd)
+        }
+
         ToolTip, Explorer tab reset.
         SetTimer, HideQuickTip, -800
     }
@@ -202,68 +241,141 @@ ExplorerCapturePath(targetHwnd)
 
 ExplorerCapturePathSilent(targetHwnd)
 {
-    ; Capture address bar using SendInput (more reliable than PostMessage for Explorer)
+    ; Capture address bar using clipboard
     captureClipSaved := ClipboardAll
     Clipboard := ""
 
-    ToolTip, DEBUG: Starting path capture...
-    Sleep, 500
-
-    ; Ensure window is active and ready
+    ; Ensure window is active
     if (!WinActive("ahk_id " targetHwnd))
     {
-        ToolTip, DEBUG: Window not active - activating...
-        Sleep, 500
         WinActivate, ahk_id %targetHwnd%
         WinWaitActive, ahk_id %targetHwnd%,, 0.5
         if (ErrorLevel)
-        {
-            ToolTip, DEBUG: Failed to activate window!
-            Sleep, 2000
-            ToolTip
             return ""
+    }
+
+    ; Try to capture path, with retry if focus isn't right
+    Loop, 2
+    {
+        SendInput, ^l
+        Sleep, 200
+        SendInput, ^c
+        ClipWait, 0.8
+        if (!ErrorLevel)
+            break
+
+        ; First attempt failed - click center of window to ensure proper focus
+        if (A_Index = 1)
+        {
+            SendInput, {Esc}
+            WinGetPos, winX, winY, winW, winH, ahk_id %targetHwnd%
+            clickX := winX + (winW // 2)
+            clickY := winY + (winH // 2)
+            CoordMode, Mouse, Screen
+            Click, %clickX%, %clickY%
+            Sleep, 200
+            Clipboard := ""
         }
     }
 
-    ToolTip, DEBUG: Window active - waiting...
-    Sleep, 500
-
-    ; Use SendInput - it's fast and reliable, shouldn't cause beeps on active windows
-    ToolTip, DEBUG: Sending Alt+D...
-    Sleep, 500
-    SendInput, !d
-    Sleep, 300
-
-    ToolTip, DEBUG: Sending Ctrl+C...
-    Sleep, 500
-    SendInput, ^c
-
-    ToolTip, DEBUG: Waiting for clipboard...
-    Sleep, 500
-    ClipWait, 0.8
     if (ErrorLevel)
     {
-        ; Clipboard didn't receive data, restore and return empty
-        ToolTip, DEBUG: ClipWait timed out - no data received!
-        Sleep, 2000
         Clipboard := captureClipSaved
         SendInput, {Esc}
-        ToolTip
         return ""
     }
 
     capturedPath := Clipboard
-    ToolTip, DEBUG: Captured path: %capturedPath%
-    Sleep, 1500
-
     Clipboard := captureClipSaved
 
     ; Close address bar dropdown
     SendInput, {Esc}
     Sleep, 50
 
-    ToolTip
     return capturedPath
+}
+
+ResolveSpecialFolder(folderName)
+{
+    ; Handle common Windows special folder display names
+    if (folderName = "Desktop")
+        return A_Desktop
+    if (folderName = "Documents" || folderName = "My Documents")
+        return A_MyDocuments
+    if (folderName = "Downloads")
+    {
+        EnvGet, userProfile, USERPROFILE
+        return userProfile . "\Downloads"
+    }
+    if (folderName = "Pictures")
+    {
+        EnvGet, userProfile, USERPROFILE
+        return userProfile . "\Pictures"
+    }
+    if (folderName = "Music")
+    {
+        EnvGet, userProfile, USERPROFILE
+        return userProfile . "\Music"
+    }
+    if (folderName = "Videos")
+    {
+        EnvGet, userProfile, USERPROFILE
+        return userProfile . "\Videos"
+    }
+    return ""
+}
+
+FindOtherExplorerWindow(excludeHwnd)
+{
+    ; Find another Explorer window that's not the one we're resetting
+    WinGet, windowList, List, ahk_class CabinetWClass
+    Loop, %windowList%
+    {
+        hwnd := windowList%A_Index%
+        if (hwnd != excludeHwnd)
+            return hwnd
+    }
+    return ""
+}
+
+MergeExplorerWindows(sourceHwnd, targetHwnd)
+{
+    ; sourceHwnd = new window (the one to drag FROM - has the reset tab)
+    ; targetHwnd = existing window (the one to drag INTO)
+    CoordMode, Mouse, Screen
+
+    ; Get source window (new window) position - drag from its tab area
+    WinGetPos, srcX, srcY, srcW, srcH, ahk_id %sourceHwnd%
+    srcTabX := srcX + 60   ; First tab position
+    srcTabY := srcY + 12   ; Tab bar vertical center
+
+    ; Get target window (existing window) position
+    WinGetPos, tgtX, tgtY, tgtW, tgtH, ahk_id %targetHwnd%
+    tgtTabX := tgtX + (tgtW // 2)  ; Middle of target's tab bar
+    tgtTabY := tgtY + 12
+
+    ; Activate source window (new window) and move mouse to its tab
+    WinActivate, ahk_id %sourceHwnd%
+    WinWaitActive, ahk_id %sourceHwnd%,, 0.5
+    Sleep, 200
+
+    MouseMove, srcTabX, srcTabY, 0
+    Sleep, 150
+
+    ; Start dragging (hold mouse down)
+    Click, Down, Left
+    Sleep, 150
+
+    ; Drag to target window's tab bar
+    MouseMove, tgtTabX, tgtTabY, 10
+    Sleep, 300
+
+    ; Release mouse
+    Click, Up, Left
+    Sleep, 300
+
+    ; Activate the merged window (the target/existing window)
+    WinActivate, ahk_id %targetHwnd%
 }
 
 ExplorerCloseAddressDropdown(targetHwnd)
