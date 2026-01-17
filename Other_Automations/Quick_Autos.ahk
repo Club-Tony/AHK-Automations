@@ -685,4 +685,146 @@ ReadFriendlyNameFromStore(store)
     return value
 }
 
+; Multi-tab Explorer reset Ctrl+Alt+Shift+E
+^!+e::
+    if (!ExplorerWindowExists())
+    {
+        ToolTip, No Explorer window running.
+        SetTimer, HideQuickTip, -1200
+        return
+    }
+    if (!IsExplorerActive())
+    {
+        ToolTip, Focus Explorer window and try again.
+        SetTimer, HideQuickTip, -1500
+        return
+    }
+
+    InputBox, tabCount, Multi-Tab Reset, How many tabs to reset? (1-9), , 220, 130, , , , , 1
+    if (ErrorLevel || tabCount = "")
+        return
+    if tabCount is not integer
+    {
+        ToolTip, Invalid number.
+        SetTimer, HideQuickTip, -1200
+        return
+    }
+    if (tabCount < 1 || tabCount > 9)
+    {
+        ToolTip, Enter a number between 1 and 9.
+        SetTimer, HideQuickTip, -1500
+        return
+    }
+
+    ToolTip, Resetting %tabCount% tab(s)...
+    Sleep, 500
+
+    Loop, %tabCount%
+    {
+        currentTab := A_Index
+        ToolTip, Resetting tab %currentTab% of %tabCount%...
+
+        ; Run the same logic as Ctrl+Alt+E for the current tab
+        if (!ResetCurrentExplorerTab())
+        {
+            ToolTip, Failed on tab %currentTab%. Stopping.
+            SetTimer, HideQuickTip, -2000
+            return
+        }
+
+        ; If not the last tab, switch to next tab
+        if (A_Index < tabCount)
+        {
+            Sleep, 350
+            SendInput, ^{Tab}
+            Sleep, 400
+        }
+    }
+
+    ToolTip, Reset %tabCount% tab(s) complete.
+    SetTimer, HideQuickTip, -1500
+return
+
+ResetCurrentExplorerTab()
+{
+    ; Returns true on success, false on failure
+    local originalHwnd, path, existingWindows, preList, newHwnd, postList, thisHwnd, targetMergeHwnd
+
+    if (!IsExplorerActive())
+        return false
+
+    originalHwnd := WinExist("A")
+
+    ; Capture path from address bar
+    path := ExplorerCapturePathSilent(originalHwnd)
+
+    if (path = "")
+        return false
+
+    ; Resolve special folder names to actual paths
+    if (!IsFilePath(path))
+        path := ResolveSpecialFolder(path)
+
+    if (path = "" || !IsFilePath(path))
+        return false
+
+    ; Close current tab
+    if (!WinActive("ahk_id " originalHwnd))
+    {
+        WinActivate, ahk_id %originalHwnd%
+        WinWaitActive, ahk_id %originalHwnd%,, 0.5
+    }
+    SendInput, ^w
+    Sleep, 150
+
+    ; If close dialog appears, dismiss it
+    if WinExist("ahk_class #32770 ahk_exe explorer.exe")
+    {
+        WinActivate, ahk_class #32770 ahk_exe explorer.exe
+        Sleep, 50
+        SendInput, {Enter}
+        Sleep, 100
+    }
+
+    ; Get list of existing Explorer windows before opening new one
+    existingWindows := {}
+    WinGet, preList, List, ahk_class CabinetWClass
+    Loop, %preList%
+        existingWindows[preList%A_Index%] := true
+
+    ; Open new Explorer window at the saved path
+    Run, explorer.exe "%path%"
+
+    ; Wait for new window to appear
+    newHwnd := ""
+    Loop, 20  ; Try for up to 2 seconds
+    {
+        Sleep, 100
+        WinGet, postList, List, ahk_class CabinetWClass
+        Loop, %postList%
+        {
+            thisHwnd := postList%A_Index%
+            if (!existingWindows[thisHwnd])
+            {
+                newHwnd := thisHwnd
+                break 2
+            }
+        }
+    }
+
+    if (!newHwnd)
+        return false
+
+    WinActivate, ahk_id %newHwnd%
+    WinWaitActive, ahk_id %newHwnd%,, 1
+    Sleep, 1000  ; Wait for window to fully render
+
+    ; Find another Explorer window to merge into (the pre-existing one)
+    targetMergeHwnd := FindOtherExplorerWindow(newHwnd)
+    if (targetMergeHwnd)
+        MergeExplorerWindows(newHwnd, targetMergeHwnd)
+
+    return true
+}
+
 ; Next hotkey (not yet implemented)

@@ -51,6 +51,7 @@ Ctrl+Shift+Alt+C - Launch Coord Capture Helper script
 Ctrl+Shift+Alt+W - Toggle Window Spy
 Ctrl+Alt+S  - Toggle sound output device
 Ctrl+Alt+E  - Reset Explorer tab scaling (reopen tab)
+Ctrl+Alt+Shift+E - Multi-tab reset (1-9 tabs)
 Win+Alt+E   - Open new Explorer window
 -
 Window Switch (Personal)
@@ -96,4 +97,5 @@ return
 ~^+!w::Gosub HideTooltips
 ~^!s::Gosub HideTooltips
 ~^!e::Gosub HideTooltips
+~^!+e::Gosub HideTooltips
 #If
