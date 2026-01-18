@@ -8,11 +8,11 @@ SetWorkingDir %A_ScriptDir%
 SetTitleMatchMode, 2
 TooltipActive := false
 TooltipLocked := false
+VSCodeTooltipActive := false
+ClaudeTooltipActive := false
 TooltipCooldownMs := 1500 ; 1.5 seconds (prevent accidental double-tap)
 ButtonsTooltipActive := false
 interofficeExes := ["firefox.exe", "chrome.exe", "msedge.exe"]
-
-^Esc::Reload
 
 #If WinActive("Intra Desktop Client - Assign Recip")
 
@@ -38,7 +38,7 @@ Alt+R - Clear + Toggle Print Button & Normalize
 Alt+C - Clear All
 Alt+E - Focus Scan Field
 Alt+Shift+E - Paste list into Scan field
-Ctrl+Alt+Shift+E - Paste list into Scan field (fast)
+Ctrl+Shift+Alt+E - Paste list into Scan field (fast)
 Alt+A - Focus Alias Field
 Alt+N - Focus Name Field
 Alt+1 - Focus Package Type
@@ -51,7 +51,7 @@ Alt+D - Item Var Lookup + Apply All Toggle
 Additional Scripts Launch Hotkeys:
 Ctrl+Alt+E - Toggle tracking file (1=TXT, 2=CSV)
 Alt+Shift+C - Toggle tracking_numbers.csv file
-Ctrl+Alt+Shift+Delete - Clear both tracking files
+Ctrl+Shift+Alt+Delete - Clear both tracking files
 Ctrl+Alt+F - Launch Intra Search Shortcuts
 Ctrl+Alt+I - Launch Intra Extensive Automations
 Ctrl+Alt+T - Show this tooltip again
@@ -336,12 +336,14 @@ return
         Return
     }
     TooltipActive := true
+    VSCodeTooltipActive := true
     tooltipText =
     (
 VS Code Shortcuts
 Ctrl+Shift+P - Command Palette
 Restarting Extensions - Ctrl+Shift+P - type Restart Extension Host
 Ctrl+`` - Toggle terminal
+Ctrl+Alt+R - Relaunch terminal (when focused)
 Ctrl+P - Quick Open
 Ctrl+Shift+E - Explorer
 Ctrl+Shift+F - Search
@@ -349,12 +351,58 @@ Ctrl+Shift+G - Source Control
 Ctrl+Shift+X - Extensions
 Ctrl+K Ctrl+S - Keyboard Shortcuts
 Ctrl+Alt+T - Show this tooltip again
+-
+PRESS 'T' FOR OTHER/AGENT SHORTCUTS
     )
     Tooltip, %tooltipText%
     Hotkey, Esc, HideTooltips, On
+    Hotkey, t, ShowClaudeTooltip, On
     SetTimer, HideTooltips, -15000
 return
 #If
+
+ShowClaudeTooltip:
+    if (!VSCodeTooltipActive || ClaudeTooltipActive)
+        return
+    VSCodeTooltipActive := false
+    ClaudeTooltipActive := true
+    Hotkey, t, ShowClaudeTooltip, Off
+    SetTimer, HideTooltips, Off
+    claudeText =
+    (
+Claude Code Shortcuts (Windows)
+-
+Input Controls:
+@ - Mention files/folders/URLs
+Tab - Accept suggestion
+Shift+Tab - Reject suggestion
+Esc - Interrupt/cancel current operation
+Ctrl+C - Cancel (while Claude is responding)
+Up/Down - Navigate conversation history
+-
+Slash Commands:
+/clear - Clear conversation history
+/compact - Toggle compact conversation mode
+/config - Open configuration settings
+/cost - Show token usage and cost
+/help - Show all available commands
+/init - Initialize CLAUDE.md in project
+/model - Switch between Claude models
+/permissions - Manage tool permissions
+/review - Review recent code changes
+-
+CLI Only:
+/doctor - Check Claude Code health/setup
+/memory - Manage project memory/context (CLI)
+/status - Show current session status (CLI)
+/terminal-setup - Configure terminal integration (CLI)
+-
+Press Esc to close
+    )
+    Tooltip, %claudeText%
+    Hotkey, Esc, HideTooltips, On
+    SetTimer, HideTooltips, -30000
+return
 
 ; Slack shortcuts when Slack is active
 #IfWinActive, ahk_exe slack.exe
@@ -464,18 +512,20 @@ Win+W - Launch/Focus/Minimize UPS WorldShip
 Win+E - Focus/Minimize/Cycle Explorer
 Win+Alt+E - Open new Explorer window
 Win+Alt+V - Launch/Focus/Minimize VS Code
+Win+Alt+R - Launch RS focus helper (Alt+Z)
 Win+I - Focus/Minimize all Intra windows
 Win+Alt+M - Minimize all, then focus Firefox, Outlook PWA, Slack
 Alt+X / Alt+O - Intra Online: Outbound Shipping Requests button anchor
 Alt+Z / Alt+H - Intra Online: Home button anchor
 Ctrl+Alt+E - Toggle tracking file (1=TXT, 2=CSV)
 Alt+Shift+C - Toggle tracking_numbers.csv file
-Ctrl+Alt+Shift+Delete - Clear both tracking files
+Ctrl+Shift+Alt+Delete - Clear both tracking files
 Ctrl+Alt+L - Launch Daily Audit + Smartsheet
 Ctrl+Shift+Alt+L - Auto Daily Audit + Smartsheet
 Ctrl+Alt+W - Intra Desktop Window Organizing
 Ctrl+Shift+Alt+C - Launch Coord Capture helper
 Ctrl+Shift+Alt+O - Toggle coord.txt open/close (Coord Capture helper)
+Ctrl+Shift+Alt+R - Reset stuck modifier keys
 Ctrl+Shift+Alt+W - Toggle Window Spy
 Ctrl+Alt+T - Show this tooltip again
     )
@@ -488,8 +538,11 @@ HideTooltips:
     SetTimer, UnlockTooltip, Off
     TooltipLocked := false
     TooltipActive := false
+    VSCodeTooltipActive := false
+    ClaudeTooltipActive := false
     ButtonsTooltipActive := false
     Hotkey, Esc, HideTooltips, Off
+    Hotkey, t, ShowClaudeTooltip, Off
     Tooltip
 Return
 

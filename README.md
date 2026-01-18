@@ -45,7 +45,7 @@
 #### -`Ctrl+Shift+Alt+E` - Paste list into Assign Recip scan field (fast speed)
 #### -`Ctrl+Alt+E` - Toggle tracking file (press 1 for TXT, 2 for CSV)
 #### -`Alt+Shift+C` - Toggle tracking_numbers.csv (direct access)
-#### -`Ctrl+Alt+Shift+Delete` - Clear both tracking files
+#### -`Ctrl+Shift+Alt+Delete` - Clear both tracking files
 
 **Formats Supported:**
 - **TXT**: One tracking number per line in tracking_numbers.txt

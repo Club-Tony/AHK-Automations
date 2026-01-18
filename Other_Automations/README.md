@@ -16,14 +16,24 @@
 - `Esc` - exits certain launched scripts early.
 - `Ctrl+Alt+T` - show/hide global hotkey tooltip (ToolTips.ahk).
 - `Ctrl+Alt+E` - reset Explorer tab scaling (Quick_Autos.ahk).
+- `Ctrl+Shift+Alt+R` - reset stuck modifier keys (Quick_Autos.ahk).
 - `Alt+Q` - acts as Alt+F4.
 - `Ctrl+Home` - sleep the machine.
 
 ---
 
+## Window_Switch.ahk
+
+- `Win+E` - Focus/minimize/cycle Explorer windows.
+- `Win+Alt+E` - Open new Explorer window.
+- `Win+F` - Focus/minimize/launch Firefox.
+- `Win+Alt+V` - Launch/focus/minimize VS Code.
+- `Win+Alt+R` - Launch RS focus helper (Alt+Z to use).
+
+---
+
 ## Launcher_Script_Other.ahk
 
-- `Ctrl+Alt+R` — launch RS focus helper (Focus_RS_Window.ahk).
 - `Ctrl+Shift+Alt+C` — launch Coordinate Capture Helper (Alt+C starts capture, Alt+I shows more info).
 - `Ctrl+Shift+Alt+O` — open the saved `coord.txt` capture file.
 

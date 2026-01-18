@@ -6,8 +6,6 @@ SendMode Input
 SetWorkingDir, %A_ScriptDir%
 SetKeyDelay, 25
 
-^Esc::Reload
-
 ; Switch sound output Ctrl+Alt+S
 ^!s::
     ToggleAudioOutput()
@@ -685,7 +683,7 @@ ReadFriendlyNameFromStore(store)
     return value
 }
 
-; Multi-tab Explorer reset Ctrl+Alt+Shift+E
+; Multi-tab Explorer reset Ctrl+Shift+Alt+E
 ^!+e::
     if (!ExplorerWindowExists())
     {
@@ -827,4 +825,9 @@ ResetCurrentExplorerTab()
     return true
 }
 
-; Next hotkey (not yet implemented)
+; Modifier key reset Ctrl+Shift+Alt+R
+^+!r::
+    SendInput, {Ctrl Up}{Alt Up}{Shift Up}{LWin Up}{RWin Up}
+    ToolTip, Modifier keys reset
+    SetTimer, HideQuickTip, -1000
+return

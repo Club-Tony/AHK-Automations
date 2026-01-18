@@ -46,7 +46,7 @@ return
     ToggleTrackingCSVFile()
 return
 
-; Clear: Both Tracking Files ; Keybind: Ctrl+Alt+Shift+Delete
+; Clear: Both Tracking Files ; Keybind: Ctrl+Shift+Alt+Delete
 ^!+Delete::
     ClearTrackingFiles()
 return
@@ -226,8 +226,6 @@ FocusAssignRecipWindow()
     WinWaitActive, %assignTitle%,, 1
     return !ErrorLevel
 }
-
-^Esc::Reload
 
 ShowTooltip(TooltipText, durationMs)
 {

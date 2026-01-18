@@ -5,17 +5,6 @@
 SendMode Input
 SetWorkingDir, %A_ScriptDir%
 
-^Esc::Reload
-
-; ; Keybind: Ctrl+Alt+R Opens RS-related scripts
-^!r:: 
-    Run, C:\Users\Davey\Documents\AutoHotkey\Focus_RS_Window.ahk ; Keybind: Alt+Z
-    Sleep 150
-    Tooltip, RS Window Focus: Alt+Z
-    Sleep 5000
-    Tooltip
-Return
-
 ^+!c::
     Run, "C:\Users\Davey\Documents\GitHub\Repositories\AHK-Automations\Other_Automations\Coordinate Capture Helper\Coord_Capture.ahk"
     ToolTip, % "Coord Helper: Alt+C to capture, Alt+I for more info, Alt+G toggle bg"

@@ -15,6 +15,18 @@ CoordMode, Mouse, Window
 ; Win+Alt+V - Focus/Minimize/Launch VS Code
 #!v::ToggleVsCode()
 
+; Win+Alt+R - Launch RS focus helper
+#!r::
+    Run, C:\Users\Davey\Documents\AutoHotkey\Focus_RS_Window.ahk
+    Sleep, 150
+    ToolTip, RS Window Focus: Alt+Z
+    SetTimer, HideRSTip, -5000
+return
+
+HideRSTip:
+    ToolTip
+return
+
 ToggleExplorer()
 {
     ; Cycle Explorer windows if multiple; toggle minimize if single and active; open if none.
