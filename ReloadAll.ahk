@@ -11,9 +11,14 @@ SetWorkingDir %A_ScriptDir%
 
 ; Directories to scan for running scripts
 ManagedDirs := []
+; Home machine (Davey)
 ManagedDirs.Push("C:\Users\Davey\Documents\GitHub\Repositories\AHK-Automations\Work_Automations")
 ManagedDirs.Push("C:\Users\Davey\Documents\GitHub\Repositories\AHK-Automations\Other_Automations")
 ManagedDirs.Push("C:\Users\Davey\Documents\GitHub\Repositories\Macros-Script")
+; Work machine (daveyuan)
+ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations")
+ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Other_Automations")
+ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\Macros-Script")
 
 ^Esc::
     reloadedScripts := []
