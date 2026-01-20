@@ -27,7 +27,6 @@ posterActionCtrlAltEnter := 7
 posterActionCtrlW := 8
 
 ; Scope: Intra: Interoffice Request (browser) poster automation (priority: Firefox > Chrome > Edge).
-^Esc::Reload
 
 ^!p::  ; TODO: full poster automation
     posterHotkeyCancelled := false

@@ -20,8 +20,6 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 ; 500, 120 = Print Label button
 ; 40, 1300 = All Button
 
-^Esc::Reload
-
 #IfWinActive, Intra Desktop Client - Assign Recip
 SetKeyDelay 150
 

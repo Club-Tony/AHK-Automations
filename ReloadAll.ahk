@@ -30,7 +30,14 @@ ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\Macros-Script"
     Loop, %ahkWindows%
     {
         hwnd := ahkWindows%A_Index%
-        WinGetTitle, scriptPath, ahk_id %hwnd%
+        WinGetTitle, winTitle, ahk_id %hwnd%
+
+        ; Window title format: "C:\path\script.ahk - AutoHotkey v1.x.x"
+        ; Extract just the script path by removing " - AutoHotkey..." suffix
+        scriptPath := winTitle
+        ahkPos := InStr(winTitle, " - AutoHotkey")
+        if (ahkPos > 0)
+            scriptPath := SubStr(winTitle, 1, ahkPos - 1)
 
         ; Skip this script (ReloadAll.ahk)
         if (scriptPath = A_ScriptFullPath)

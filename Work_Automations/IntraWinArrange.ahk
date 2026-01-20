@@ -15,8 +15,6 @@ assignPos := {x: -7, y: 0, w: 1322, h: 1399}      ; from latest Assign Recip win
 updatePos := {x: 1713, y: 0, w: 1734, h: 1399}    ; from latest Update window spy
 assignScanPos := {x: 200, y: 245}                  ; scan field (Assign Recip)
 
-^Esc::Reload
-
 ^!w::  ; Align Assign/Update/Pickup windows
     ArrangeIntraWindows()
 return

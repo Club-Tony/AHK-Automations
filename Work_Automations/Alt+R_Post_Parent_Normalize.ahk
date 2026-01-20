@@ -5,8 +5,6 @@
 SendMode Input ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
-^Esc::Reload
-
 ; Window Coordinates (Intra Desktop Client - Assign Recip):
 ; Window Position: x: -7 y: 0 w: 1322 h: 1339
 ; 200, 245 = Scan field

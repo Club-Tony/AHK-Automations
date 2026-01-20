@@ -8,7 +8,6 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 SetTitleMatchMode, 2
 ; Scope: Intra Assign/Update windows; focus helpers only (tooltip moved to ToolTips.ahk).
 
-^Esc::Reload
 #If ( WinActive("Intra Desktop Client - Assign Recip")
     || WinActive("Intra Desktop Client - Update") )
 

@@ -32,7 +32,6 @@ abortHotkey := false
 
 ^Esc::
     abortHotkey := true
-    Reload
 return
 
 #If ( WinActive("Intra Desktop Client - Update") || WinActive("Search - General") )

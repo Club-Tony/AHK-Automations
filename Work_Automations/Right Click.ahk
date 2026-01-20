@@ -6,7 +6,6 @@ SendMode Input ; Send works as SendInput
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 ; Scope: global right-click helper (prefers focused control).
-^Esc::Reload
 
 PrintScreen::
     ; Try to right-click the currently focused control (works when the selected item follows keyboard focus).

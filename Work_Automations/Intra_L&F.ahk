@@ -20,7 +20,6 @@ abortHotkey := false
 
 ^Esc::
     abortHotkey := true
-    Reload
 return
 
 !l::  ; L&F received flow

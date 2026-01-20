@@ -11,8 +11,6 @@ TooltipActive := false
 VSCodeTooltipActive := false
 ClaudeTooltipActive := false
 
-^Esc::Reload
-
 #IfWinActive, ahk_exe Code.exe
 ^!t::
     if (TooltipActive) {

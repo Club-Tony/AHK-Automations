@@ -8,8 +8,6 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 SetTitleMatchMode, 2 ; allows for partial window title matches
 ; Two scoped Alt+Space handlers: Item Details vs Search Results windows.
 
-^Esc::Reload
-
 #IfWinActive, Item Details
 !space::
     KeyWait, space

@@ -19,9 +19,6 @@ StatusSelect := {x: 375, y: 160}
 ; PickupFromBSC: send p, down 3, space, enter
 ; ArrivedAtBSC: send a, space, enter
 
-; Quick restart without single-instance prompts.
-^Esc::Reload
-
 IsIntraSearchWin()
 {
     return WinActive("Search - General")

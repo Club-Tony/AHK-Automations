@@ -18,7 +18,6 @@ ctrlWRunning := false
 exportedReportTitle := "ExportedReport.pdf"
 
 ; Scope: Intra Interoffice Request (Firefox) helpers for common form fields.
-^Esc::Reload
 
 ; Window Coordinates (Intra Interoffice Request - Mozilla Firefox):
 ; Active Window Position: x: 1721 y: 0 w: 1718 h: 1391

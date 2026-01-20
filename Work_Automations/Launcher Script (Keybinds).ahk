@@ -126,7 +126,7 @@ Return
     SendInput, {WheelUp 25} ; Scroll to top of form
 
     if (intraExe != "firefox.exe") {
-        Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WS-Legacy.ahk"
+        Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WS\DSRF-to-UPS_WS-Legacy.ahk"
         Sleep 150
         TooltipText =
         (
@@ -136,7 +136,7 @@ Ctrl+Alt+C: Launches Legacy (Chrome/Edge)
 Current Mode: Legacy (No zoom)
         )
     } else {
-        Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WS.ahk"
+        Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WS\DSRF-to-UPS_WS.ahk"
         Sleep 150
         TooltipText =
         (
@@ -170,7 +170,7 @@ Return
     SendInput, {WheelUp 25}
 
     if (intraExe != "firefox.exe") {
-        Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WS-Legacy.ahk"
+        Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WS\DSRF-to-UPS_WS-Legacy.ahk"
         Sleep 150
         TooltipText =
         (
@@ -180,7 +180,7 @@ Ctrl+Alt+U: Launches Legacy (Chrome/Edge)
 Current Mode: Legacy (No zoom)
         )
     } else {
-        Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WS(Super-Speed).ahk"
+        Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WS\DSRF-to-UPS_WS(Super-Speed).ahk"
         Sleep 75
         TooltipText =
         (

@@ -37,8 +37,6 @@ worldShipTabs.Options := {x: 372, y: 162}
 worldShipTabs.QVN := {x: 381, y: 282}
 worldShipTabs.Recipients := {x: 560, y: 253}
 
-^Esc::Reload
-
 #If WinActive(worldShipTitle)
 ~Alt::
     Sleep 250

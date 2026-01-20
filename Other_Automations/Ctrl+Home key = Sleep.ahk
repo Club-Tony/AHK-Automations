@@ -5,8 +5,6 @@
 SendMode Input
 SetWorkingDir, %A_ScriptDir%
 
-^Esc::Reload
-
 ^Home::
 DllCall("PowrProf\SetSuspendState", "int", 0, "int", 0, "int", 0)
 return

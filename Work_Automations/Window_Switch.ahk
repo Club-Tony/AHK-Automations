@@ -17,8 +17,6 @@ qvnTitle := "Quantum View Notify Recipients"
 exportedReportTitle := "ExportedReport.pdf"
 browserExes := ["firefox.exe", "chrome.exe", "msedge.exe"]
 
-^Esc::Reload
-
 #a::ToggleFocusOrMinimize(assignTitle)
 #u::ToggleFocusOrMinimize(updateTitle)
 #p::ToggleFocusOrMinimize(pickupTitle)

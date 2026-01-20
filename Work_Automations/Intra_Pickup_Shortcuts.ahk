@@ -21,8 +21,6 @@ clearClass := "WindowsForms10.Window.8.app.0.38248fc_r8_ad11294"
 signatureClass := "WindowsForms10.Window.8.app.0.38248fc_r8_ad11353"
 scanClasses := ["WindowsForms10.EDIT.app.0.38248fc_r8_ad111", "WindowsForms10.EDIT.app.0.38248fc_r8_ad113"]
 
-^Esc::Reload
-
 #If WinActive("Intra Desktop Client - Pickup")
 !1::  ; focus SigPrintName field
     ControlClick, x%sigX% y%sigY%, Intra Desktop Client - Pickup,, Left, 1, NA

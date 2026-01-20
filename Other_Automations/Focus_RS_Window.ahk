@@ -5,8 +5,6 @@
 SendMode Input
 SetWorkingDir, %A_ScriptDir%
 
-^Esc::Reload
-
 Esc::ExitApp
 
 !z::

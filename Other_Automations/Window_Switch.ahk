@@ -7,8 +7,6 @@ SetWorkingDir %A_ScriptDir%
 SetTitleMatchMode, 2
 CoordMode, Mouse, Window
 
-^Esc::Reload
-
 #e::ToggleExplorer()
 #!e::Run, explorer.exe
 #f::ToggleFirefox()

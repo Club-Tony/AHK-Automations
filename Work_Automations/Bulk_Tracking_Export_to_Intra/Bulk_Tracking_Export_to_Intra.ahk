@@ -26,8 +26,6 @@ abortHotkey := false
 ; 40, 1300 = All Button
 ScanField := {x: 200, y: 245}
 
-^Esc::Reload
-
 !+e::  ; paste list into scan field (normal speed)
     RunExport()
 return

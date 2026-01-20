@@ -14,14 +14,12 @@ slackWindow := "ahk_exe " slackExe
 #IfWinActive, ahk_exe slack.exe
 ~Alt Up::return
 
-^Esc::Reload
-
 ; Jump to specific channels (edit the names to your workspace).
 !0::JumpToSlackChannel("daveyuan")
 !1::JumpToSlackChannel("leona-array")
 !2::JumpToSlackChannel("sps-byod")
 !3::JumpToSlackChannel("sea124_ouroboros")
-!4::JumpToSlackChannel("acp_bsc_comms")
+!4::JumpToSlackChannel("acp_bsc_coms")
 !5::JumpToSlackChannel("spssea124lostnfound")
 !s::JumpToSlackChannel("felsusad grovfred")
 !a::JumpToSlackChannel("tstepama grovfred")
