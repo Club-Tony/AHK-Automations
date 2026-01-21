@@ -94,6 +94,7 @@ Esc::ExitApp
     startTick := A_TickCount
     data := CollectIntraData("business")
     PasteBusinessToWorldShip(data)
+    ClickServiceTab()
     FocusIntraWindow()
     EnsureIntraWindow()
     EnsureIntraZoom100()
@@ -105,6 +106,7 @@ return
     startTick := A_TickCount
     data := CollectIntraData("personal")
     PastePersonalToWorldShip(data)
+    ClickServiceTab()
     FocusIntraWindow()
     EnsureIntraWindow()
     EnsureIntraZoom100()
@@ -410,6 +412,14 @@ EnsureIntraZoom100()
 {
     SendInput, ^0
     Sleep 120
+}
+
+ClickServiceTab()
+{
+    global worldShipTabs
+    FocusWorldShipWindow()
+    MouseClick, left, % worldShipTabs.Service.x, % worldShipTabs.Service.y, 2
+    Sleep 150
 }
 
 FocusWorldShipWindow()

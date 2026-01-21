@@ -304,6 +304,7 @@ Esc::ExitApp
     Sleep 150
     Send {Enter}
     ; Return to Intra and restore default zoom
+    ClickServiceTab()
     FocusIntraWindow()
     EnsureIntraWindow()
     EnsureIntraZoom100()
@@ -525,6 +526,7 @@ return
     Sleep 150
     Send {Enter}
     ; Return to Intra and restore default zoom
+    ClickServiceTab()
     FocusIntraWindow()
     EnsureIntraWindow()
     EnsureIntraZoom100()
@@ -561,6 +563,14 @@ EnsureIntraZoom60()
 EnsureIntraZoom100()
 {
     SendInput, ^0
+    Sleep 150
+}
+
+ClickServiceTab()
+{
+    global worldShipTabs
+    FocusWorldShipWindow()
+    MouseClick, left, % worldShipTabs.Service.x, % worldShipTabs.Service.y, 2
     Sleep 150
 }
 

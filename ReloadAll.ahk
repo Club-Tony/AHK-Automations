@@ -9,6 +9,11 @@ SetWorkingDir %A_ScriptDir%
 ; Keybind: Ctrl+Esc
 ; Dynamically detects running scripts from managed directories
 
+reloadTooltipActive := false
+reloadedScriptsList := []
+tooltipMouseX := 0
+tooltipMouseY := 0
+
 ; Directories to scan for running scripts
 ManagedDirs := []
 ; Home machine (Davey)
@@ -67,24 +72,67 @@ ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\Macros-Script"
     DetectHiddenWindows, Off
 
     ; Show tooltip with results
+    reloadedScriptsList := reloadedScripts
     if (reloadedScripts.Length() > 0)
     {
-        msg := "Reloaded " reloadedScripts.Length() " script(s):`n"
-        for i, name in reloadedScripts
-            msg .= "  " name "`n"
+        msg := "Reloaded " reloadedScripts.Length() " script(s)`nPress T to view list"
         ToolTip, %msg%
-        SetTimer, ClearReloadTooltip, -2000
+        reloadTooltipActive := true
+        MouseGetPos, tooltipMouseX, tooltipMouseY
+        SetTimer, ClearReloadTooltip, -5000
+        SetTimer, CheckTooltipDismiss, 50
     }
     else
     {
         ToolTip, No managed scripts were running
+        reloadTooltipActive := true
+        MouseGetPos, tooltipMouseX, tooltipMouseY
         SetTimer, ClearReloadTooltip, -1500
+        SetTimer, CheckTooltipDismiss, 50
     }
+return
 
-    ; Reload this script last
-    Reload
+#If reloadTooltipActive
+t::
+    SetTimer, ClearReloadTooltip, Off
+    SetTimer, CheckTooltipDismiss, Off
+    msg := "Reloaded " reloadedScriptsList.Length() " script(s):`n"
+    for i, name in reloadedScriptsList
+        msg .= "  " name "`n"
+    msg .= "`nPress Esc to close"
+    ToolTip, %msg%
+    SetTimer, ClearReloadTooltip, -30000
+return
+
+Esc::
+    Gosub, ClearReloadTooltip
+return
+#If
+
+CheckTooltipDismiss:
+    MouseGetPos, currentX, currentY
+    if (Abs(currentX - tooltipMouseX) > 20 || Abs(currentY - tooltipMouseY) > 20)
+    {
+        Gosub, ClearReloadTooltip
+        return
+    }
+    ; Check for any key press (except T which is handled separately)
+    Loop, 256
+    {
+        key := A_Index
+        if (key = 84)  ; Skip T
+            continue
+        if (GetKeyState(Format("vk{:02X}", key), "P"))
+        {
+            Gosub, ClearReloadTooltip
+            return
+        }
+    }
 return
 
 ClearReloadTooltip:
+    SetTimer, ClearReloadTooltip, Off
+    SetTimer, CheckTooltipDismiss, Off
+    reloadTooltipActive := false
     ToolTip
 return

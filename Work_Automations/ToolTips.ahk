@@ -350,6 +350,7 @@ Ctrl+Shift+F - Search
 Ctrl+Shift+G - Source Control
 Ctrl+Shift+X - Extensions
 Ctrl+K Ctrl+S - Keyboard Shortcuts
+Ctrl+Alt+C - Claude Code Extension
 Ctrl+Alt+T - Show this tooltip again
 -
 PRESS 'T' FOR OTHER/AGENT SHORTCUTS

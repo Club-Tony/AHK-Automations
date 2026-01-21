@@ -107,6 +107,8 @@ Return
 Return
 
 ; Launch: DSRF-to-UPS WorldShip ; Keybind: Ctrl+Alt+C
+; Skip when VS Code is active to allow Claude Code extension shortcut
+#IfWinNotActive ahk_exe Code.exe
 ^!c::
     intraTitle := GetIntraWindowTitle()
     intraExe := GetIntraBrowserExe()
@@ -150,6 +152,7 @@ Current Mode: Normal Speed
     if (!TooltipActive)
         ShowTooltip(TooltipText, 5000)
 Return
+#IfWinNotActive  ; Reset context for subsequent hotkeys
 
 ; Launch: DSRF-to-UPS WorldShip (Super-Speed) ; Keybind: Ctrl+Alt+U
 ^!u::

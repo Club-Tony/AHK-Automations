@@ -78,6 +78,7 @@ Esc::ExitApp
     startTick := A_TickCount
     data := CollectIntraDataLegacy("business")
     PasteBusinessToWorldShip(data)
+    ClickServiceTab()
     FocusIntraWindow()
     EnsureIntraWindow()
     ShowHotkeyRuntime(startTick)
@@ -88,6 +89,7 @@ return
     startTick := A_TickCount
     data := CollectIntraDataLegacy("personal")
     PastePersonalToWorldShip(data)
+    ClickServiceTab()
     FocusIntraWindow()
     EnsureIntraWindow()
     ShowHotkeyRuntime(startTick)
@@ -369,6 +371,14 @@ EnsureIntraWindow()
     title := GetIntraWindowTitle()
     ; Match the working dimensions used in Intra_Buttons. Adjust here if the target size changes.
     WinMove, %title%,, 1917, 0, 1530, 1399
+    Sleep 150
+}
+
+ClickServiceTab()
+{
+    global worldShipTabs
+    FocusWorldShipWindow()
+    MouseClick, left, % worldShipTabs.Service.x, % worldShipTabs.Service.y, 2
     Sleep 150
 }
 

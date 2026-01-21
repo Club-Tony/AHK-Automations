@@ -30,9 +30,6 @@ StatusSelect := {x: 375, y: 160}
 
 abortHotkey := false
 
-^Esc::
-    abortHotkey := true
-return
 
 #If ( WinActive("Intra Desktop Client - Update") || WinActive("Search - General") )
 Esc::

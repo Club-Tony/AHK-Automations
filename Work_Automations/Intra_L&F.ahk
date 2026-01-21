@@ -18,9 +18,6 @@ ScanField := {x: 200, y: 245}
 
 abortHotkey := false
 
-^Esc::
-    abortHotkey := true
-return
 
 !l::  ; L&F received flow
     ResetAbort()
@@ -63,7 +60,47 @@ return
     Sleep 200
     if (AbortRequested())
         return
-    SendInput, ^n
+    SendInput, {Raw}LF
+    Sleep 250
+    ; Wait for barcode scan similar to IT_Asset_Move script
+    ToolTip, Scan barcode on tamper-proof bag to continue script
+    changed := false
+    initialCaptured := false
+    initialText := ""
+    focusedCtrl := ""
+    Loop 600  ; ~120 seconds total at 200 ms intervals
+    {
+        if (AbortRequested())
+        {
+            ToolTip
+            return
+        }
+        Sleep 200
+        ControlGetFocus, loopFocus, A
+        if (loopFocus = "")
+            continue
+        if (!initialCaptured)
+        {
+            ControlGetText, initialText, %loopFocus%, A
+            focusedCtrl := loopFocus
+            initialCaptured := true
+            continue
+        }
+        ControlGetText, newText, %focusedCtrl%, A
+        if (newText != initialText && newText != "")
+        {
+            changed := true
+            break
+        }
+    }
+    if (!changed)
+    {
+        ToolTip, L&F script timed out waiting for scan
+        Sleep 3000
+        ToolTip
+        return
+    }
+    ToolTip  ; clear scan prompt on success
     Sleep 750
     if (AbortRequested())
         return
