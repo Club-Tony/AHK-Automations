@@ -214,7 +214,6 @@ Ctrl+Enter - Scroll to bottom and Submit
 Ctrl+Alt+S - Fill Special Instructions
 Ctrl+Alt+A - ACP preset -> Alias
 Alt+P  - Load "posters" preset -> Name field
-Ctrl+Alt+P - Poster full automation
 Alt+Z / Alt+H - Intra Online: Home button anchor
 Alt+1  - Focus "# of Packages"
 Alt+2  - Focus Package Type
@@ -223,6 +222,10 @@ Alt+C  - Clear/Reset
 Ctrl+Alt+Enter - Quick submit (scroll bottom + submit)
 Ctrl+W - Close open tabs (bulk prompt)
 Ctrl+Alt+N - Focus Name field (recipient)
+-
+Intra Form Full Autos
+Ctrl+Alt+M - IO full auto (mfrncoa)
+Ctrl+Alt+P - Poster full automation
 Ctrl+Alt+T - Show this tooltip again
     )
     Tooltip, %tooltipText%
@@ -246,6 +249,7 @@ Return
 ~!c::Gosub HideTooltips
 ~!Space::Gosub HideTooltips
 ~^w::Gosub HideTooltips
+~^!m::Gosub HideTooltips
 ~^!t::Gosub HideTooltips
 ~^Enter::Gosub HideTooltips
 #If
@@ -273,7 +277,6 @@ return
 
 #If (ButtonsTooltipActive)
 ~^!c::Gosub HideTooltips
-~^!p::Gosub HideTooltips
 ~^!b::Gosub HideTooltips
 #If
 
