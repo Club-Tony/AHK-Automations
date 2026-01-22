@@ -12,6 +12,8 @@ CoordMode, Mouse, Window
 #f::ToggleFirefox()
 ; Win+Alt+V - Focus/Minimize/Launch VS Code
 #!v::ToggleVsCode()
+; Ctrl+Win+Alt+V - Focus/Minimize/Position VLC
+^#!v::ToggleVlc()
 
 ; Win+Alt+R - Launch RS focus helper
 #!r::
@@ -104,6 +106,98 @@ ToggleVsCode()
         Run, %vsExe%,, Hide
     else
         Run, % """" vsExe """"
+}
+
+ToggleVlc()
+{
+    local candidate := "ahk_exe vlc.exe"
+
+    if WinActive(candidate)
+    {
+        WinMinimize, %candidate%
+        return
+    }
+    if WinExist(candidate)
+    {
+        WinRestore, %candidate%
+        WinActivate  ; last found window
+        WinWaitActive, %candidate%,, 1
+    }
+    else
+    {
+        Run, vlc.exe
+        WinWaitActive, %candidate%,, 2
+    }
+    if WinExist(candidate)
+    {
+        EnsureVlcWindowed(candidate)
+        CenterWindowOnMonitor(candidate, 0.5)
+    }
+}
+
+EnsureVlcWindowed(winTitle)
+{
+    ; Ensure VLC has a normal resizable captioned window (fixes missing drag bar).
+    WinSet, Style, +0xC00000, %winTitle%  ; WS_CAPTION
+    WinSet, Style, +0x40000, %winTitle%   ; WS_THICKFRAME
+    WinSet, Style, +0x80000, %winTitle%   ; WS_SYSMENU
+    WinSet, Style, +0x10000, %winTitle%   ; WS_MAXIMIZEBOX
+    WinSet, Style, +0x20000, %winTitle%   ; WS_MINIMIZEBOX
+    WinSet, Redraw,, %winTitle%
+    ; Exit fullscreen if VLC is in that mode.
+    ControlSend,, {Esc}, %winTitle%
+}
+
+CenterWindowOnMonitor(winTitle, scale := 0.5)
+{
+    global monLeft, monTop, monRight, monBottom
+    ; Use implicit locals to avoid SysGet scope issues with MonitorWorkArea.
+    winX := ""
+    winY := ""
+    winW := ""
+    winH := ""
+
+    WinGetPos, winX, winY, winW, winH, %winTitle%
+    if (winW = "" || winH = "")
+        return
+
+    centerX := winX + (winW / 2)
+    centerY := winY + (winH / 2)
+
+    ; Defaults in case SysGet fails
+    monLeft := 0
+    monTop := 0
+    monRight := A_ScreenWidth
+    monBottom := A_ScreenHeight
+
+    SysGet, monitorCount, MonitorCount
+    Loop %monitorCount%
+    {
+        SysGet, mon, MonitorWorkArea, %A_Index%
+        if (centerX >= monLeft && centerX <= monRight && centerY >= monTop && centerY <= monBottom)
+            break
+    }
+    ; If not on any monitor, fall back to primary monitor work area.
+    if !(centerX >= monLeft && centerX <= monRight && centerY >= monTop && centerY <= monBottom)
+        SysGet, mon, MonitorWorkArea, 1
+
+    monW := monRight - monLeft
+    monH := monBottom - monTop
+    if (monW <= 0 || monH <= 0)
+    {
+        monLeft := 0
+        monTop := 0
+        monRight := A_ScreenWidth
+        monBottom := A_ScreenHeight
+        monW := monRight - monLeft
+        monH := monBottom - monTop
+    }
+    newW := Floor(monW * scale)
+    newH := Floor(monH * scale)
+    newX := Floor(monLeft + (monW - newW) / 2)
+    newY := Floor(monTop + (monH - newH) / 2)
+
+    WinMove, %winTitle%,, %newX%, %newY%, %newW%, %newH%
 }
 
 GetVsCodeExe()

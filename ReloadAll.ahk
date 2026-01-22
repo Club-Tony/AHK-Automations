@@ -101,7 +101,9 @@ t::
         msg .= "  " name "`n"
     msg .= "`nPress Esc to close"
     ToolTip, %msg%
+    MouseGetPos, tooltipMouseX, tooltipMouseY
     SetTimer, ClearReloadTooltip, -30000
+    SetTimer, CheckTooltipDismiss, 50
 return
 
 Esc::

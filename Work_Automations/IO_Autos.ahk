@@ -1,6 +1,7 @@
 #Requires AutoHotkey v1
 #NoEnv
 #Warn
+#UseHook
 #SingleInstance, Force
 SendMode Input
 SetWorkingDir %A_ScriptDir%
@@ -36,7 +37,7 @@ return ; end of auto-execute section
 
 Esc::ExitApp
 
-^!m::
+^#!m::
     ; Check if Intra: Interoffice Request window is active
     if (!IsInterofficeActive())
     {

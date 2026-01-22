@@ -224,7 +224,7 @@ Ctrl+W - Close open tabs (bulk prompt)
 Ctrl+Alt+N - Focus Name field (recipient)
 -
 Intra Form Full Autos
-Ctrl+Alt+M - IO full auto (mfrncoa)
+Ctrl+Win+Alt+M - IO full auto (mfrncoa)
 Ctrl+Alt+P - Poster full automation
 Ctrl+Alt+T - Show this tooltip again
     )
@@ -249,7 +249,7 @@ Return
 ~!c::Gosub HideTooltips
 ~!Space::Gosub HideTooltips
 ~^w::Gosub HideTooltips
-~^!m::Gosub HideTooltips
+~^#!m::Gosub HideTooltips
 ~^!t::Gosub HideTooltips
 ~^Enter::Gosub HideTooltips
 #If

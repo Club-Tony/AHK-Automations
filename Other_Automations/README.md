@@ -28,6 +28,7 @@
 - `Win+Alt+E` - Open new Explorer window.
 - `Win+F` - Focus/minimize/launch Firefox.
 - `Win+Alt+V` - Launch/focus/minimize VS Code.
+- `Ctrl+Win+Alt+V` - Focus/minimize/position VLC.
 - `Win+Alt+R` - Launch RS focus helper (Alt+Z to use).
 
 ---

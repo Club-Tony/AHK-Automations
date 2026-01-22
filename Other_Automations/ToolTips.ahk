@@ -107,6 +107,7 @@ Window Switch (Personal)
 Win+E       - Focus/Minimize/Cycle Explorer
 Win+Alt+E   - Open new Explorer window
 Win+Alt+V   - Launch/Focus/Minimize VS Code
+Ctrl+Win+Alt+V - Focus/Minimize/Position VLC
 Win+Alt+R   - Launch RS focus helper (Alt+Z)
 Win+F       - Focus/Minimize/Launch Firefox
 Ctrl+Alt+T  - Show this tooltip again
@@ -144,6 +145,7 @@ return
 ~#e::Gosub HideTooltips
 ~#!e::Gosub HideTooltips
 ~#!v::Gosub HideTooltips
+~^#!v::Gosub HideTooltips
 ~#!r::Gosub HideTooltips
 ~#f::Gosub HideTooltips
 ~^!t::Gosub HideTooltips
