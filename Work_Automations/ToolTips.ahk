@@ -2,6 +2,7 @@
 #NoEnv
 #Warn
 #SingleInstance, Force
+#InstallKeybdHook
 SendMode Input
 SetWorkingDir %A_ScriptDir%
 
@@ -509,6 +510,7 @@ return
     tooltipText =
     (
 Global Hotkeys
+Ctrl+Esc - Reload all scripts (ReloadAll.ahk)
 Win+A / Win+U / Win+P - Focus/Minimize Assign / Update / Pickup
 Win+F - Focus/Minimize Firefox
 Win+S - Focus/Minimize Slack
@@ -574,6 +576,7 @@ return
 #If
 
 #If (TooltipActive)
+~^Esc::Gosub HideTooltips
 ~!1::Gosub HideTooltips
 ~!e::Gosub HideTooltips
 ~!c::Gosub HideTooltips

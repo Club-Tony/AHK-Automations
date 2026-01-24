@@ -2,6 +2,7 @@
 #NoEnv
 #Warn
 #SingleInstance, Force
+#InstallKeybdHook
 SendMode Input
 SetWorkingDir %A_ScriptDir%
 

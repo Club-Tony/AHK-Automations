@@ -2,6 +2,7 @@
 #NoEnv
 #Warn
 #SingleInstance, Force
+#InstallKeybdHook
 SendMode Input
 SetWorkingDir %A_ScriptDir%
 SetTitleMatchMode, 2
@@ -96,6 +97,7 @@ return
     tooltipText =
     (
 Global Hotkeys
+Ctrl+Esc - Reload all scripts (ReloadAll.ahk)
 Ctrl+Shift+Alt+C - Launch Coord Capture Helper script
 Ctrl+Shift+Alt+W - Toggle Window Spy
 Ctrl+Shift+Alt+R - Reset stuck modifier keys
@@ -142,6 +144,7 @@ HideTooltips:
 return
 
 #If (TooltipActive)
+~^Esc::Gosub HideTooltips
 ~#e::Gosub HideTooltips
 ~#!e::Gosub HideTooltips
 ~#!v::Gosub HideTooltips
