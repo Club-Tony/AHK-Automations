@@ -30,20 +30,59 @@ SubmitBtnY := 1313
 ; Intra Desktop Client - Assign Recip coordinates
 AliasFieldX := 945
 AliasFieldY := 850
+NameFieldX := 130
+NameFieldY := 850
 ScanFieldX := 200
 ScanFieldY := 245
 
+abortRequested := false
+workflowRunning := false
+
 return ; end of auto-execute section
 
-Esc::ExitApp
+#If workflowRunning
+Esc::
+    abortRequested := true
+    ShowTimedTooltip("Workflow aborted", 1500)
+return
+#If
 
 ^#!m::
-    ; Check if Intra: Interoffice Request window is active
+    RunInterofficeWorkflow("mfrncoa", false)
+return
+
+^#!1::
+    RunInterofficeWorkflow("payable-", true, true)
+return
+
+^#!2::
+    RunInterofficeWorkflow("payroll-", true, true)
+return
+
+; ========== Helper Functions ==========
+
+AbortRequested()
+{
+    global abortRequested
+    return abortRequested
+}
+
+RunInterofficeWorkflow(searchString, useNameField := false, useShortcuts := false)
+{
+    global interofficeTitle, assignRecipTitle, abortRequested, workflowRunning
+    global NeutralClickX, NeutralClickY, EnvelopeBtnX, EnvelopeBtnY
+    global LoadBtnX, LoadBtnY, SubmitBtnX, SubmitBtnY
+    global AliasFieldX, AliasFieldY, NameFieldX, NameFieldY, ScanFieldX, ScanFieldY
+
+    ; Check if Intra: Interoffice Request window is active (before setting workflowRunning)
     if (!IsInterofficeActive())
     {
         ShowTimedTooltip("Make sure Intra: Interoffice Request Tab is active", 4000)
         return
     }
+
+    abortRequested := false
+    workflowRunning := true
 
     ; Ensure window is positioned and scrolled to top
     EnsureIntraWindow()
@@ -53,15 +92,27 @@ Esc::ExitApp
     SendInput, ^{Home}
     Sleep 150
 
-    ; Post send: click envelope button, type mfrncoa, enter, click load
+    if (AbortRequested())
+    {
+        workflowRunning := false
+        return
+    }
+
+    ; Click envelope button, type searchString, enter, click load
     MouseClick, left, %EnvelopeBtnX%, %EnvelopeBtnY%
     Sleep 1000
-    SendInput, mfrncoa
+    SendInput, %searchString%
     Sleep 500
     SendInput, {Enter}
     Sleep 250
     MouseClick, left, %LoadBtnX%, %LoadBtnY%
     Sleep 500
+
+    if (AbortRequested())
+    {
+        workflowRunning := false
+        return
+    }
 
     ; Submit: scroll to bottom and click submit button
     MouseClick, left, %NeutralClickX%, %NeutralClickY%, 2
@@ -70,24 +121,34 @@ Esc::ExitApp
     Sleep 250
     MouseClick, left, %SubmitBtnX%, %SubmitBtnY%, 2
     Sleep 150
-    MouseClick, left, %SubmitBtnX% - 3, %SubmitBtnY%, 2
+    MouseClick, left, % SubmitBtnX - 3, % SubmitBtnY, 2
 
     ; Wait for Assign Recip window to appear
     Sleep 1500
+
+    if (AbortRequested())
+    {
+        workflowRunning := false
+        return
+    }
 
     ; Focus Intra - Assign Recip window
     FocusAssignRecipWindow()
     if (!WinActive(assignRecipTitle))
     {
         ShowTimedTooltip("Assign Recip window not found", 3000)
+        workflowRunning := false
         return
     }
 
-    ; Click alias field, type mfrncoa, enter, down, click scan field
+    ; Click alias or name field based on useNameField, type searchString, enter, down, click scan field
     Sleep 200
-    MouseClick, left, %AliasFieldX%, %AliasFieldY%
+    if (useNameField)
+        MouseClick, left, %NameFieldX%, %NameFieldY%, 2
+    else
+        MouseClick, left, %AliasFieldX%, %AliasFieldY%
     Sleep 150
-    SendInput, mfrncoa
+    SendInput, %searchString%
     Sleep 150
     SendInput, {Enter}
     Sleep 400
@@ -95,8 +156,20 @@ Esc::ExitApp
     Sleep 400
     MouseClick, left, %ScanFieldX%, %ScanFieldY%, 2
 
+    if (AbortRequested())
+    {
+        workflowRunning := false
+        return
+    }
+
     ; Wait for ExportedReport.pdf to appear and print 1 page
     WaitForExportedReportAndPrint(15000)
+
+    if (AbortRequested())
+    {
+        workflowRunning := false
+        return
+    }
 
     ; Focus Intra - Assign Recip again, click scan field
     FocusAssignRecipWindow()
@@ -124,9 +197,9 @@ Esc::ExitApp
         Sleep 100
         SendInput, {Space}
     }
-return
 
-; ========== Helper Functions ==========
+    workflowRunning := false
+}
 
 GetInterofficeWinTitle()
 {

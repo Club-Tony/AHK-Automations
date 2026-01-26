@@ -81,21 +81,22 @@ ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\Macros-Script"
         reloadTooltipActive := true
         MouseGetPos, tooltipMouseX, tooltipMouseY
         SetTimer, ClearReloadTooltip, -5000
-        SetTimer, CheckTooltipDismiss, 50
+        SetTimer, StartTooltipDismissCheck, -500  ; Delay before starting dismiss checks
     }
     else
     {
         ToolTip, No managed scripts were running
         reloadTooltipActive := true
         MouseGetPos, tooltipMouseX, tooltipMouseY
-        SetTimer, ClearReloadTooltip, -1500
-        SetTimer, CheckTooltipDismiss, 50
+        SetTimer, ClearReloadTooltip, -3000
+        SetTimer, StartTooltipDismissCheck, -500  ; Delay before starting dismiss checks
     }
 return
 
 #If reloadTooltipActive
 t::
     SetTimer, ClearReloadTooltip, Off
+    SetTimer, StartTooltipDismissCheck, Off
     SetTimer, CheckTooltipDismiss, Off
     msg := "Reloaded " reloadedScriptsList.Length() " script(s):`n"
     for i, name in reloadedScriptsList
@@ -104,13 +105,17 @@ t::
     ToolTip, %msg%
     MouseGetPos, tooltipMouseX, tooltipMouseY
     SetTimer, ClearReloadTooltip, -30000
-    SetTimer, CheckTooltipDismiss, 50
+    SetTimer, StartTooltipDismissCheck, -500
 return
 
 Esc::
     Gosub, ClearReloadTooltip
 return
 #If
+
+StartTooltipDismissCheck:
+    SetTimer, CheckTooltipDismiss, 50
+return
 
 CheckTooltipDismiss:
     MouseGetPos, currentX, currentY
@@ -119,11 +124,12 @@ CheckTooltipDismiss:
         Gosub, ClearReloadTooltip
         return
     }
-    ; Check for any key press (except T which is handled separately)
+    ; Check for any key press (except T and modifier keys)
     Loop, 256
     {
         key := A_Index
-        if (key = 84)  ; Skip T
+        ; Skip T (84), Ctrl (17), Shift (16), Alt (18), LWin (91), RWin (92)
+        if (key = 84 || key = 16 || key = 17 || key = 18 || key = 91 || key = 92)
             continue
         if (GetKeyState(Format("vk{:02X}", key), "P"))
         {
@@ -135,6 +141,7 @@ return
 
 ClearReloadTooltip:
     SetTimer, ClearReloadTooltip, Off
+    SetTimer, StartTooltipDismissCheck, Off
     SetTimer, CheckTooltipDismiss, Off
     reloadTooltipActive := false
     ToolTip

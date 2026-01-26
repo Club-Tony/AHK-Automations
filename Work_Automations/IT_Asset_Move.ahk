@@ -153,7 +153,7 @@ CloseScriptIfRunning(name) {
         ControlGetFocus, loopFocus, A
         if (loopFocus = "")
             continue
-        if (!initialCaptured)
+        if (!initialCaptured || loopFocus != focusedCtrl)
         {
             ControlGetText, initialText, %loopFocus%, A
             focusedCtrl := loopFocus

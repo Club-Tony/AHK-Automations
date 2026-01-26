@@ -226,6 +226,8 @@ Ctrl+Alt+N - Focus Name field (recipient)
 -
 Intra Form Full Autos
 Ctrl+Win+Alt+M - IO full auto (mfrncoa)
+Ctrl+Win+Alt+1 - IO full auto (Accts Payable Roxanne)
+Ctrl+Win+Alt+2 - IO full auto (Payroll Roxanne)
 Ctrl+Alt+P - Poster full automation
 Ctrl+Alt+T - Show this tooltip again
     )
@@ -251,6 +253,8 @@ Return
 ~!Space::Gosub HideTooltips
 ~^w::Gosub HideTooltips
 ~^#!m::Gosub HideTooltips
+~^#!1::Gosub HideTooltips
+~^#!2::Gosub HideTooltips
 ~^!t::Gosub HideTooltips
 ~^Enter::Gosub HideTooltips
 #If
