@@ -16,6 +16,7 @@ interofficeTitle := "Intra: Interoffice Request"
 interofficeExes := ["firefox.exe", "chrome.exe", "msedge.exe"]
 assignRecipTitle := "Intra Desktop Client - Assign Recip"
 exportedReportTitle := "ExportedReport.pdf"
+intraButtonsPath := A_ScriptDir "\Intra_Buttons.ahk"
 
 ; Intra: Interoffice Request coordinates (window-relative pixels)
 NeutralClickX := 1400
@@ -26,6 +27,12 @@ LoadBtnX := 880
 LoadBtnY := 815
 SubmitBtnX := 460
 SubmitBtnY := 1313
+
+coordToggleIni := A_ScriptDir "\Interoffice_Coord_Toggle.ini"
+coordToggleSection := "Interoffice"
+coordToggleKey := "YOffsetEnabled"
+coordYOffsetUp := -77
+coordYOffsetDown := 2
 
 ; Intra Desktop Client - Assign Recip coordinates
 AliasFieldX := 945
@@ -87,7 +94,7 @@ RunInterofficeWorkflow(searchString, useNameField := false, useShortcuts := fals
     ; Ensure window is positioned and scrolled to top
     EnsureIntraWindow()
     Sleep 150
-    MouseClick, left, %NeutralClickX%, %NeutralClickY%, 2
+    MouseClick, left, %NeutralClickX%, % IOY(NeutralClickY), 2
     Sleep 150
     SendInput, ^{Home}
     Sleep 150
@@ -99,13 +106,13 @@ RunInterofficeWorkflow(searchString, useNameField := false, useShortcuts := fals
     }
 
     ; Click envelope button, type searchString, enter, click load
-    MouseClick, left, %EnvelopeBtnX%, %EnvelopeBtnY%
+    MouseClick, left, %EnvelopeBtnX%, % IOY(EnvelopeBtnY)
     Sleep 1000
     SendInput, %searchString%
     Sleep 500
     SendInput, {Enter}
     Sleep 250
-    MouseClick, left, %LoadBtnX%, %LoadBtnY%
+    MouseClick, left, %LoadBtnX%, % IOY(LoadBtnY)
     Sleep 500
 
     if (AbortRequested())
@@ -115,13 +122,20 @@ RunInterofficeWorkflow(searchString, useNameField := false, useShortcuts := fals
     }
 
     ; Submit: scroll to bottom and click submit button
-    MouseClick, left, %NeutralClickX%, %NeutralClickY%, 2
+    MouseClick, left, %NeutralClickX%, % IOY(NeutralClickY), 2
     Sleep 150
     SendInput, ^{End}
     Sleep 250
-    MouseClick, left, %SubmitBtnX%, %SubmitBtnY%, 2
+    if (IsInterofficeYOffsetEnabled())
+    {
+        EnsureIntraButtonsScript()
+        SendInput, !n
+        workflowRunning := false
+        return
+    }
+    MouseClick, left, %SubmitBtnX%, % IOY(SubmitBtnY, "down"), 2
     Sleep 150
-    MouseClick, left, % SubmitBtnX - 3, % SubmitBtnY, 2
+    MouseClick, left, % SubmitBtnX - 3, % IOY(SubmitBtnY, "down"), 2
 
     ; Wait for Assign Recip window to appear
     Sleep 1500
@@ -307,6 +321,44 @@ WaitForScanAndSubmit()
             break
         }
     }
+}
+
+EnsureIntraButtonsScript()
+{
+    global intraButtonsPath
+    DetectHiddenWindows, On
+    running := WinExist("Intra_Buttons.ahk ahk_class AutoHotkey")
+    DetectHiddenWindows, Off
+    if (!running && FileExist(intraButtonsPath))
+        Run, %intraButtonsPath%
+}
+
+GetInterofficeYOffset(mode := "up")
+{
+    global coordToggleIni, coordToggleSection, coordToggleKey
+    global coordYOffsetUp, coordYOffsetDown
+    IniRead, enabled, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%, 0
+    if (enabled = 1)
+    {
+        if (mode = "down")
+            IniRead, offset, %coordToggleIni%, %coordToggleSection%, YOffsetDown, %coordYOffsetDown%
+        else
+            IniRead, offset, %coordToggleIni%, %coordToggleSection%, YOffsetUp, %coordYOffsetUp%
+        return offset
+    }
+    return 0
+}
+
+IsInterofficeYOffsetEnabled()
+{
+    global coordToggleIni, coordToggleSection, coordToggleKey
+    IniRead, enabled, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%, 0
+    return (enabled = 1)
+}
+
+IOY(y, mode := "up")
+{
+    return y + GetInterofficeYOffset(mode)
 }
 
 ShowTimedTooltip(msg, duration := 3000)

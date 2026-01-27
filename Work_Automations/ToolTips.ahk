@@ -229,6 +229,7 @@ Ctrl+Win+Alt+M - IO full auto (mfrncoa)
 Ctrl+Win+Alt+1 - IO full auto (Accts Payable Roxanne)
 Ctrl+Win+Alt+2 - IO full auto (Payroll Roxanne)
 Ctrl+Alt+P - Poster full automation
+Ctrl+Win+Alt+P - Offset Y Coordinates (No envelope button)
 Ctrl+Alt+T - Show this tooltip again
     )
     Tooltip, %tooltipText%

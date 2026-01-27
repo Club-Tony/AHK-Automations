@@ -32,6 +32,13 @@ LoadBtnX := 880
 LoadBtnY := 815
 SubmitBtnX := 460
 SubmitBtnY := 1313
+
+coordToggleIni := A_ScriptDir "\Interoffice_Coord_Toggle.ini"
+coordToggleSection := "Interoffice"
+coordToggleKey := "YOffsetEnabled"
+coordYOffsetUp := -77
+coordYOffsetDown := 2
+coordYOffsetBuild := 13
 NameFieldX := 485
 NameFieldY := 860
 AliasFieldX := 1005
@@ -46,6 +53,10 @@ PackagesCountX := 480
 PackagesCountY := 1154
 
 #If IsInterofficeActive()
+^#!p::
+    ToggleInterofficeYOffset()
+return
+
 ^Enter::
     DoCtrlEnter()
 return
@@ -86,15 +97,12 @@ return
 return
 
 HandleEnvelopeClick:
-    MouseClick, left, 730, 360
+    MouseClick, left, 730, % IOY(360)
     Sleep 150
 return
 
 ^!s::
     DoCtrlAltS()
-return
-
-^!t::
 return
 
 !h::
@@ -135,11 +143,11 @@ DoAltE()
 {
     EnsureIntraWindow()
     Sleep 150
-    MouseClick, left, 1400, 850, 2  ; neutral click to defocus controls
+    MouseClick, left, 1400, % IOY(850), 2  ; neutral click to defocus controls
     Sleep 150
     SendInput, ^{Home}  ; scroll to top
     Sleep 150
-    MouseClick, left, 730, 360
+    MouseClick, left, 730, % IOY(360)
 }
 
 DoAltL()
@@ -153,13 +161,13 @@ DoAltC()
 {
     EnsureIntraWindow()
     Sleep 150
-    MouseClick, left, 1400, 850, 2
+    MouseClick, left, 1400, % IOY(850), 2
     Sleep 150
     SendInput, ^{End}
     Sleep 150
-    MouseClick, left, 320, 1315, 2  ; Clear/Reset
+    MouseClick, left, 320, % IOY(1313, "down"), 2  ; Clear/Reset
     Sleep 150
-    MouseClick, left, 1400, 850, 2
+    MouseClick, left, 1400, % IOY(850), 2
     Sleep 150
     SendInput, ^{Home}
 }
@@ -168,46 +176,46 @@ DoAltA()
 {
     EnsureIntraWindow()
     Sleep 50
-    MouseClick, left, 1400, 850, 2
+    MouseClick, left, 1400, % IOY(850), 2
     Sleep 150
     SendInput, ^{Home}
     Sleep 150
-    MouseClick, left, 1005, 860, 2
+    MouseClick, left, 1005, % IOY(860), 2
     Sleep 150
     aliasText := CopyFieldText("Top", AliasFieldX, AliasFieldY)
     Sleep 150
     if (aliasText != "")
         Clipboard := aliasText  ; leave alias ready to paste after submit
-    MouseClick, left, 1005, 860
+    MouseClick, left, 1005, % IOY(860)
 }
 
 DoAltN()
 {
     EnsureIntraWindow()
     Sleep 150
-    MouseClick, left, 1400, 850, 2
+    MouseClick, left, 1400, % IOY(850), 2
     Sleep 150
     SendInput, ^{Home}
     Sleep 150
-    MouseClick, left, 450, 560, 2
+    MouseClick, left, 450, % IOY(560), 2
 }
 
 DoCtrlAltN()
 {
     EnsureIntraWindow()
     Sleep 150
-    MouseClick, left, 1400, 850, 2
+    MouseClick, left, 1400, % IOY(850), 2
     Sleep 150
     SendInput, ^{Home}
     Sleep 150
-    MouseClick, left, 467, 858, 2
+    MouseClick, left, 467, % IOY(858), 2
 }
 
 DoAltP()
 {
     EnsureIntraWindow()
     Sleep 150
-    MouseClick, left, 1400, 850, 2
+    MouseClick, left, 1400, % IOY(850), 2
     Sleep 150
     SendInput, ^{Home}
     Sleep 250
@@ -217,16 +225,16 @@ DoAltP()
     Sleep 500
     SendInput, {Enter}
     Sleep 250
-    MouseClick, left, 880, 815
+    MouseClick, left, 880, % IOY(815)
     Sleep 250
-    MouseClick, left, 485, 860
+    MouseClick, left, 485, % IOY(860)
 }
 
 DoCtrlAltA()
 {
     EnsureIntraWindow()
     Sleep 150
-    MouseClick, left, 1400, 850, 2
+    MouseClick, left, 1400, % IOY(850), 2
     Sleep 150
     SendInput, ^{Home}
     Sleep 150
@@ -236,67 +244,75 @@ DoCtrlAltA()
     Sleep 250
     SendInput, {Enter}
     Sleep 250
-    MouseClick, left, 880, 815
+    MouseClick, left, 880, % IOY(815)
     Sleep 500
-    MouseClick, left, 1005, 860
+    MouseClick, left, 1005, % IOY(860)
 }
 
 DoAlt1()
 {
     EnsureIntraWindow()
     Sleep 150
-    MouseClick, left, 1400, 850, 2
+    MouseClick, left, 1400, % IOY(850), 2
     Sleep 150
     Loop 5 {
         SendInput, {WheelUp}
         Sleep 25
     }
     Sleep 150
-    MouseClick, left, 480, 1154
+    MouseClick, left, 480, % IOY(1154)
 }
 
 DoAlt2()
 {
     EnsureIntraWindow()
     Sleep 50
-    MouseClick, left, 1400, 850, 2
+    MouseClick, left, 1400, % IOY(850), 2
     Sleep 100
     Loop 5 {
         SendInput, {WheelUp}
     }
     Sleep 100
-    MouseClick, left, 480, 1246, 2
+    MouseClick, left, 480, % IOY(1246), 2
     Sleep 50
 }
 
 DoCtrlEnter()
 {
+    global SubmitBtnX, SubmitBtnY
+    if (IsInterofficeYOffsetEnabled())
+    {
+        DoAltN()
+        return
+    }
     EnsureIntraWindow()
     Sleep 150
-    MouseClick, left, 1005, 860, 2
+    MouseClick, left, 1005, % IOY(860), 2
     Sleep 150
     aliasText := CopyFieldText("Top", AliasFieldX, AliasFieldY)
     Sleep 150
     if (aliasText != "")
         Clipboard := aliasText  ; leave alias ready to paste after submit
-    MouseClick, left, 1400, 850, 2
+    MouseClick, left, 1400, % IOY(850), 2
     Sleep 150
     SendInput, ^{End}
     Sleep 250
-    MouseClick, left, 460, 1313, 2 ; this Mouseclick, the Sleep 250 before, and the following double mouseclick ensures successful button press
+    submitY := IOY(SubmitBtnY, "down")
+    ; This click, the Sleep 250 before, and the following double click ensure a successful press.
+    MouseClick, left, %SubmitBtnX%, %submitY%, 2
     Sleep 150
-    MouseClick, left, 457, 1313, 2
+    MouseClick, left, %SubmitBtnX%, %submitY%, 2
 }
 
 DoCtrlAltS()
 {
     EnsureIntraWindow()
     Sleep 150
-    MouseClick, left, 1400, 850, 2
+    MouseClick, left, 1400, % IOY(850), 2
     Sleep 150
     SendInput, ^{End}
     Sleep 150
-    MouseClick, left, 510, 1230
+    MouseClick, left, 510, % IOY(1230, "down")
     Sleep 150
     SendInput, ^a
     Sleep 80
@@ -311,13 +327,13 @@ DoAltSpace()
 {
     EnsureIntraWindow()
     Sleep 150
-    MouseClick, left, 1400, 850, 2
+    MouseClick, left, 1400, % IOY(850), 2
     Sleep 150
     SendInput, ^{End}
     Sleep 150
-    buildingText := CopyFieldText("", 468, 811)
+    buildingText := CopyFieldText("", 468, 811, "build")
     Sleep 150
-    MouseClick, left, 510, 1230
+    MouseClick, left, 510, % IOY(1230, "down")
     Sleep 100
     SendInput, {Space 2}
     Sleep 100
@@ -328,17 +344,17 @@ DoAltSpace()
     SendInput, {Space 2}
     Sleep 150
     ; capture alias after finishing and return focus to Special Instructions
-    MouseClick, left, 1400, 850, 2
+    MouseClick, left, 1400, % IOY(850), 2
     Sleep 150
     aliasText := CopyFieldText("Top", 1005, 860)
     Sleep 150
-    MouseClick, left, 1400, 850, 2
+    MouseClick, left, 1400, % IOY(850), 2
     Sleep 150
     SendInput, ^{End}
     Sleep 200
-    MouseClick, left, 1400, 850, 2
+    MouseClick, left, 1400, % IOY(850), 2
     Sleep 150
-    MouseClick, left, 510, 1230
+    MouseClick, left, 510, % IOY(1230, "down")
     Clipboard := aliasText  ; leave alias on clipboard after finishing
     Sleep 100
     SendInput, ^v
@@ -348,15 +364,23 @@ DoAltSpace()
 
 DoCtrlAltEnter()
 {
+    global SubmitBtnX, SubmitBtnY
+    if (IsInterofficeYOffsetEnabled())
+    {
+        DoAltN()
+        return
+    }
     EnsureIntraWindow()
     Sleep 150
-    MouseClick, left, 1400, 850, 2
+    MouseClick, left, 1400, % IOY(850), 2
     Sleep 150
     SendInput, ^{End}
     Sleep 250
-    MouseClick, left, 460, 1313, 2 ; this Mouseclick, the Sleep 250 before, and the following double mouseclick ensures successful button press
+    submitY := IOY(SubmitBtnY, "down")
+    ; This click, the Sleep 250 before, and the following double click ensure a successful press.
+    MouseClick, left, %SubmitBtnX%, %submitY%, 2
     Sleep 150
-    MouseClick, left, 457, 1313, 2
+    MouseClick, left, %SubmitBtnX%, %submitY%, 2
 }
 
 HandlePosterMessage(wParam, lParam, msg, hwnd)
@@ -382,7 +406,7 @@ HandlePosterMessage(wParam, lParam, msg, hwnd)
         DoCtrlW()
 }
 
-CopyFieldText(scrollPos, xCoord, yCoord)
+CopyFieldText(scrollPos, xCoord, yCoord, yMode := "up")
 {
     if (scrollPos = "Top")
         SendInput, ^{Home}
@@ -390,7 +414,7 @@ CopyFieldText(scrollPos, xCoord, yCoord)
         SendInput, ^{End}
 
     Sleep 200
-    MouseClick, left, %xCoord%, %yCoord%
+    MouseClick, left, %xCoord%, % IOY(yCoord, yMode)
     Sleep 200
     ClipSaved := ClipboardAll
     Clipboard :=
@@ -407,11 +431,56 @@ CopyFieldText(scrollPos, xCoord, yCoord)
     return text
 }
 
+GetInterofficeYOffset(mode := "up")
+{
+    global coordToggleIni, coordToggleSection, coordToggleKey
+    global coordYOffsetUp, coordYOffsetDown, coordYOffsetBuild
+    IniRead, enabled, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%, 0
+    if (enabled = 1)
+    {
+        if (mode = "down")
+            IniRead, offset, %coordToggleIni%, %coordToggleSection%, YOffsetDown, %coordYOffsetDown%
+        else if (mode = "build")
+            IniRead, offset, %coordToggleIni%, %coordToggleSection%, YOffsetBuild, %coordYOffsetBuild%
+        else
+            IniRead, offset, %coordToggleIni%, %coordToggleSection%, YOffsetUp, %coordYOffsetUp%
+        return offset
+    }
+    return 0
+}
+
+IsInterofficeYOffsetEnabled()
+{
+    global coordToggleIni, coordToggleSection, coordToggleKey
+    IniRead, enabled, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%, 0
+    return (enabled = 1)
+}
+
+IOY(y, mode := "up")
+{
+    return y + GetInterofficeYOffset(mode)
+}
+
+ToggleInterofficeYOffset()
+{
+    global coordToggleIni, coordToggleSection, coordToggleKey
+    IniRead, enabled, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%, 0
+    newValue := (enabled = 1) ? 0 : 1
+    IniWrite, %newValue%, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%
+    state := newValue ? "ON" : "OFF"
+    Tooltip, % "Offset Y Coordinates (No envelope button): " state
+    SetTimer, HideInterofficeToggleTooltip, -1500
+}
+
+HideInterofficeToggleTooltip:
+    Tooltip
+return
+
 DoAnchorClick()
 {
     EnsureIntraWindow()
     Sleep 100
-    MouseClick, left, 75, 150, 2
+    MouseClick, left, 75, % IOY(150), 2
 }
 
 DoHomeAlt1()

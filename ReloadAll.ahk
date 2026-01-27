@@ -14,6 +14,7 @@ reloadTooltipActive := false
 reloadedScriptsList := []
 tooltipMouseX := 0
 tooltipMouseY := 0
+reloadElapsedText := ""
 
 ; Directories to scan for running scripts
 ManagedDirs := []
@@ -27,6 +28,7 @@ ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automation
 ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\Macros-Script")
 
 ^Esc::
+    startTick := A_TickCount
     reloadedScripts := []
     DetectHiddenWindows, On
 
@@ -71,12 +73,14 @@ ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\Macros-Script"
     }
 
     DetectHiddenWindows, Off
+    elapsedMs := A_TickCount - startTick
+    reloadElapsedText := "Reload time: " Round(elapsedMs / 1000.0, 2) "s"
 
     ; Show tooltip with results
     reloadedScriptsList := reloadedScripts
     if (reloadedScripts.Length() > 0)
     {
-        msg := "Reloaded " reloadedScripts.Length() " script(s)`nPress T to view list"
+        msg := "Reloaded " reloadedScripts.Length() " script(s)`n" reloadElapsedText "`nPress T to view list"
         ToolTip, %msg%
         reloadTooltipActive := true
         MouseGetPos, tooltipMouseX, tooltipMouseY
@@ -85,7 +89,7 @@ ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\Macros-Script"
     }
     else
     {
-        ToolTip, No managed scripts were running
+        ToolTip, No managed scripts were running`n%reloadElapsedText%
         reloadTooltipActive := true
         MouseGetPos, tooltipMouseX, tooltipMouseY
         SetTimer, ClearReloadTooltip, -3000
@@ -98,7 +102,7 @@ t::
     SetTimer, ClearReloadTooltip, Off
     SetTimer, StartTooltipDismissCheck, Off
     SetTimer, CheckTooltipDismiss, Off
-    msg := "Reloaded " reloadedScriptsList.Length() " script(s):`n"
+    msg := "Reloaded " reloadedScriptsList.Length() " script(s):`n" reloadElapsedText "`n"
     for i, name in reloadedScriptsList
         msg .= "  " name "`n"
     msg .= "`nPress Esc to close"

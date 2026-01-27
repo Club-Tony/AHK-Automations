@@ -26,6 +26,12 @@ posterActionCtrlAltN := 6
 posterActionCtrlAltEnter := 7
 posterActionCtrlW := 8
 
+coordToggleIni := A_ScriptDir "\Interoffice_Coord_Toggle.ini"
+coordToggleSection := "Interoffice"
+coordToggleKey := "YOffsetEnabled"
+coordYOffsetUp := -77
+coordYOffsetDown := 2
+
 ; Scope: Intra: Interoffice Request (browser) poster automation (priority: Firefox > Chrome > Edge).
 
 ^!p::  ; TODO: full poster automation
@@ -101,7 +107,7 @@ posterActionCtrlW := 8
     {
         CallIntraButtonsHotkey(posterActionAltP, true)
         Sleep 2500
-        MouseClick, left, 480, 1246, 2
+        MouseClick, left, 480, % IOY(1246), 2
         Sleep 150
         Send, {Down 2}
         Sleep 400
@@ -278,6 +284,27 @@ GetExportedReportWindow()
     return ""
 }
 
+GetInterofficeYOffset(mode := "up")
+{
+    global coordToggleIni, coordToggleSection, coordToggleKey
+    global coordYOffsetUp, coordYOffsetDown
+    IniRead, enabled, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%, 0
+    if (enabled = 1)
+    {
+        if (mode = "down")
+            IniRead, offset, %coordToggleIni%, %coordToggleSection%, YOffsetDown, %coordYOffsetDown%
+        else
+            IniRead, offset, %coordToggleIni%, %coordToggleSection%, YOffsetUp, %coordYOffsetUp%
+        return offset
+    }
+    return 0
+}
+
+IOY(y, mode := "up")
+{
+    return y + GetInterofficeYOffset(mode)
+}
+
 WaitForExportedReportAndPrint(timeoutMs := 20000)
 {
     deadline := A_TickCount + timeoutMs
@@ -386,7 +413,7 @@ AttemptNameEntryAndSubmit(nameValue, needsMidBox, isRetry)
         if (needsMidBox)
         {
             ; Re-select Mid-Size package type
-            MouseClick, left, 480, 1246, 2
+            MouseClick, left, 480, % IOY(1246), 2
             Sleep 150
             Send, {Down 2}
             Sleep 400
