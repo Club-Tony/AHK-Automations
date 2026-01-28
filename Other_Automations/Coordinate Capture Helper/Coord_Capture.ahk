@@ -1,15 +1,12 @@
-#Requires AutoHotkey v1
-#NoEnv
-#SingleInstance, Force
-#InstallMouseHook
-#Persistent
-SendMode Input
-SetWorkingDir %A_ScriptDir%
-SetBatchLines, -1
+#Requires AutoHotkey v2.0
+#SingleInstance Force
+InstallMouseHook()
 #MaxThreadsPerHotkey 1
-SetTitleMatchMode, 2
 
-CoordMode, Mouse, Screen
+SendMode("Input")
+SetWorkingDir(A_ScriptDir)
+SetTitleMatchMode(2)
+CoordMode("Mouse", "Screen")
 
 fields := ["1.","2.","3.","4.","5.","6.","7.","8.","9.","10."]
 captureFile := A_ScriptDir "\coord.txt"
@@ -25,29 +22,29 @@ guiHwnd := 0
 InitializeCapture()
 
 ; overlay with live coords
-Gui, -Caption +AlwaysOnTop +ToolWindow +LastFound
-Gui, Color, Black
-Gui, Font, s20 q3, Arial
-Gui, Add, Text, vTitleText cFF0000, Window Coordinates
-Gui, Font, s32 q3, Arial
-Gui, Add, Text, vCoordText cFF0000, X: XXXXX  Y: YYYYY
-Gui, Font, s18 q3, Arial
-Gui, Add, Text, vHintText cFF0000, Alt+C to capture | Alt+I for more info | Alt+G toggle bg
-Gui, Font, s18 q3, Arial
-Gui, Add, Text, vDetailsText cFF0000 w420 r22 +Wrap,
-GuiControl, Hide, DetailsText
+myGui := Gui("-Caption +AlwaysOnTop +ToolWindow +LastFound")
+myGui.BackColor := "Black"
+myGui.SetFont("s20 q3", "Arial")
+titleCtrl := myGui.Add("Text", "vTitleText cFF0000", "Window Coordinates")
+myGui.SetFont("s32 q3", "Arial")
+coordCtrl := myGui.Add("Text", "vCoordText cFF0000", "X: XXXXX  Y: YYYYY")
+myGui.SetFont("s18 q3", "Arial")
+hintCtrl := myGui.Add("Text", "vHintText cFF0000", "Alt+C to capture | Alt+I for more info | Alt+G toggle bg")
+myGui.SetFont("s18 q3", "Arial")
+detailsCtrl := myGui.Add("Text", "vDetailsText cFF0000 w420 r22 +Wrap", "")
+detailsCtrl.Visible := false
 ApplyBackground()
-SetTimer, Update, 50
-Gui, Show, x0 y0 NA AutoSize
+SetTimer(Update, 50)
+myGui.Show("x0 y0 NA AutoSize")
 guiHwnd := WinExist()
 
-return
-
-^+!c::Reload
+^+!c::Reload()
 !c::StartCapture()
 !i::ToggleDetails()
 !g::ToggleBackground()
-Esc::
+
+Esc:: {
+    global captureEnabled, escConfirm
     savedCapture := captureEnabled
     if (savedCapture)
     {
@@ -58,21 +55,23 @@ Esc::
     {
         escConfirm := true
         if (savedCapture)
-            ToolTip, Done. Saved to coord.txt (Shortcut: Ctrl+Shift+Alt+O)
-        SetTimer, ClearTip, -3000
+            ToolTip("Done. Saved to coord.txt (Shortcut: Ctrl+Shift+Alt+O)")
+        SetTimer(ClearTip, -3000)
         return
     }
-    ExitApp
+    ExitApp()
+}
 
-~LButton::
-    if (!captureEnabled || idx > fields.Length())
+~LButton:: {
+    global captureEnabled, idx, fields, entries, captureFile
+    if (!captureEnabled || idx > fields.Length)
         return
     CloseCaptureFile(captureFile)
-    CoordMode, Mouse, Screen
-    MouseGetPos, screenX, screenY, mouseWinId
+    CoordMode("Mouse", "Screen")
+    MouseGetPos(&screenX, &screenY, &mouseWinId)
     if (mouseWinId)
     {
-        WinGetPos, winX, winY,,, ahk_id %mouseWinId%
+        WinGetPos(&winX, &winY, , , "ahk_id " mouseWinId)
         x := screenX - winX
         y := screenY - winY
     }
@@ -83,29 +82,25 @@ Esc::
     }
     entries[idx] := fields[idx] ": {x: " x ", y: " y "}"
     WriteCapture()
-    ToolTip, % "Saved " entries[idx] " (" idx " of " fields.Length() ")"
-    SetTimer, ClearTip, -800
+    ToolTip("Saved " entries[idx] " (" idx " of " fields.Length ")")
+    SetTimer(ClearTip, -800)
     idx++
-    if (idx > fields.Length())
+    if (idx > fields.Length)
     {
-        Sleep 300
-        ToolTip, % "Done. Saved to " captureFile
-        SetTimer, ClearTip, -3000
+        Sleep(300)
+        ToolTip("Done. Saved to " captureFile)
+        SetTimer(ClearTip, -3000)
     }
-return
+}
 
-ClearTip:
-    ToolTip
-return
+ClearTip() {
+    ToolTip()
+}
 
 Update() {
-    global detailsVisible
-    CoordMode, Mouse, Screen
-    MouseGetPos, screenX, screenY, mouseWinId, controlClassNN
-    mouseWinX := ""
-    mouseWinY := ""
-    mouseWinW := ""
-    mouseWinH := ""
+    global detailsVisible, coordCtrl, detailsCtrl
+    CoordMode("Mouse", "Screen")
+    MouseGetPos(&screenX, &screenY, &mouseWinId, &controlClassNN)
     winRelX := "N/A"
     winRelY := "N/A"
     clientX := "N/A"
@@ -113,34 +108,48 @@ Update() {
 
     if (mouseWinId)
     {
-        WinGetPos, mouseWinX, mouseWinY, mouseWinW, mouseWinH, ahk_id %mouseWinId%
+        WinGetPos(&mouseWinX, &mouseWinY, &mouseWinW, &mouseWinH, "ahk_id " mouseWinId)
         winRelX := screenX - mouseWinX
         winRelY := screenY - mouseWinY
     }
 
-    GuiControl,, CoordText, % "X: " winRelX "  Y: " winRelY
+    coordCtrl.Value := "X: " winRelX "  Y: " winRelY
 
     if (!detailsVisible)
         return
 
     if (mouseWinId)
     {
-        VarSetCapacity(pt, 8, 0)
-        NumPut(screenX, pt, 0, "Int")
-        NumPut(screenY, pt, 4, "Int")
-        if DllCall("ScreenToClient", "ptr", mouseWinId, "ptr", &pt)
+        pt := Buffer(8, 0)
+        NumPut("Int", screenX, pt, 0)
+        NumPut("Int", screenY, pt, 4)
+        if DllCall("ScreenToClient", "ptr", mouseWinId, "ptr", pt)
         {
             clientX := NumGet(pt, 0, "Int")
             clientY := NumGet(pt, 4, "Int")
         }
     }
 
-    WinGet, activeId, ID, A
-    WinGetTitle, activeTitle, ahk_id %activeId%
-    WinGetClass, activeClass, ahk_id %activeId%
-    WinGet, activeExe, ProcessName, ahk_id %activeId%
-    WinGetPos, activeX, activeY, activeW, activeH, ahk_id %activeId%
-    activeIdHex := (activeId != "") ? Format("0x{:X}", activeId) : "N/A"
+    pixelColor := PixelGetColor(screenX, screenY)
+    pixelColor := StrReplace(pixelColor, "0x", "")
+
+    try {
+        activeId := WinGetID("A")
+        activeTitle := WinGetTitle("ahk_id " activeId)
+        activeClass := WinGetClass("ahk_id " activeId)
+        activeExe := WinGetProcessName("ahk_id " activeId)
+        WinGetPos(&activeX, &activeY, &activeW, &activeH, "ahk_id " activeId)
+        activeIdHex := Format("0x{:X}", activeId)
+    } catch {
+        activeTitle := "N/A"
+        activeClass := "N/A"
+        activeExe := "N/A"
+        activeX := "N/A"
+        activeY := "N/A"
+        activeW := "N/A"
+        activeH := "N/A"
+        activeIdHex := "N/A"
+    }
 
     activeTitle := SanitizeText(activeTitle)
     activeClass := SanitizeText(activeClass)
@@ -153,8 +162,10 @@ Update() {
     }
     else
     {
-        ControlGetText, controlText, %controlClassNN%, ahk_id %mouseWinId%
-        controlText := SanitizeText(controlText)
+        try
+            controlText := SanitizeText(ControlGetText(controlClassNN, "ahk_id " mouseWinId))
+        catch
+            controlText := "N/A"
     }
 
     detailsText := "Active window:`n"
@@ -165,7 +176,8 @@ Update() {
         . "Mouse coords:`n"
         . "Screen: " screenX ", " screenY "`n"
         . "Window: " winRelX ", " winRelY "`n"
-        . "Client: " clientX ", " clientY "`n`n"
+        . "Client: " clientX ", " clientY "`n"
+        . "Color: " pixelColor (pixelColor = "FFFFFF" ? " (Use Window Spy [Ctrl+Shift+Alt+W] for browser color captures)" : "") "`n`n"
         . "Control under mouse:`n"
         . "ClassNN: " controlClassNN "`n"
         . "Text: " controlText "`n`n"
@@ -173,90 +185,77 @@ Update() {
         . "X: " activeX "  Y: " activeY "`n"
         . "W: " activeW "  H: " activeH
 
-    GuiControl,, DetailsText, %detailsText%
+    detailsCtrl.Value := detailsText
 }
 
-ToggleDetails()
-{
-    global detailsVisible
+ToggleDetails() {
+    global detailsVisible, detailsCtrl, myGui
     detailsVisible := !detailsVisible
-    if (detailsVisible)
-        GuiControl, Show, DetailsText
-    else
-        GuiControl, Hide, DetailsText
-    Gui, Show, x0 y0 NA AutoSize
+    detailsCtrl.Visible := detailsVisible
+    myGui.Show("x0 y0 NA AutoSize")
 }
 
-ToggleBackground()
-{
+ToggleBackground() {
     global solidBackground
     solidBackground := !solidBackground
     ApplyBackground()
 }
 
-ApplyBackground()
-{
+ApplyBackground() {
     global solidBackground, guiHwnd
-    target := (guiHwnd ? "ahk_id " guiHwnd : "A")
+    target := guiHwnd ? "ahk_id " guiHwnd : "A"
     if (solidBackground)
     {
-        WinSet, TransColor, Off, %target%
-        WinSet, Transparent, 255, %target%
+        WinSetTransColor("Off", target)
+        WinSetTransparent(255, target)
     }
     else
     {
-        WinSet, TransColor, Black, %target%
+        WinSetTransColor("Black", target)
     }
 }
 
-StartCapture()
-{
+StartCapture() {
     global captureEnabled, escConfirm, idx
     captureEnabled := true
     escConfirm := false
     idx := 1
     InitializeCapture()
-    ToolTip, Capture started. Click to save coords.
-    SetTimer, ClearTip, -1500
+    ToolTip("Capture started. Click to save coords.")
+    SetTimer(ClearTip, -1500)
 }
 
-SanitizeText(text)
-{
-    StringReplace, text, text, `r, , All
-    StringReplace, text, text, `n,  , All
+SanitizeText(text) {
+    text := StrReplace(text, "`r", "")
+    text := StrReplace(text, "`n", " ")
     return text
 }
 
-InitializeCapture()
-{
+InitializeCapture() {
     global entries, captureFile, captureHeader, fields
     CloseCaptureFile(captureFile)
-    if (entries.Length())
-        entries.RemoveAt(1, entries.Length())
-    Loop % fields.Length()
-        entries[A_Index] := fields[A_Index] ": {x: , y: }"
-    WriteCapture()
+    entries := []
+    Loop fields.Length
+        entries.Push(fields[A_Index] ": {x: , y: }")
 }
 
-WriteCapture()
-{
+WriteCapture() {
     global entries, captureFile, captureHeader
-    FileDelete, %captureFile%
-    FileAppend, % captureHeader "`n`n", %captureFile%
-    Loop % entries.Length()
-        FileAppend, % entries[A_Index] "`n", %captureFile%
+    try FileDelete(captureFile)
+    FileAppend(captureHeader "`n`n", captureFile)
+    Loop entries.Length
+        FileAppend(entries[A_Index] "`n", captureFile)
 }
 
-CloseCaptureFile(captureFile)
-{
-    SplitPath, captureFile, fileName
+CloseCaptureFile(path) {
+    SplitPath(path, &fileName)
     captureTitle := fileName " - Notepad"
-    DetectHiddenWindows, On
+    DetectHiddenWindows(true)
     hwnd := WinExist(captureTitle)
-    DetectHiddenWindows, Off
+    DetectHiddenWindows(false)
     if (hwnd && WinActive("ahk_id " hwnd))
     {
-        SendInput, ^w
-        Sleep 150
+        SendInput("^w")
+        Sleep(150)
     }
 }

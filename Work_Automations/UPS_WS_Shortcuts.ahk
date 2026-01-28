@@ -215,6 +215,7 @@ return
 return
 #If
 
+#If WinActive(worldShipTitle)
 ; Alt+P: copy Ship To Phone, switch to Ship From, paste into SF Phone.
 !p::
     if (!FocusWorldShip())
@@ -248,6 +249,7 @@ return
     Sleep 30
     PasteFieldAt(worldShipFields.Ref2.x, worldShipFields.Ref2.y, copiedText)
 return
+#If
 
 FocusWorldShip()
 {

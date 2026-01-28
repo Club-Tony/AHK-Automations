@@ -8,7 +8,6 @@ SetTitleMatchMode, 2  ; Allow partial matches for Intra window title.
 CoordMode, Mouse, Window  ; Window-relative coordinates from Window Spy.
 SetKeyDelay, 50, 50
 exportRunning := false
-abortHotkey := false
 
 ; Window Coordinates (Intra Desktop Client - Assign Recip):
 ; Window Position: x: -7 y: 0 w: 1322 h: 1339
@@ -43,7 +42,6 @@ RunExport(isFast := false)
         return
     }
     exportRunning := true
-    ResetAbort()
 
     ; Validate window first
     if (!FocusAssignRecipWindow())
@@ -140,7 +138,7 @@ RunExport(isFast := false)
     }
 
     ; Show start message
-    ShowTimedTooltip("Starting " modeLabel " export (" formatLabel "): " totalItems " items (Esc to abort)", 2000)
+    ShowTimedTooltip("Starting " modeLabel " export (" formatLabel "): " totalItems " items (Ctrl+Esc to abort)", 2000)
     Sleep, %initialSleep%
 
     itemCount := 0
@@ -151,14 +149,6 @@ RunExport(isFast := false)
     ; Process each line
     Loop, Parse, ItemList, `n, `r
     {
-        ; Check for abort request
-        if (AbortRequested())
-        {
-            ShowTimedTooltip("Aborted at item " itemCount " of " totalItems, 4000)
-            aborted := true
-            break
-        }
-
         ; Skip empty lines
         currentItem := Trim(A_LoopField)
         if (currentItem = "")
@@ -172,15 +162,6 @@ RunExport(isFast := false)
         ; Click scan field
         MouseClick, left, % ScanField.x, % ScanField.y, 2
         Sleep, %clickSleep%
-
-        ; Check abort again before typing
-        if (AbortRequested())
-        {
-            ShowTimedTooltip("Aborted at item " itemCount " of " totalItems, 4000)
-            aborted := true
-            break
-        }
-
         ; Type the tracking number
         SendInput, % "{Raw}" currentItem
         Sleep, %typeSleep%
@@ -191,7 +172,7 @@ RunExport(isFast := false)
         if (progressEvery && Mod(itemCount, progressEvery) = 0)
         {
             percentDone := Round((itemCount / totalItems) * 100)
-            ToolTip, % modeLabel " mode: " itemCount " of " totalItems " (" percentDone "%) - Esc to abort"
+            ToolTip, % modeLabel " mode: " itemCount " of " totalItems " (" percentDone "%) - Ctrl+Esc to abort"
         }
     }
 
@@ -215,25 +196,6 @@ RunExport(isFast := false)
     }
 
     exportRunning := false
-}
-
-#If ( WinActive("Intra Desktop Client - Assign Recip") && exportRunning )
-Esc::
-    abortHotkey := true
-    ToolTip, Aborting...
-return
-#If
-
-ResetAbort()
-{
-    global abortHotkey
-    abortHotkey := false
-}
-
-AbortRequested()
-{
-    global abortHotkey
-    return abortHotkey
 }
 
 FocusAssignRecipWindow()

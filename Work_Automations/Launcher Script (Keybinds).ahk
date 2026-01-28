@@ -16,6 +16,8 @@ showSearchTooltip := true
 fastAssignPrevRunning := false
 autoSmartsheetRunning := false
 autoSmartsheetCancelled := false
+exportRunning := false
+ScanField := {x: 200, y: 245}
 tooltipMouseX := 0
 tooltipMouseY := 0
 SetTimer, DetectSearchWindow, 500  ; Watch for first appearance of Search - General
@@ -41,15 +43,21 @@ return
     ToggleTrackingNumbersFile()
 return
 
-; Toggle: Tracking CSV File ; Keybind: Alt+Shift+C
-!+c::
-    ToggleTrackingCSVFile()
-return
-
 ; Clear: Both Tracking Files ; Keybind: Ctrl+Shift+Alt+Delete
 ^!+Delete::
     ClearTrackingFiles()
 return
+
+; Bulk Tracking Export hotkeys (Assign Recip and Update)
+#If WinActive("Intra Desktop Client - Assign Recip") || WinActive("Intra Desktop Client - Update")
+!+e::  ; paste list into scan field (normal speed)
+    RunBulkExport()
+return
+
+^+!e::  ; paste list into scan field (fast speed)
+    RunBulkExport(true)
+return
+#If
 
 ; Launch: Smartsheets ; Keybind: Ctrl+Alt+L
 ^!l:: 
@@ -708,6 +716,7 @@ Esc::
 return
 #If
 
+
 #If (TooltipActive)
 ~Esc::Gosub HideLauncherTooltip
 ~!s::Gosub HideLauncherTooltip
@@ -730,30 +739,14 @@ ToggleTrackingNumbersFile()
     CloseTrackingFiles()
     Sleep 200
 
-    ; Prompt user to choose TXT or CSV
-    ToolTip, Press 1 for TXT or 2 for CSV (5s timeout)
-    startTime := A_TickCount
-    choice := ""
-
-    while (A_TickCount - startTime < 5000)
-    {
-        if GetKeyState("1", "P")
-        {
-            choice := "txt"
-            break
-        }
-        if GetKeyState("2", "P")
-        {
-            choice := "csv"
-            break
-        }
-        Sleep 50
-    }
-    ToolTip
-
-    ; Default to TXT on timeout
-    if (choice = "")
+    ; Prompt user to choose TXT or CSV via MsgBox (prevents keystroke leaking into scan field)
+    MsgBox, 3, Open Tracking File, Open TXT or CSV?`n`nYes = TXT`nNo = CSV`nCancel = Abort
+    IfMsgBox, Yes
         choice := "txt"
+    else IfMsgBox, No
+        choice := "csv"
+    else
+        return
 
     ; Call appropriate toggle function
     if (choice = "txt")
@@ -911,4 +904,270 @@ ClearTrackingFiles()
     if (csvCleared)
         msg .= "✓ tracking_numbers.csv"
     ShowTooltip(msg, 3000)
+}
+
+; ========== Bulk Tracking Export Functions ==========
+
+RunBulkExport(isFast := false)
+{
+    global exportRunning, ScanField
+
+    if (exportRunning)
+    {
+        ShowTooltip("Export already running!", 2000)
+        return
+    }
+    exportRunning := true
+
+    ; Validate window - accept Assign Recip or Update
+    if (!WinActive("Intra Desktop Client - Assign Recip") && !WinActive("Intra Desktop Client - Update"))
+    {
+        FocusAssignRecipWindow()
+        if (!WinActive("Intra Desktop Client - Assign Recip") && !WinActive("Intra Desktop Client - Update"))
+        {
+            ShowTooltip("Assign Recip or Update window not active!", 3000)
+            exportRunning := false
+            return
+        }
+    }
+
+    ; Determine which file to use
+    trackingFileTxt := A_ScriptDir "\Bulk_Tracking_Export_to_Intra\tracking_numbers.txt"
+    trackingFileCsv := A_ScriptDir "\Bulk_Tracking_Export_to_Intra\tracking_numbers.csv"
+    fileType := SelectExportTrackingFile(trackingFileTxt, trackingFileCsv)
+
+    if (fileType = "")
+    {
+        ShowTooltip("No tracking files found or both are empty!", 4000)
+        exportRunning := false
+        return
+    }
+
+    ; Read file contents based on type
+    if (fileType = "txt")
+    {
+        FileRead, ItemList, %trackingFileTxt%
+        if (ErrorLevel)
+        {
+            ShowTooltip("Error reading TXT file!", 3000)
+            exportRunning := false
+            return
+        }
+        formatLabel := "TXT"
+    }
+    else
+    {
+        ItemList := ReadCSVColumn(trackingFileCsv)
+        if (ItemList = "")
+        {
+            ShowTooltip("Error reading CSV or no valid data!", 3000)
+            exportRunning := false
+            return
+        }
+        formatLabel := "CSV"
+    }
+
+    ; Trim whitespace and validate content
+    ItemList := Trim(ItemList)
+    if (ItemList = "")
+    {
+        ShowTooltip("Tracking file is empty!", 3000)
+        exportRunning := false
+        return
+    }
+
+    ; Count items before starting
+    totalItems := 0
+    Loop, Parse, ItemList, `n, `r
+    {
+        if (A_LoopField != "")
+            totalItems++
+    }
+
+    if (totalItems = 0)
+    {
+        ShowTooltip("No valid tracking numbers found in file!", 3000)
+        exportRunning := false
+        return
+    }
+
+    ; Set timing parameters based on speed mode
+    if (isFast)
+    {
+        initialSleep := 200
+        clickSleep := 75
+        typeSleep := 40
+        enterSleep := 150
+        progressEvery := 100
+        modeLabel := "FAST"
+    }
+    else
+    {
+        initialSleep := 500
+        clickSleep := 200
+        typeSleep := 100
+        enterSleep := 400
+        progressEvery := 50
+        modeLabel := "NORMAL"
+    }
+
+    ; Show start message
+    ToolTip, % "Starting " modeLabel " export (" formatLabel "): " totalItems " items (Ctrl+Esc to abort)"
+    Sleep, %initialSleep%
+
+    itemCount := 0
+    skippedCount := 0
+    aborted := false
+    startTime := A_TickCount
+
+    ; Process each line
+    Loop, Parse, ItemList, `n, `r
+    {
+        currentItem := Trim(A_LoopField)
+        if (currentItem = "")
+        {
+            skippedCount++
+            continue
+        }
+
+        itemCount++
+
+        ; Show progress tooltip on every item
+        percentDone := Round((itemCount / totalItems) * 100)
+        ToolTip, % modeLabel " mode: " itemCount " of " totalItems " (" percentDone "%) - Ctrl+Esc to abort"
+
+        ; Click scan field
+        MouseClick, left, % ScanField.x, % ScanField.y, 2
+        Sleep, %clickSleep%
+
+        ; Type the tracking number
+        SendInput, % "{Raw}" currentItem
+        Sleep, %typeSleep%
+        SendInput, {Enter}
+        Sleep, %enterSleep%
+    }
+
+    ; Calculate elapsed time
+    elapsedMs := A_TickCount - startTime
+    elapsedSec := Round(elapsedMs / 1000, 1)
+
+    ; Clear progress tooltip
+    ToolTip
+
+    ; Show abort message
+    if (aborted)
+        ShowTooltip("Aborted at item " itemCount " of " totalItems, 4000)
+
+    ; Show completion message
+    if (!aborted)
+    {
+        completionMsg := "Export complete!`n`n"
+            . "Processed: " itemCount " items`n"
+        if (skippedCount > 0)
+            completionMsg .= "Skipped: " skippedCount " empty lines`n"
+        completionMsg .= "Time: " elapsedSec "s`n"
+            . "Mode: " modeLabel
+        MsgBox, % completionMsg
+    }
+
+    exportRunning := false
+}
+
+SelectExportTrackingFile(trackingFileTxt, trackingFileCsv)
+{
+    txtOK := false
+    csvOK := false
+
+    if (FileExist(trackingFileTxt) != "")
+    {
+        FileRead, txtContent, %trackingFileTxt%
+        if (!ErrorLevel)
+        {
+            txtContent := Trim(txtContent)
+            if (txtContent != "")
+                txtOK := true
+        }
+    }
+
+    if (FileExist(trackingFileCsv) != "")
+    {
+        FileRead, csvContent, %trackingFileCsv%
+        if (!ErrorLevel)
+        {
+            csvContent := Trim(csvContent)
+            if (csvContent != "")
+                csvOK := true
+        }
+    }
+
+    if (txtOK && !csvOK)
+        return "txt"
+    if (csvOK && !txtOK)
+        return "csv"
+    if (!txtOK && !csvOK)
+        return ""
+
+    ; Both exist - ask user via MsgBox (avoids keystroke leaking into scan field)
+    MsgBox, 3, Tracking File, Both TXT and CSV files found.`n`nYes = TXT`nNo = CSV`nCancel = Abort
+    IfMsgBox, Yes
+        return "txt"
+    IfMsgBox, No
+        return "csv"
+    return ""  ; Cancel = abort export
+}
+
+ReadCSVColumn(filePath)
+{
+    FileRead, csvContent, %filePath%
+    if (ErrorLevel)
+        return ""
+
+    result := ""
+    firstRow := true
+    Loop, Parse, csvContent, `n, `r
+    {
+        line := Trim(A_LoopField)
+        if (line = "")
+            continue
+
+        commaPos := InStr(line, ",")
+        if (commaPos > 0)
+            cell := Trim(SubStr(line, 1, commaPos - 1))
+        else
+            cell := line
+
+        if (firstRow)
+        {
+            firstRow := false
+            if (IsHeaderRow(cell))
+                continue
+        }
+
+        if (cell != "")
+            result .= cell "`n"
+    }
+    return RTrim(result, "`n")
+}
+
+IsHeaderRow(cell)
+{
+    StringLower, cellLower, cell
+
+    if InStr(cellLower, "tracking")
+        return true
+    if InStr(cellLower, "number")
+        return true
+    if InStr(cellLower, "id")
+        return true
+    if InStr(cellLower, "barcode")
+        return true
+    if InStr(cellLower, "reference")
+        return true
+    if InStr(cellLower, "item")
+        return true
+
+    if RegExMatch(cell, "^[^a-zA-Z0-9]+$")
+        return true
+
+    return false
 }

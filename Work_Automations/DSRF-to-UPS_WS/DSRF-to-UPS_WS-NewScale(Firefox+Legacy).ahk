@@ -712,8 +712,9 @@ ShowHotkeyRuntime(startTick)
 {
     elapsedMs := A_TickCount - startTick
     elapsedSec := Round(elapsedMs / 1000.0, 2)
-    ToolTip, Hotkey Runtime: %elapsedSec% seconds
-    SetTimer, HideRuntimeTooltip, -4000
+    msg := "Check Service, Dimensions, and Weight before processing`nHotkey Runtime: " elapsedSec " seconds"
+    ToolTip, %msg%
+    SetTimer, HideRuntimeTooltip, -9000
 }
 
 HideRuntimeTooltip:

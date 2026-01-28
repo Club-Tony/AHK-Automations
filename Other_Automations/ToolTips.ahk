@@ -73,11 +73,12 @@ Slash Commands:
 /init - Initialize CLAUDE.md in project
 /model - Switch between Claude models
 /permissions - Manage tool permissions
+/memory - Edit CLAUDE.md memory files
+/mcp - Manage MCP server connections
 /review - Review recent code changes
 -
 CLI Only:
 /doctor - Check Claude Code health/setup
-/memory - Manage project memory/context (CLI)
 /status - Show current session status (CLI)
 /terminal-setup - Configure terminal integration (CLI)
 -

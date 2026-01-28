@@ -38,8 +38,6 @@ Ctrl+I - Yellow Pouch (multi-piece)
 Alt+R - Clear + Toggle Print Button & Normalize
 Alt+C - Clear All
 Alt+E - Focus Scan Field
-Alt+Shift+E - Paste list into Scan field
-Ctrl+Shift+Alt+E - Paste list into Scan field (fast)
 Alt+A - Focus Alias Field
 Alt+N - Focus Name Field
 Alt+1 - Focus Package Type
@@ -49,10 +47,13 @@ Alt+4 - Focus Notes Field
 Alt+L - Lost and Found
 Alt+D - Item Var Lookup + Apply All Toggle
 -
-Additional Scripts Launch Hotkeys:
-Ctrl+Alt+E - Toggle tracking file (1=TXT, 2=CSV)
-Alt+Shift+C - Toggle tracking_numbers.csv file
+Bulk Tracking Export:
+Alt+Shift+E - Export tracking list to Scan field
+Ctrl+Shift+Alt+E - Export tracking list to Scan field (fast)
+Ctrl+Alt+E - Open tracking file (1=TXT, 2=CSV)
 Ctrl+Shift+Alt+Delete - Clear both tracking files
+-
+Additional Scripts Launch Hotkeys:
 Ctrl+Alt+F - Launch Intra Search Shortcuts
 Ctrl+Alt+I - Launch Intra Extensive Automations
 Ctrl+Alt+T - Show this tooltip again
@@ -88,6 +89,12 @@ Alt+V - Status Select -> Void
 Alt+S - Click Status Field
 Alt+4 - Focus Notes Field
 -
+Bulk Tracking Export:
+Alt+Shift+E - Export tracking list to Scan field
+Ctrl+Shift+Alt+E - Export tracking list to Scan field (fast)
+Ctrl+Alt+E - Open tracking file (1=TXT, 2=CSV)
+Ctrl+Shift+Alt+Delete - Clear both tracking files
+-
 Additional Scripts Launch Hotkeys:
 Ctrl+Alt+F - Launch Intra Search Shortcuts
 Ctrl+Alt+I - Launch Intra Extensive Automations
@@ -121,7 +128,6 @@ Return
 ~!c::Gosub HideTooltips
 ~^!c::Gosub HideTooltips
 ~^!e::Gosub HideTooltips
-~!+c::Gosub HideTooltips
 ~^!+Delete::Gosub HideTooltips
 ~^!f::Gosub HideTooltips
 ~^!d::Gosub HideTooltips
@@ -399,11 +405,12 @@ Slash Commands:
 /init - Initialize CLAUDE.md in project
 /model - Switch between Claude models
 /permissions - Manage tool permissions
+/memory - Edit CLAUDE.md memory files
+/mcp - Manage MCP server connections
 /review - Review recent code changes
 -
 CLI Only:
 /doctor - Check Claude Code health/setup
-/memory - Manage project memory/context (CLI)
 /status - Show current session status (CLI)
 /terminal-setup - Configure terminal integration (CLI)
 -
@@ -528,8 +535,7 @@ Win+I - Focus/Minimize all Intra windows
 Win+Alt+M - Minimize all, then focus Firefox, Outlook PWA, Slack
 Alt+X / Alt+O - Intra Online: Outbound Shipping Requests button anchor
 Alt+Z / Alt+H - Intra Online: Home button anchor
-Ctrl+Alt+E - Toggle tracking file (1=TXT, 2=CSV)
-Alt+Shift+C - Toggle tracking_numbers.csv file
+Ctrl+Alt+E - Open tracking file (1=TXT, 2=CSV)
 Ctrl+Shift+Alt+Delete - Clear both tracking files
 Ctrl+Alt+L - Launch Daily Audit + Smartsheet
 Ctrl+Shift+Alt+L - Auto Daily Audit + Smartsheet
