@@ -214,15 +214,48 @@ DoAltP()
     Sleep 150
     SendInput, ^{Home}
     Sleep 250
-    Gosub, HandleEnvelopeClick
-    Sleep 1000
-    SendInput, post
-    Sleep 500
-    SendInput, {Enter}
-    Sleep 250
-    MouseClick, left, 880, % IOY(815)
-    Sleep 250
-    MouseClick, left, 485, % IOY(860)
+
+    if (IsInterofficeYOffsetEnabled())
+    {
+        ; No envelope button - use direct field entry
+        ; Click Sender Name field (same coords as !n)
+        MouseClick, left, 450, % IOY(560), 2
+        Sleep 150
+        SendInput, ^a
+        Sleep 50
+        SendInput, {Space}acp
+        Sleep 2000
+        SendInput, {Enter}
+        ; Failsafe: clear and repeat if dropdown didn't load in time
+        Sleep 200
+        SendInput, ^a
+        Sleep 50
+        SendInput, {Space}acp
+        Sleep 1500
+        SendInput, {Enter}
+        Sleep 250
+        ; Click Package Type field (same coords as !2)
+        MouseClick, left, 480, % IOY(1246), 2
+        Sleep 150
+        SendInput, env
+        Sleep 250
+        SendInput, {Enter}
+        Sleep 250
+        ; End on Recipient Name field (same coords as ^!n)
+        MouseClick, left, 467, % IOY(858), 2
+    }
+    else
+    {
+        Gosub, HandleEnvelopeClick
+        Sleep 1000
+        SendInput, post
+        Sleep 500
+        SendInput, {Enter}
+        Sleep 250
+        MouseClick, left, 880, % IOY(815)
+        Sleep 250
+        MouseClick, left, 485, % IOY(860)
+    }
 }
 
 DoCtrlAltA()
@@ -233,15 +266,48 @@ DoCtrlAltA()
     Sleep 150
     SendInput, ^{Home}
     Sleep 150
-    Gosub, HandleEnvelopeClick
-    Sleep, 500
-    SendInput, ACP
-    Sleep 250
-    SendInput, {Enter}
-    Sleep 250
-    MouseClick, left, 880, % IOY(815)
-    Sleep 500
-    MouseClick, left, 1005, % IOY(860)
+
+    if (IsInterofficeYOffsetEnabled())
+    {
+        ; No envelope button - use direct field entry
+        ; Click Sender Name field (same coords as !n)
+        MouseClick, left, 450, % IOY(560), 2
+        Sleep 150
+        SendInput, ^a
+        Sleep 50
+        SendInput, {Space}acp
+        Sleep 2000
+        SendInput, {Enter}
+        ; Failsafe: clear and repeat if dropdown didn't load in time
+        Sleep 200
+        SendInput, ^a
+        Sleep 50
+        SendInput, {Space}acp
+        Sleep 1500
+        SendInput, {Enter}
+        Sleep 250
+        ; Click Package Type field (same coords as !2)
+        MouseClick, left, 480, % IOY(1246), 2
+        Sleep 150
+        SendInput, mid
+        Sleep 250
+        SendInput, {Enter}
+        Sleep 250
+        ; End on Alias field (same coords as !a)
+        MouseClick, left, 1005, % IOY(860), 2
+    }
+    else
+    {
+        Gosub, HandleEnvelopeClick
+        Sleep, 500
+        SendInput, ACP
+        Sleep 250
+        SendInput, {Enter}
+        Sleep 250
+        MouseClick, left, 880, % IOY(815)
+        Sleep 500
+        MouseClick, left, 1005, % IOY(860)
+    }
 }
 
 DoAlt1()
@@ -275,11 +341,6 @@ DoAlt2()
 DoCtrlEnter()
 {
     global SubmitBtnX, SubmitBtnY
-    if (IsInterofficeYOffsetEnabled())
-    {
-        DoAltN()
-        return
-    }
     EnsureIntraWindow()
     Sleep 150
     MouseClick, left, 1005, % IOY(860), 2
@@ -288,15 +349,26 @@ DoCtrlEnter()
     Sleep 150
     if (aliasText != "")
         Clipboard := aliasText  ; leave alias ready to paste after submit
-    MouseClick, left, 1400, % IOY(850), 2
-    Sleep 150
-    SendInput, ^{End}
-    Sleep 250
-    submitY := IOY(SubmitBtnY, "down")
-    ; This click, the Sleep 250 before, and the following double click ensure a successful press.
-    MouseClick, left, %SubmitBtnX%, %submitY%, 2
-    Sleep 150
-    MouseClick, left, %SubmitBtnX%, %submitY%, 2
+
+    if (IsInterofficeYOffsetEnabled())
+    {
+        ; No scroll needed when offset ON, submit button visible at fixed coords
+        MouseClick, left, 450, 1369, 2
+        Sleep 150
+        MouseClick, left, 450, 1369, 2
+    }
+    else
+    {
+        MouseClick, left, 1400, % IOY(850), 2
+        Sleep 150
+        SendInput, ^{End}
+        Sleep 250
+        submitY := IOY(SubmitBtnY, "down")
+        ; This click, the Sleep 250 before, and the following double click ensure a successful press.
+        MouseClick, left, %SubmitBtnX%, %submitY%, 2
+        Sleep 150
+        MouseClick, left, %SubmitBtnX%, %submitY%, 2
+    }
 }
 
 DoCtrlAltS()
@@ -357,25 +429,46 @@ DoAltSpace()
     SendInput, @
 }
 
+ToggleInterofficeYOffset()
+{
+    global coordToggleIni, coordToggleSection, coordToggleKey
+    IniRead, enabled, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%, 0
+    newValue := (enabled = 1) ? 0 : 1
+    IniWrite, %newValue%, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%
+    state := newValue ? "ON" : "OFF"
+    Tooltip, % "Offset Y Coordinates (No envelope button): " state
+    SetTimer, HideInterofficeToggleTooltip, -1500
+}
+
+HideInterofficeToggleTooltip:
+    Tooltip
+return
+
 DoCtrlAltEnter()
 {
     global SubmitBtnX, SubmitBtnY
-    if (IsInterofficeYOffsetEnabled())
-    {
-        DoAltN()
-        return
-    }
     EnsureIntraWindow()
     Sleep 150
-    MouseClick, left, 1400, % IOY(850), 2
-    Sleep 150
-    SendInput, ^{End}
-    Sleep 250
-    submitY := IOY(SubmitBtnY, "down")
-    ; This click, the Sleep 250 before, and the following double click ensure a successful press.
-    MouseClick, left, %SubmitBtnX%, %submitY%, 2
-    Sleep 150
-    MouseClick, left, %SubmitBtnX%, %submitY%, 2
+
+    if (IsInterofficeYOffsetEnabled())
+    {
+        ; No scroll needed when offset ON, submit button visible at fixed coords
+        MouseClick, left, 450, 1369, 2
+        Sleep 150
+        MouseClick, left, 450, 1369, 2
+    }
+    else
+    {
+        MouseClick, left, 1400, % IOY(850), 2
+        Sleep 150
+        SendInput, ^{End}
+        Sleep 250
+        submitY := IOY(SubmitBtnY, "down")
+        ; This click, the Sleep 250 before, and the following double click ensure a successful press.
+        MouseClick, left, %SubmitBtnX%, %submitY%, 2
+        Sleep 150
+        MouseClick, left, %SubmitBtnX%, %submitY%, 2
+    }
 }
 
 HandlePosterMessage(wParam, lParam, msg, hwnd)

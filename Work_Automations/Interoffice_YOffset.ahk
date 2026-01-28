@@ -37,18 +37,3 @@ IOY(y, mode := "up")
     return y + GetInterofficeYOffset(mode)
 }
 
-ToggleInterofficeYOffset()
-{
-    global coordToggleIni, coordToggleSection, coordToggleKey
-    IniRead, enabled, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%, 0
-    newValue := (enabled = 1) ? 0 : 1
-    IniWrite, %newValue%, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%
-    state := newValue ? "ON" : "OFF"
-    Tooltip, % "Offset Y Coordinates (No envelope button): " state
-    SetTimer, % Func("HideInterofficeToggleTooltip"), -1500
-}
-
-HideInterofficeToggleTooltip()
-{
-    Tooltip
-}

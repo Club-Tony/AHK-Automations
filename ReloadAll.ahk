@@ -15,6 +15,7 @@ reloadedScriptsList := []
 tooltipMouseX := 0
 tooltipMouseY := 0
 reloadElapsedText := ""
+allowInputDismiss := false
 
 ; Directories to scan for running scripts
 ManagedDirs := []
@@ -73,6 +74,7 @@ ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\Macros-Script"
     }
 
     DetectHiddenWindows, Off
+    Sleep 1000
     elapsedMs := A_TickCount - startTick
     reloadElapsedText := "Reload time: " Round(elapsedMs / 1000.0, 2) "s"
 
@@ -83,17 +85,17 @@ ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\Macros-Script"
         msg := "Reloaded " reloadedScripts.Length() " script(s)`n" reloadElapsedText "`nPress T to view list"
         ToolTip, %msg%
         reloadTooltipActive := true
+        allowInputDismiss := false
         MouseGetPos, tooltipMouseX, tooltipMouseY
         SetTimer, ClearReloadTooltip, -5000
-        SetTimer, StartTooltipDismissCheck, -500  ; Delay before starting dismiss checks
     }
     else
     {
         ToolTip, No managed scripts were running`n%reloadElapsedText%
         reloadTooltipActive := true
+        allowInputDismiss := false
         MouseGetPos, tooltipMouseX, tooltipMouseY
         SetTimer, ClearReloadTooltip, -3000
-        SetTimer, StartTooltipDismissCheck, -500  ; Delay before starting dismiss checks
     }
 return
 
@@ -107,9 +109,9 @@ t::
         msg .= "  " name "`n"
     msg .= "`nPress Esc to close"
     ToolTip, %msg%
+    allowInputDismiss := false
     MouseGetPos, tooltipMouseX, tooltipMouseY
     SetTimer, ClearReloadTooltip, -30000
-    SetTimer, StartTooltipDismissCheck, -500
 return
 
 Esc::
@@ -122,6 +124,8 @@ StartTooltipDismissCheck:
 return
 
 CheckTooltipDismiss:
+    if (!allowInputDismiss || !reloadTooltipActive)
+        return
     MouseGetPos, currentX, currentY
     if (Abs(currentX - tooltipMouseX) > 20 || Abs(currentY - tooltipMouseY) > 20)
     {
@@ -148,5 +152,6 @@ ClearReloadTooltip:
     SetTimer, StartTooltipDismissCheck, Off
     SetTimer, CheckTooltipDismiss, Off
     reloadTooltipActive := false
+    allowInputDismiss := false
     ToolTip
 return

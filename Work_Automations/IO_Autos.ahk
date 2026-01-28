@@ -50,15 +50,15 @@ return
 #If
 
 ^#!m::
-    RunInterofficeWorkflow("mfrncoa", false)
+    RunInterofficeWorkflow("mfrncoa", false, false, "jensen, jess", false)
 return
 
 ^#!1::
-    RunInterofficeWorkflow("payable-", true, true)
+    RunInterofficeWorkflow("payable-", true, true, " acp", true)
 return
 
 ^#!2::
-    RunInterofficeWorkflow("payroll-", true, true)
+    RunInterofficeWorkflow("payroll-", true, true, " acp", true)
 return
 
 ; ========== Helper Functions ==========
@@ -69,7 +69,7 @@ AbortRequested()
     return abortRequested
 }
 
-RunInterofficeWorkflow(searchString, useNameField := false, useShortcuts := false)
+RunInterofficeWorkflow(searchString, useNameField := false, useShortcuts := false, offsetSenderName := "", offsetUseRecipientName := false)
 {
     global interofficeTitle, assignRecipTitle, abortRequested, workflowRunning
     global NeutralClickX, NeutralClickY, EnvelopeBtnX, EnvelopeBtnY
@@ -100,37 +100,121 @@ RunInterofficeWorkflow(searchString, useNameField := false, useShortcuts := fals
         return
     }
 
-    ; Click envelope button, type searchString, enter, click load
-    MouseClick, left, %EnvelopeBtnX%, % IOY(EnvelopeBtnY)
-    Sleep 1000
-    SendInput, %searchString%
-    Sleep 500
-    SendInput, {Enter}
-    Sleep 250
-    MouseClick, left, %LoadBtnX%, % IOY(LoadBtnY)
-    Sleep 500
-
-    if (AbortRequested())
-    {
-        workflowRunning := false
-        return
-    }
-
-    ; Submit: scroll to bottom and click submit button
-    MouseClick, left, %NeutralClickX%, % IOY(NeutralClickY), 2
-    Sleep 150
-    SendInput, ^{End}
-    Sleep 250
     if (IsInterofficeYOffsetEnabled())
     {
-        EnsureIntraButtonsScript()
-        SendInput, !n
-        workflowRunning := false
-        return
+        ; Y offset ON: No envelope button - use direct field entry
+        ; Sender Name field
+        MouseClick, left, 450, % IOY(560), 2
+        Sleep 150
+        SendInput, ^a
+        Sleep 50
+        SendInput, %offsetSenderName%
+        Sleep 2000
+        SendInput, {Enter}
+        Sleep 200
+        SendInput, ^a
+        Sleep 50
+        SendInput, %offsetSenderName%
+        Sleep 1500
+        SendInput, {Enter}
+        Sleep 250
+
+        if (AbortRequested())
+        {
+            workflowRunning := false
+            return
+        }
+
+        ; Package Type field
+        MouseClick, left, 480, % IOY(1246), 2
+        Sleep 150
+        SendInput, env
+        Sleep 250
+        SendInput, {Enter}
+        Sleep 250
+
+        if (AbortRequested())
+        {
+            workflowRunning := false
+            return
+        }
+
+        ; Recipient field (Alias or Recipient Name based on offsetUseRecipientName)
+        if (offsetUseRecipientName)
+        {
+            MouseClick, left, 467, % IOY(858), 2  ; Recipient Name field
+            Sleep 150
+            SendInput, ^a
+            Sleep 50
+            SendInput, %searchString%
+            Sleep 2000
+            SendInput, {Enter}
+            Sleep 200
+            SendInput, ^a
+            Sleep 50
+            SendInput, %searchString%
+            Sleep 1500
+            SendInput, {Enter}
+        }
+        else
+        {
+            MouseClick, left, 1005, % IOY(860), 2  ; Alias field
+            Sleep 150
+            SendInput, ^a
+            Sleep 50
+            SendInput, %searchString%
+            Sleep 2000
+            SendInput, {Enter}
+            Sleep 200
+            SendInput, ^a
+            Sleep 50
+            SendInput, %searchString%
+            Sleep 1500
+            SendInput, {Enter}
+        }
+
+        if (AbortRequested())
+        {
+            workflowRunning := false
+            return
+        }
+
+        Sleep 250
+        SendInput, {Tab 2}
+        Sleep 500
+
+        ; Submit at offset coords
+        MouseClick, left, 450, 1369, 2
+        Sleep 150
+        MouseClick, left, 450, 1369, 2
     }
-    MouseClick, left, %SubmitBtnX%, % IOY(SubmitBtnY, "down"), 2
-    Sleep 150
-    MouseClick, left, % SubmitBtnX - 3, % IOY(SubmitBtnY, "down"), 2
+    else
+    {
+        ; Y offset OFF: Use envelope button workflow
+        MouseClick, left, %EnvelopeBtnX%, % IOY(EnvelopeBtnY)
+        Sleep 1000
+        SendInput, %searchString%
+        Sleep 500
+        SendInput, {Enter}
+        Sleep 250
+        MouseClick, left, %LoadBtnX%, % IOY(LoadBtnY)
+        Sleep 500
+
+        if (AbortRequested())
+        {
+            workflowRunning := false
+            return
+        }
+
+        ; Submit: scroll to bottom and click submit button
+        MouseClick, left, %NeutralClickX%, % IOY(NeutralClickY), 2
+        Sleep 150
+        SendInput, ^{End}
+        Sleep 250
+        MouseClick, left, %SubmitBtnX%, % IOY(SubmitBtnY, "down"), 2
+        Sleep 150
+        MouseClick, left, % SubmitBtnX - 3, % IOY(SubmitBtnY, "down"), 2
+    }
 
     ; Wait for Assign Recip window to appear
     Sleep 1500
@@ -188,14 +272,23 @@ RunInterofficeWorkflow(searchString, useNameField := false, useShortcuts := fals
     ; Wait for scan input to continue script
     WaitForScanAndSubmit()
 
-    ; Focus ExportedReport.pdf and close with Ctrl+W
+    ; Countdown before refocusing Firefox (3 seconds)
+    Loop, 3
+    {
+        remaining := 4 - A_Index
+        ToolTip, Refocusing firefox window to normalize in %remaining% seconds
+        Sleep 1000
+    }
+    ToolTip
+
+    ; Focus ExportedReport.pdf and go back to previous tab
     expTitle := GetExportedReportWinTitle()
     if (expTitle != "")
     {
         WinActivate, %expTitle%
         WinWaitActive, %expTitle%,, 2
         Sleep 200
-        SendInput, ^w
+        SendInput, ^+{Tab}
     }
 
     ; Check if Intra: Interoffice Request is active
@@ -297,6 +390,8 @@ WaitForScanAndSubmit()
     ; Wait up to ~8s for scan input to stabilize
     Loop, 80
     {
+        if (AbortRequested())
+            return
         Sleep 100
         ControlGetText, newText, %ctrlUnderMouse%, ahk_id %winID%
         if (newText != "" && newText != lastText)

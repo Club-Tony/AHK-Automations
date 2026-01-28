@@ -900,9 +900,9 @@ ClearTrackingFiles()
     ; Show result
     msg := "Cleared tracking files:`n"
     if (txtCleared)
-        msg .= "✓ tracking_numbers.txt`n"
+        msg .= "[OK] tracking_numbers.txt`n"
     if (csvCleared)
-        msg .= "✓ tracking_numbers.csv"
+        msg .= "[OK] tracking_numbers.csv"
     ShowTooltip(msg, 3000)
 }
 
