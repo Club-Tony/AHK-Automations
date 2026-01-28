@@ -3,6 +3,7 @@
 #SingleInstance, Force  ; Reload without prompt when Esc is pressed.
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
+#Include %A_ScriptDir%\Interoffice_YOffset.ahk
 
 SetTitleMatchMode, 2  ; Allow partial matches on Firefox window titles.
 CoordMode, Mouse, Window  ; Work with positions relative to the active Intra window.
@@ -33,12 +34,6 @@ LoadBtnY := 815
 SubmitBtnX := 460
 SubmitBtnY := 1313
 
-coordToggleIni := A_ScriptDir "\Interoffice_Coord_Toggle.ini"
-coordToggleSection := "Interoffice"
-coordToggleKey := "YOffsetEnabled"
-coordYOffsetUp := -77
-coordYOffsetDown := 2
-coordYOffsetBuild := 13
 NameFieldX := 485
 NameFieldY := 860
 AliasFieldX := 1005
@@ -430,51 +425,6 @@ CopyFieldText(scrollPos, xCoord, yCoord, yMode := "up")
     ClipSaved := ""
     return text
 }
-
-GetInterofficeYOffset(mode := "up")
-{
-    global coordToggleIni, coordToggleSection, coordToggleKey
-    global coordYOffsetUp, coordYOffsetDown, coordYOffsetBuild
-    IniRead, enabled, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%, 0
-    if (enabled = 1)
-    {
-        if (mode = "down")
-            IniRead, offset, %coordToggleIni%, %coordToggleSection%, YOffsetDown, %coordYOffsetDown%
-        else if (mode = "build")
-            IniRead, offset, %coordToggleIni%, %coordToggleSection%, YOffsetBuild, %coordYOffsetBuild%
-        else
-            IniRead, offset, %coordToggleIni%, %coordToggleSection%, YOffsetUp, %coordYOffsetUp%
-        return offset
-    }
-    return 0
-}
-
-IsInterofficeYOffsetEnabled()
-{
-    global coordToggleIni, coordToggleSection, coordToggleKey
-    IniRead, enabled, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%, 0
-    return (enabled = 1)
-}
-
-IOY(y, mode := "up")
-{
-    return y + GetInterofficeYOffset(mode)
-}
-
-ToggleInterofficeYOffset()
-{
-    global coordToggleIni, coordToggleSection, coordToggleKey
-    IniRead, enabled, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%, 0
-    newValue := (enabled = 1) ? 0 : 1
-    IniWrite, %newValue%, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%
-    state := newValue ? "ON" : "OFF"
-    Tooltip, % "Offset Y Coordinates (No envelope button): " state
-    SetTimer, HideInterofficeToggleTooltip, -1500
-}
-
-HideInterofficeToggleTooltip:
-    Tooltip
-return
 
 DoAnchorClick()
 {

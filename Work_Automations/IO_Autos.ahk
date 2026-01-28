@@ -6,6 +6,7 @@
 SendMode Input
 SetWorkingDir %A_ScriptDir%
 SetKeyDelay, 50
+#Include %A_ScriptDir%\Interoffice_YOffset.ahk
 
 SetTitleMatchMode, 2
 CoordMode, Mouse, Window
@@ -27,12 +28,6 @@ LoadBtnX := 880
 LoadBtnY := 815
 SubmitBtnX := 460
 SubmitBtnY := 1313
-
-coordToggleIni := A_ScriptDir "\Interoffice_Coord_Toggle.ini"
-coordToggleSection := "Interoffice"
-coordToggleKey := "YOffsetEnabled"
-coordYOffsetUp := -77
-coordYOffsetDown := 2
 
 ; Intra Desktop Client - Assign Recip coordinates
 AliasFieldX := 945
@@ -331,34 +326,6 @@ EnsureIntraButtonsScript()
     DetectHiddenWindows, Off
     if (!running && FileExist(intraButtonsPath))
         Run, %intraButtonsPath%
-}
-
-GetInterofficeYOffset(mode := "up")
-{
-    global coordToggleIni, coordToggleSection, coordToggleKey
-    global coordYOffsetUp, coordYOffsetDown
-    IniRead, enabled, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%, 0
-    if (enabled = 1)
-    {
-        if (mode = "down")
-            IniRead, offset, %coordToggleIni%, %coordToggleSection%, YOffsetDown, %coordYOffsetDown%
-        else
-            IniRead, offset, %coordToggleIni%, %coordToggleSection%, YOffsetUp, %coordYOffsetUp%
-        return offset
-    }
-    return 0
-}
-
-IsInterofficeYOffsetEnabled()
-{
-    global coordToggleIni, coordToggleSection, coordToggleKey
-    IniRead, enabled, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%, 0
-    return (enabled = 1)
-}
-
-IOY(y, mode := "up")
-{
-    return y + GetInterofficeYOffset(mode)
 }
 
 ShowTimedTooltip(msg, duration := 3000)

@@ -4,6 +4,7 @@
 #SingleInstance, Force  ; Reload without prompt when Esc is pressed.
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
+#Include %A_ScriptDir%\Interoffice_YOffset.ahk
 
 SetTitleMatchMode, 2  ; Allow partial matches on Intra tab titles.
 CoordMode, Mouse, Window  ; Work with positions relative to the active Intra window.
@@ -25,12 +26,6 @@ posterActionAltN := 5
 posterActionCtrlAltN := 6
 posterActionCtrlAltEnter := 7
 posterActionCtrlW := 8
-
-coordToggleIni := A_ScriptDir "\Interoffice_Coord_Toggle.ini"
-coordToggleSection := "Interoffice"
-coordToggleKey := "YOffsetEnabled"
-coordYOffsetUp := -77
-coordYOffsetDown := 2
 
 ; Scope: Intra: Interoffice Request (browser) poster automation (priority: Firefox > Chrome > Edge).
 
@@ -282,27 +277,6 @@ GetExportedReportWindow()
             return candidate
     }
     return ""
-}
-
-GetInterofficeYOffset(mode := "up")
-{
-    global coordToggleIni, coordToggleSection, coordToggleKey
-    global coordYOffsetUp, coordYOffsetDown
-    IniRead, enabled, %coordToggleIni%, %coordToggleSection%, %coordToggleKey%, 0
-    if (enabled = 1)
-    {
-        if (mode = "down")
-            IniRead, offset, %coordToggleIni%, %coordToggleSection%, YOffsetDown, %coordYOffsetDown%
-        else
-            IniRead, offset, %coordToggleIni%, %coordToggleSection%, YOffsetUp, %coordYOffsetUp%
-        return offset
-    }
-    return 0
-}
-
-IOY(y, mode := "up")
-{
-    return y + GetInterofficeYOffset(mode)
 }
 
 WaitForExportedReportAndPrint(timeoutMs := 20000)
