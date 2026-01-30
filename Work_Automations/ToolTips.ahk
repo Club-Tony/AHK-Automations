@@ -217,6 +217,7 @@ SSJ Intra: Interoffice Requests
 Alt+E/Alt+S  - Focus envelope icon
 Alt+A  - Focus alias field
 Alt+N  - Focus SF name field
+Shift+Alt+A - Focus SF alias field (1-5 quick-select)
 Ctrl+Enter - Scroll to bottom and Submit
 Ctrl+Alt+S - Fill Special Instructions
 Ctrl+Alt+A - ACP preset -> Alias
@@ -247,6 +248,7 @@ Return
 ~!s::Gosub HideTooltips
 ~!e::Gosub HideTooltips
 ~!a::Gosub HideTooltips
+~+!a::Gosub HideTooltips
 ~!n::Gosub HideTooltips
 ~!p::Gosub HideTooltips
 ~^!a::Gosub HideTooltips
@@ -277,6 +279,7 @@ Return
     tooltipText =
     (
 Launch Hotkeys:
+Ctrl+Alt+D: API Fetch -> Paste to WorldShip (New)
 Ctrl+Alt+C: Launch DSRF to WorldShip Script
 Ctrl+Alt+U: Launch Super-Speed version (Warning: May be unstable)
 Ctrl+Alt+P: Personal Form
@@ -290,6 +293,7 @@ return
 #If (ButtonsTooltipActive)
 ~^!c::Gosub HideTooltips
 ~^!b::Gosub HideTooltips
+~^!d::Gosub HideTooltips
 #If
 
 ; UPS WorldShip shortcuts (UPS_WS_Shortcuts.ahk) when WorldShip or QVN window is active

@@ -91,6 +91,10 @@ return
     DoCtrlAltA()
 return
 
++!a::
+    DoShiftAltA()
+return
+
 HandleEnvelopeClick:
     MouseClick, left, 730, % IOY(360)
     Sleep 150
@@ -204,6 +208,106 @@ DoCtrlAltN()
     SendInput, ^{Home}
     Sleep 150
     MouseClick, left, 467, % IOY(858), 2
+}
+
+DoShiftAltA()
+{
+    EnsureIntraWindow()
+    Sleep 150
+    MouseClick, left, 1400, % IOY(850), 2
+    Sleep 150
+    SendInput, ^{Home}
+    Sleep 150
+    MouseClick, left, 950, % IOY(563), 2
+    Sleep 100
+
+    ; Show alias selection tooltip
+    prompt := "Enter Sender Alias:`n1: jssjens`n2: osterios`n3: keobeker`n4: leobanks`n5: SEA124"
+    Tooltip, %prompt%
+
+    ; Wait for any single key input, 10 second timeout
+    Input, key, L1 T10
+    err := ErrorLevel
+    Tooltip  ; hide tooltip
+
+    ; Timeout or Esc - do nothing
+    if (err = "Timeout")
+        return
+    if (key = Chr(27))  ; Esc character
+        return
+
+    ; Handle quick-select options
+    if (key = "1")
+    {
+        ; jssjens - simple alias + Tab
+        SendInput, jssjens
+        Sleep 50
+        SendInput, {Tab}
+    }
+    else if (key = "2")
+    {
+        ; osterios - alias + Tab, then clear field + SEA124
+        SendInput, osterios
+        Sleep 50
+        SendInput, {Tab}
+        Sleep 250
+        SendInput, ^a
+        Sleep 50
+        SendInput, {Delete}
+        Sleep 50
+        SendInput, SEA124
+    }
+    else if (key = "3")
+    {
+        ; keobeker - simple alias + Tab
+        SendInput, keobeker
+        Sleep 50
+        SendInput, {Tab}
+    }
+    else if (key = "4")
+    {
+        ; leobanks - alias + Tab, then clear field + SEA124
+        SendInput, leobanks
+        Sleep 50
+        SendInput, {Tab}
+        Sleep 250
+        SendInput, ^a
+        Sleep 50
+        SendInput, {Delete}
+        Sleep 50
+        SendInput, SEA124
+    }
+    else if (key = "5")
+    {
+        ; team, ouroboros - goes in Sender NAME field (not alias)
+        ; Click SF name field directly (same coords as !n)
+        MouseClick, left, 450, % IOY(560), 2
+        Sleep 150
+        ; Autocomplete pattern (same as " acp")
+        SendInput, ^a
+        Sleep 50
+        SendInput, team, ouroboros-sea124-bsc
+        Sleep 2000
+        SendInput, {Enter}
+        ; Failsafe repeat
+        Sleep 200
+        SendInput, ^a
+        Sleep 50
+        SendInput, team, ouroboros-sea124-bsc
+        Sleep 1500
+        SendInput, {Enter}
+        Sleep 250
+    }
+    else
+    {
+        ; Any other key: pass it through to the field for manual typing
+        SendInput, %key%
+        return  ; Don't click recipient alias for manual typing
+    }
+
+    ; All 1-5 options: end on Recipient Alias field
+    Sleep 250
+    MouseClick, left, 1005, % IOY(860), 2
 }
 
 DoAltP()
@@ -523,7 +627,7 @@ DoAnchorClick()
 {
     EnsureIntraWindow()
     Sleep 100
-    MouseClick, left, 75, % IOY(150), 2
+    MouseClick, left, 75, 150, 2
 }
 
 DoHomeAlt1()

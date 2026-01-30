@@ -9,6 +9,11 @@ SetTitleMatchMode, 2  ; Partial matches for Intra window names.
 assignTitle := "Intra Desktop Client - Assign Recip"
 updateTitle := "Intra Desktop Client - Update"
 pickupTitle := "Intra Desktop Client - Pickup"
+loginTitle := "Desktop Client Login"
+
+; Automatic tracking of login windows in order of appearance
+trackedLoginWindows := []
+SetTimer, TrackLoginWindows, 500
 
 ; Window coordinates taken from existing Intra scripts/window spy for consistency.
 assignPos := {x: -7, y: 0, w: 1322, h: 1399}      ; from latest Assign Recip window spy
@@ -18,6 +23,54 @@ assignScanPos := {x: 200, y: 245}                  ; scan field (Assign Recip)
 ^!w::  ; Align Assign/Update/Pickup windows
     ArrangeIntraWindows()
 return
+
+^!0::  ; Clear tracked login windows
+    trackedLoginWindows := []
+    ShowTimedTooltip("Login tracking cleared", 1500)
+return
+
+TrackLoginWindows:
+    TrackLoginWindowsFunc()
+return
+
+TrackLoginWindowsFunc()
+{
+    global loginTitle, trackedLoginWindows
+
+    ; Get current login windows
+    currentHwnds := {}
+    WinGet, winList, List, %loginTitle%
+    Loop, %winList%
+    {
+        hwnd := winList%A_Index%
+        currentHwnds[hwnd] := true
+    }
+
+    ; Remove any tracked windows that no longer exist as login windows
+    ; (they've been logged in and transformed)
+    newTracked := []
+    for i, info in trackedLoginWindows
+    {
+        if (currentHwnds[info.hwnd])
+            newTracked.Push(info)
+    }
+    trackedLoginWindows := newTracked
+
+    ; Add any new login windows we haven't seen before
+    alreadyTracked := {}
+    for i, info in trackedLoginWindows
+        alreadyTracked[info.hwnd] := true
+
+    Loop, %winList%
+    {
+        hwnd := winList%A_Index%
+        if (!alreadyTracked[hwnd])
+        {
+            WinGet, pid, PID, ahk_id %hwnd%
+            trackedLoginWindows.Push({hwnd: hwnd, pid: pid})
+        }
+    }
+}
 
 ArrangeIntraWindows()
 {
@@ -86,21 +139,51 @@ GetWindowCount(title)
 
 CycleAssignWindows(title)
 {
-    global updatePos, updateTitle, pickupTitle, assignPos, assignScanPos
+    global trackedLoginWindows, updatePos, updateTitle, pickupTitle, assignPos, assignScanPos
 
     prevCoordMode := A_CoordModeMouse
     CoordMode, Mouse, Window
 
+    ; Get current Assign windows with their PIDs
     winInfo := []
     WinGet, winList, List, %title%
     Loop, %winList%
     {
         thisId := winList%A_Index%
-        creation := GetProcessCreationTimeForWindow(thisId)
-        winInfo.Push({id: thisId, time: creation})
+        WinGet, pid, PID, ahk_id %thisId%
+        winInfo.Push({id: thisId, pid: pid})
     }
 
-    SortWindowsByCreation(winInfo)
+    ; Try to match by tracked login order (using PID)
+    useTrackedOrder := false
+    if (trackedLoginWindows.MaxIndex() >= 3)
+    {
+        ordered := []
+        for i, tracked in trackedLoginWindows
+        {
+            for j, win in winInfo
+            {
+                if (win.pid = tracked.pid)
+                {
+                    ordered.Push(win)
+                    break
+                }
+            }
+        }
+        if (ordered.MaxIndex() = 3)
+        {
+            winInfo := ordered
+            useTrackedOrder := true
+        }
+    }
+
+    ; Fallback to process creation time sorting if tracking didn't work
+    if (!useTrackedOrder)
+    {
+        for i, win in winInfo
+            win.time := GetProcessCreationTimeForWindow(win.id)
+        SortWindowsByCreation(winInfo)
+    }
 
     for index, info in winInfo
     {

@@ -16,6 +16,7 @@ worldShipPos := {x: 1204, y: 711, w: 814, h: 688} ; Window Spy sizing for UPS Wo
 qvnTitle := "Quantum View Notify Recipients"
 exportedReportTitle := "ExportedReport.pdf"
 browserExes := ["firefox.exe", "chrome.exe", "msedge.exe"]
+vsCodePos := {x: 0, y: 0, w: 1724, h: 1392}
 
 #a::ToggleFocusOrMinimize(assignTitle)
 #u::ToggleFocusOrMinimize(updateTitle)
@@ -168,6 +169,15 @@ EnsureWorldShipPlacement()
     WinMove, %worldShipTitle%,, % worldShipPos.x, % worldShipPos.y, % worldShipPos.w, % worldShipPos.h
 }
 
+EnsureVsCodePlacement()
+{
+    global vsCodePos
+    if !WinExist("ahk_exe Code.exe")
+        return
+    WinRestore, ahk_exe Code.exe
+    WinMove, ahk_exe Code.exe,, % vsCodePos.x, % vsCodePos.y, % vsCodePos.w, % vsCodePos.h
+}
+
 ToggleIntraGroup()
 {
     global assignTitle, updateTitle, pickupTitle
@@ -318,6 +328,7 @@ ToggleVsCode()
     {
         WinActivate  ; last found window
         WinWaitActive, ahk_exe Code.exe,, 1
+        EnsureVsCodePlacement()
         return
     }
     vsExe := GetVsCodeExe()
@@ -325,6 +336,8 @@ ToggleVsCode()
         Run, %vsExe%,, Hide
     else
         Run, % """" vsExe """"
+    WinWaitActive, ahk_exe Code.exe,, 2
+    EnsureVsCodePlacement()
 }
 
 GetVsCodeExe()
