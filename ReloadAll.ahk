@@ -3,6 +3,8 @@
 #Warn
 #SingleInstance, Force
 #InstallKeybdHook
+#UseHook
+#InputLevel 1  ; Only respond to physical keypresses, improves game compatibility
 SendMode Input
 SetWorkingDir %A_ScriptDir%
 
@@ -28,7 +30,7 @@ ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automation
 ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Other_Automations")
 ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\Macros-Script")
 
-^Esc::
+$^Esc::
     startTick := A_TickCount
     reloadedScripts := []
     DetectHiddenWindows, On
