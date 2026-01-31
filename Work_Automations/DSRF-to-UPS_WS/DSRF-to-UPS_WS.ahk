@@ -188,6 +188,7 @@ PasteBusinessToWorldShip(data)
     MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
     delay := (companyName = data.Company && companyName != "") ? 2000 : 5000
     Sleep, %delay%
+    ClearWorldShipPostalCode()
     PasteFieldAt(worldShipFields.STName.x, worldShipFields.STName.y, data.STName)
     Sleep 120
 
@@ -235,6 +236,7 @@ PastePersonalToWorldShip(data)
     MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
     delay := (companyName = data.Company && companyName != "") ? 2000 : 5000
     Sleep, %delay%
+    ClearWorldShipPostalCode()
     PasteFieldAt(worldShipFields.STName.x, worldShipFields.STName.y, data.STName)
     Sleep 120
 
@@ -281,6 +283,20 @@ PastePostalCode(postalCode, ref2Delay := 5000)
     global worldShipFields, worldShipTabs
     ClipSaved := ClipboardAll
     Clipboard := postalCode
+    ClearWorldShipPostalCode()
+    Sleep 150
+    SendInput, %postalCode%
+    Sleep 250
+    MaybeDismissPostalCodePopup()
+    MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
+    Sleep, %ref2Delay%
+    Clipboard := ClipSaved
+    ClipSaved := ""
+}
+
+ClearWorldShipPostalCode()
+{
+    global worldShipFields
     MouseClick, left, % worldShipFields.PostalCode.x, worldShipFields.PostalCode.y
     Sleep 150
     SendInput, {Home}
@@ -288,13 +304,19 @@ PastePostalCode(postalCode, ref2Delay := 5000)
     SendInput, +{End}
     Sleep 80
     SendInput, {Delete}
-    Sleep 250
-    SendInput, %postalCode%
-    Sleep 250
-    MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
-    Sleep, %ref2Delay%
-    Clipboard := ClipSaved
-    ClipSaved := ""
+    Sleep 120
+}
+
+MaybeDismissPostalCodePopup()
+{
+    global worldShipTitle
+    popupText := "State/Province/County field was automatically changed"
+    WinWaitActive, %worldShipTitle%, %popupText%, 0.8
+    if (ErrorLevel)
+        return
+    Sleep 1500
+    SendInput, {Space}
+    Sleep 150
 }
 
 PasteDeclaredValue(declaredValue)

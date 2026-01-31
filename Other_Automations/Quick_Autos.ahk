@@ -11,6 +11,13 @@ SetKeyDelay, 25
     ToggleAudioOutput()
 return
 
+; Run installers (new device setup) Ctrl+Shift+Alt+I (VS Code only)
+#IfWinActive, ahk_exe Code.exe
+^+!i::
+    RunInstallers()
+return
+#If
+
 ; Explorer tab reset Ctrl+Alt+E
 ^!e::
     if (!ExplorerWindowExists())
@@ -501,6 +508,85 @@ UriDecode(str)
 HideQuickTip:
     ToolTip
 return
+
+RunInstallers()
+{
+    local statusPs7, statusPs5, msg
+
+    ToolTip, Installer running...`nPowerShell cd-tab shortcut setup
+
+    statusPs7 := EnsureProfileSnippet(A_MyDocuments . "\PowerShell\Microsoft.PowerShell_profile.ps1", BuildCdTabSnippet())
+    statusPs5 := EnsureProfileSnippet(A_MyDocuments . "\WindowsPowerShell\Microsoft.PowerShell_profile.ps1", BuildCdTabSnippet())
+
+    msg := "Installer complete:`n"
+        . "PowerShell 7 profile: " . FormatInstallStatus(statusPs7) . "`n"
+        . "Windows PowerShell profile: " . FormatInstallStatus(statusPs5) . "`n"
+        . "Restart terminal or run . $PROFILE"
+    ToolTip, %msg%
+    SetTimer, HideQuickTip, -6000
+}
+
+BuildCdTabSnippet()
+{
+    snippet =
+(
+# >>> codex cd-tab shortcut >>>
+try {
+    if (Get-Command Set-PSReadLineKeyHandler -ErrorAction SilentlyContinue) {
+        Set-PSReadLineKeyHandler -Chord Tab -ScriptBlock {
+            param($key, $arg)
+            $line = $null
+            $cursor = $null
+            [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+            if ($line -eq 'cd') {
+                [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, 'cd .\Repositories\AHK-Automations\')
+                [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
+                return
+            }
+            [Microsoft.PowerShell.PSConsoleReadLine]::TabCompleteNext()
+        }
+    }
+} catch {
+}
+# <<< codex cd-tab shortcut <<<
+)
+    return snippet
+}
+
+EnsureProfileSnippet(profilePath, snippet)
+{
+    local dir, content
+    SplitPath, profilePath, , dir
+    if (!InStr(FileExist(dir), "D"))
+        FileCreateDir, %dir%
+
+    if (FileExist(profilePath))
+    {
+        FileRead, content, %profilePath%
+        if (ErrorLevel)
+            return "error"
+        if (InStr(content, "# >>> codex cd-tab shortcut >>>"))
+            return "exists"
+        if (content != "" && !RegExMatch(content, "\r?\n$"))
+            FileAppend, `r`n, %profilePath%
+    }
+
+    FileAppend, %snippet%, %profilePath%
+    if (ErrorLevel)
+        return "error"
+    return "added"
+}
+
+FormatInstallStatus(status)
+{
+    if (status = "added")
+        return "updated"
+    if (status = "exists")
+        return "already set"
+    if (status = "error")
+        return "error"
+    return status
+}
 
 ToggleAudioOutput()
 {

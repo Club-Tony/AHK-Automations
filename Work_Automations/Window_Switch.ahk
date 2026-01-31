@@ -55,6 +55,7 @@ $!Tab::
         }
         else if WinExist(updateTitle)
         {
+            EnsureUpdatePlacement()
             WinActivate, %updateTitle%
             WinWaitActive, %updateTitle%,, 1
         }

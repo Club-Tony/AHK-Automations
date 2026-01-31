@@ -223,3 +223,79 @@ Potential strategies to explore:
 | `Ctrl+Alt+B` | Business form transfer |
 | `Ctrl+Alt+P` | Personal form transfer |
 | `Esc` | Exit script |
+
+---
+
+## DSRF-Export Subfolder (API-Based Approach)
+
+**Location:** `DSRF-to-UPS_WS/DSRF-Export/`
+
+This subfolder contains scripts that use the Intra executeQuery API to fetch shipping data directly, bypassing screen scraping entirely. This is the "New Approach" implementation.
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `DSRF-Export.bat` | Standalone batch script (no AHK) - prompts for PK#, exports CSV |
+| `DSRF-to-UPS_WS-Paste.ahk` | AHK script - auto-detects DSRF windows, fetches via API, pastes to WorldShip |
+| `cookies.txt` | Session cookies for API authentication (user creates) |
+| `cookies.txt.template` | Template showing cookie format |
+| `README.txt` | Instructions for batch version |
+| `README(AHK ver).md` | Instructions for AHK version |
+
+### API Details
+
+**Endpoint:** `https://amazonmailservices.us.spsprod.net/IntraWeb/api/automation/then/executeQuery`
+
+**Method:** POST with JSON body containing SQL query
+
+**Auth:** Session cookies copied from browser DevTools (F12 → Network → Cookie header)
+
+### Field Mapping (itemVar → WorldShip)
+
+| itemVar | Field |
+|---------|-------|
+| 148 | Company |
+| 149 | Recipient Name |
+| 150 | Address Line 1 |
+| 151 | Address Line 2 |
+| 152 | City |
+| 153 | State |
+| 154 | Postal Code |
+| 155 | Service Type |
+
+### Advantages Over Screen Scraping
+
+1. **No coordinate dependencies** - Data fetched directly from database
+2. **Multi-browser support** - Firefox, Chrome, Edge all work
+3. **More reliable** - No timing/zoom/window size issues for data extraction
+4. **Distributable** - Batch version requires no AHK installation
+
+### Hotkeys (AHK Version)
+
+| Hotkey | Action |
+|--------|--------|
+| `Ctrl+Alt+D` | Fetch DSRF via API and paste to WorldShip |
+
+### Cookie Validation
+
+The script validates API responses before pasting:
+- Detects HTML login pages (expired session)
+- Validates JSON format
+- Checks for error indicators
+- Verifies shipping data is present
+
+If cookies are invalid, shows clear error message instead of pasting garbage data.
+
+### Multi-Window Behavior
+
+1. Script scans for "Intra: Shipping Request Form" windows in all browsers
+2. If multiple found, prompts user to select which PK#
+3. Extracts PK# from URL, calls API, pastes to WorldShip
+
+### Cookie Setup
+
+1. Open browser DevTools (F12) on any Intra page
+2. Go to Network tab, refresh page
+3. Click any request, find "Cookie:" header
+4. Copy entire cookie string to `cookies.txt` (single line)

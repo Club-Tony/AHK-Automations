@@ -36,25 +36,37 @@ scaleClickDone := false
 
 return ; end of auto-execute
 
-Esc::ExitApp
-
 ; Ctrl+Alt+D: Fetch DSRF data from API and paste to WorldShip
 ^!d::
     scaleClickDone := false
     startTick := A_TickCount
 
-    ; Get asset ID from Firefox URL
-    assetId := GetAssetIdFromFirefox()
-    if (!assetId)
+    ; Find all DSRF windows across browsers
+    ToolTip, Scanning for DSRF windows...
+    dsrfWindows := FindDSRFWindows()
+
+    if (dsrfWindows.Length() = 0)
     {
-        MsgBox, 48, Error, Could not extract PK# from Firefox URL.`n`nMake sure Firefox has a Shipping Request Form page open.
+        ToolTip
+        MsgBox, 48, Error, No Shipping Request Form windows found.`n`nOpen a DSRF page in Firefox, Chrome, or Edge.
         return
     }
+
+    ; Select window (prompt if multiple)
+    selected := SelectDSRFWindow(dsrfWindows)
+    if (!selected)
+    {
+        ToolTip
+        return
+    }
+
+    assetId := selected.pk
 
     ; Get cookies
     cookies := GetCookies()
     if (!cookies)
     {
+        ToolTip
         MsgBox, 48, Error, Could not get session cookies.`n`nCreate cookies.txt in the script folder or set INTRA_COOKIES env var.
         return
     }
@@ -66,7 +78,7 @@ Esc::ExitApp
     if (!data)
     {
         ToolTip
-        MsgBox, 48, Error, API call failed or no data returned.`n`nCheck that cookies are valid and not expired.
+        MsgBox, 48, Cookie Error, API call failed - cookies are likely invalid or expired.`n`nTo fix:`n1. Open Intra in browser and log in`n2. Press F12 for DevTools`n3. Go to Network tab, refresh page`n4. Click any request, copy Cookie header`n5. Paste into cookies.txt (replace all)
         return
     }
 
@@ -78,7 +90,8 @@ Esc::ExitApp
     ; Show completion
     elapsedMs := A_TickCount - startTick
     elapsedSec := Round(elapsedMs / 1000.0, 2)
-    ToolTip, Done! Runtime: %elapsedSec%s`nVerify Service, Dimensions, Weight
+    doneMsg := "Done! Runtime: " . elapsedSec . "s`nVerify Service, Dimensions, Weight"
+    ToolTip, %doneMsg%
     SetTimer, HideTooltip, -5000
 return
 
@@ -90,15 +103,48 @@ return
 ; Functions
 ; =============================================================================
 
-GetAssetIdFromFirefox()
+; Find all DSRF windows across Firefox, Chrome, and Edge
+FindDSRFWindows()
 {
-    ; Save current clipboard
+    local dsrfWindows, windowList, hwnd, procName, pk, i
+
+    dsrfWindows := []
+    dsrfTitle := "Intra: Shipping Request Form"
+
+    ; Get all windows matching DSRF title
+    WinGet, windowList, List, %dsrfTitle%
+
+    Loop, %windowList%
+    {
+        hwnd := windowList%A_Index%
+        WinGet, procName, ProcessName, ahk_id %hwnd%
+
+        ; Only include browser windows (Firefox, Chrome, Edge)
+        if (procName = "firefox.exe" || procName = "chrome.exe" || procName = "msedge.exe")
+        {
+            ; Get PK# from this window's URL
+            pk := GetPKFromWindow(hwnd, procName)
+            if (pk != "")
+            {
+                dsrfWindows.Push({hwnd: hwnd, pk: pk, proc: procName})
+            }
+        }
+    }
+
+    return dsrfWindows
+}
+
+; Get PK# from a specific browser window by activating it and copying URL
+GetPKFromWindow(hwnd, procName)
+{
+    local ClipSaved, url, pk
+
     ClipSaved := ClipboardAll
     Clipboard :=
 
-    ; Activate Firefox and get URL
-    WinActivate, ahk_class MozillaWindowClass
-    WinWaitActive, ahk_class MozillaWindowClass,, 2
+    ; Activate the specific window
+    WinActivate, ahk_id %hwnd%
+    WinWaitActive, ahk_id %hwnd%,, 2
     if (ErrorLevel)
     {
         Clipboard := ClipSaved
@@ -106,7 +152,7 @@ GetAssetIdFromFirefox()
     }
 
     Sleep 100
-    SendInput, ^l  ; Focus address bar
+    SendInput, ^l  ; Focus address bar (works for all browsers)
     Sleep 100
     SendInput, ^c  ; Copy URL
     ClipWait, 1
@@ -114,7 +160,6 @@ GetAssetIdFromFirefox()
 
     url := Clipboard
     Clipboard := ClipSaved
-    ClipSaved := ""
 
     ; Extract assetId=PK###### from URL
     if (RegExMatch(url, "assetId=(PK\d+)", match))
@@ -122,8 +167,56 @@ GetAssetIdFromFirefox()
     return ""
 }
 
+; Prompt user to select a DSRF window if multiple are open
+SelectDSRFWindow(windows)
+{
+    local prompt, choice, idx, w, i
+
+    if (windows.Length() = 0)
+        return ""
+
+    ; If only one window, return it directly
+    if (windows.Length() = 1)
+        return windows[1]
+
+    ; Build selection prompt for multiple windows
+    prompt := "Multiple DSRF windows found:`n`n"
+    Loop, % windows.Length()
+    {
+        w := windows[A_Index]
+        browserName := GetBrowserName(w.proc)
+        prompt .= A_Index . ": " . w.pk . " (" . browserName . ")`n"
+    }
+    prompt .= "`nEnter number (1-" . windows.Length() . "):"
+
+    InputBox, choice, Select DSRF Window, %prompt%,, 320, 220
+    if (ErrorLevel || choice = "")
+        return ""
+
+    idx := Floor(choice)
+    if (idx >= 1 && idx <= windows.Length())
+        return windows[idx]
+
+    MsgBox, 48, Error, Invalid selection.
+    return ""
+}
+
+; Get friendly browser name from process name
+GetBrowserName(procName)
+{
+    if (procName = "firefox.exe")
+        return "Firefox"
+    if (procName = "chrome.exe")
+        return "Chrome"
+    if (procName = "msedge.exe")
+        return "Edge"
+    return procName
+}
+
 GetCookies()
 {
+    local cookies, configFile
+
     ; Try environment variable first
     EnvGet, cookies, INTRA_COOKIES
     if (cookies)
@@ -142,6 +235,8 @@ GetCookies()
 
 FetchDSRFData(assetId, cookies)
 {
+    local sql, bodyFile, outputFile, jsonBody, psScript, jsonResponse, data, trimmedResponse
+
     ; Build SQL query
     sql := "declare @profileid int = 1; "
     sql .= "declare @assetid nvarchar(50) = '" . assetId . "'; "
@@ -175,43 +270,65 @@ FetchDSRFData(assetId, cookies)
     jsonBody := "{""Sql"":""" . sql . """}"
     FileAppend, %jsonBody%, %bodyFile%
 
-    ; Build PowerShell command
+    ; Build PowerShell command with better error handling
+    ; Extract fields directly in PowerShell and output as simple KEY=VALUE format
     psScript := "$headers = @{"
     psScript .= "'Content-Type'='application/json'; "
     psScript .= "'Cookie'='" . cookies . "'"
     psScript .= "}; "
     psScript .= "try { "
-    psScript .= "$response = Invoke-RestMethod -Uri 'https://amazonmailservices.us.spsprod.net/IntraWeb/api/automation/then/executeQuery' "
-    psScript .= "-Method POST -Headers $headers -Body (Get-Content '" . bodyFile . "' -Raw); "
-    psScript .= "$response | ConvertTo-Json -Depth 10 | Out-File -Encoding UTF8 '" . outputFile . "'"
+    psScript .= "$response = Invoke-WebRequest -Uri 'https://amazonmailservices.us.spsprod.net/IntraWeb/api/automation/then/executeQuery' "
+    psScript .= "-Method POST -Headers $headers -Body (Get-Content '" . bodyFile . "' -Raw) -UseBasicParsing; "
+    psScript .= "if ($response.StatusCode -ne 200) { exit 2 }; "
+    psScript .= "$content = $response.Content; "
+    psScript .= "if ($content -match '<!DOCTYPE' -or $content -match '<html' -or $content -match '<form.*login' -or $content -match 'SAMLRequest') { exit 3 }; "
+    psScript .= "$json = $content | ConvertFrom-Json; "
+    psScript .= "if ($json -eq $null -or $json.Count -eq 0) { exit 4 }; "
+    psScript .= "$row = $json[0]; "
+    psScript .= "$out = @(); "
+    psScript .= "$out += 'name=' + $row.name; "
+    psScript .= "$out += 'company=' + $row.company; "
+    psScript .= "$out += 'address1=' + $row.address1; "
+    psScript .= "$out += 'address2=' + $row.address2; "
+    psScript .= "$out += 'city=' + $row.city; "
+    psScript .= "$out += 'state=' + $row.state; "
+    psScript .= "$out += 'postal=' + $row.postal; "
+    psScript .= "$out += 'serviceType=' + $row.serviceType; "
+    psScript .= "$out | Out-File -Encoding ASCII '" . outputFile . "'"
     psScript .= "} catch { exit 1 }"
 
     ; Run PowerShell
     RunWait, powershell -Command "%psScript%",, Hide
+    psExitCode := ErrorLevel
 
-    if (ErrorLevel != 0)
+    if (psExitCode != 0)
         return ""
 
-    ; Read and parse response
+    ; Read and parse response (KEY=VALUE format)
     if (!FileExist(outputFile))
         return ""
 
-    FileRead, jsonResponse, %outputFile%
-    if (jsonResponse = "")
+    FileRead, fileContent, %outputFile%
+    if (fileContent = "")
         return ""
 
-    ; Parse JSON using regex (simple extraction)
+    ; Parse KEY=VALUE lines
     data := {}
-    data.name := ExtractJsonField(jsonResponse, "name")
-    data.company := ExtractJsonField(jsonResponse, "company")
-    data.address1 := ExtractJsonField(jsonResponse, "address1")
-    data.address2 := ExtractJsonField(jsonResponse, "address2")
-    data.city := ExtractJsonField(jsonResponse, "city")
-    data.state := ExtractJsonField(jsonResponse, "state")
-    data.postal := ExtractJsonField(jsonResponse, "postal")
-    data.serviceType := ExtractJsonField(jsonResponse, "serviceType")
+    Loop, Parse, fileContent, `n, `r
+    {
+        line := A_LoopField
+        if (line = "")
+            continue
+        eqPos := InStr(line, "=")
+        if (eqPos > 0)
+        {
+            key := SubStr(line, 1, eqPos - 1)
+            val := SubStr(line, eqPos + 1)
+            data[key] := val
+        }
+    }
 
-    ; Validate we got some data
+    ; Validate we got actual shipping data (at least one address field must be present)
     if (data.name = "" && data.company = "" && data.address1 = "")
         return ""
 
@@ -220,6 +337,8 @@ FetchDSRFData(assetId, cookies)
 
 ExtractJsonField(json, fieldName)
 {
+    local pattern, match
+
     ; Simple regex to extract JSON field value
     pattern := """" . fieldName . """\s*:\s*""([^""]*?)"""
     if (RegExMatch(json, pattern, match))
@@ -230,6 +349,7 @@ ExtractJsonField(json, fieldName)
 PasteToWorldShip(data)
 {
     global worldShipTitle, worldShipTabs, worldShipFields
+    ; companyName and delay are implicitly local when global is declared
 
     ; Activate WorldShip
     WinActivate, %worldShipTitle%
@@ -283,17 +403,18 @@ PasteToWorldShip(data)
 
 PasteFieldAt(x, y, text)
 {
+    local ClipSaved
+
     if (text = "")
         return
 
     ClipSaved := ClipboardAll
     Clipboard := text
 
+    ; Click field, select all, delete, then paste
     MouseClick, left, %x%, %y%
     Sleep 150
-    SendInput, {Home}
-    Sleep 80
-    SendInput, +{End}
+    SendInput, ^a  ; Select all text in field
     Sleep 80
     SendInput, {Delete}
     Sleep 120
@@ -307,6 +428,7 @@ PasteFieldAt(x, y, text)
 PastePostalCode(postalCode, ref2Delay := 5000)
 {
     global worldShipFields
+    ; ClipSaved is implicitly local when global is declared
 
     if (postalCode = "")
         return
@@ -314,19 +436,36 @@ PastePostalCode(postalCode, ref2Delay := 5000)
     ClipSaved := ClipboardAll
     Clipboard := postalCode
 
+    ; Click postal code field and clear it completely
     MouseClick, left, % worldShipFields.PostalCode.x, worldShipFields.PostalCode.y
     Sleep 150
-    SendInput, {Home}
-    Sleep 80
-    SendInput, +{End}
+    SendInput, ^a  ; Select all
     Sleep 80
     SendInput, {Delete}
     Sleep 250
+
+    ; Type the postal code
     SendInput, %postalCode%
     Sleep 250
 
     ; Click away to trigger city/state autofill
     MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
+    Sleep 500
+
+    ; Handle the "State/Province/County field was automatically changed" dialog
+    ; This dialog appears when postal code changes location - just press Enter to dismiss
+    Loop, 3
+    {
+        if WinExist("UPS WorldShip ahk_class #32770")  ; Standard dialog class
+        {
+            SendInput, {Enter}
+            Sleep 200
+        }
+        else
+            break
+        Sleep 200
+    }
+
     Sleep, %ref2Delay%
 
     Clipboard := ClipSaved

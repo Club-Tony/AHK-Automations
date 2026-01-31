@@ -360,7 +360,9 @@ return
     (
 VS Code Shortcuts
 Ctrl+Shift+P - Command Palette
-Restarting Extensions - Ctrl+Shift+P - type Restart Extension Host
+Ctrl+Shift+Alt+P - Restart Extension Host
+Ctrl+Shift+Alt+R - Markdown: Refresh Preview
+Ctrl+Shift+Alt+I - Run installers (new device setup)
 Ctrl+`` - Toggle terminal
 Ctrl+Alt+R - Relaunch terminal (when focused)
 Ctrl+P - Quick Open

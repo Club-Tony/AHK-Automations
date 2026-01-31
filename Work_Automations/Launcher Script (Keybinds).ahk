@@ -126,6 +126,7 @@ Return
     }
 
     CloseWorldShipScripts()
+    Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WS\DSRF-Export\DSRF-to-UPS_WS-Paste.ahk"
 
     ; Ensure Intra Window is focused and Mouse cursor is positioned
     FocusIntraWindow()

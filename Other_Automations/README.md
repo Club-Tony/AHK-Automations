@@ -17,6 +17,7 @@
 - `Ctrl+Alt+T` - show/hide global hotkey tooltip (ToolTips.ahk).
 - `Ctrl+Alt+E` - reset Explorer tab scaling (Quick_Autos.ahk).
 - `Ctrl+Shift+Alt+R` - reset stuck modifier keys (Quick_Autos.ahk).
+- `Ctrl+Shift+Alt+I` - run installers (new device setup, VS Code).
 - `Alt+Q` - acts as Alt+F4.
 - `Ctrl+Home` - sleep the machine.
 

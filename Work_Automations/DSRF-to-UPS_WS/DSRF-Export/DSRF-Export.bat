@@ -61,17 +61,44 @@ if not exist "%TEMPJSON%" (
     exit /b 1
 )
 
-:: Parse JSON and output CSV using PowerShell
+:: Parse JSON and output CSV using PowerShell (with cookie validation)
 powershell -Command ^
   "try { ^
-     $json = Get-Content '%TEMPJSON%' -Raw | ConvertFrom-Json; ^
+     $content = Get-Content '%TEMPJSON%' -Raw; ^
+     if ([string]::IsNullOrWhiteSpace($content)) { ^
+       Write-Host 'ERROR: Empty response from API'; ^
+       Write-Host ''; ^
+       Write-Host 'Your cookies may be invalid or expired.'; ^
+       Write-Host 'Please refresh your cookies from browser DevTools.'; ^
+       exit 2; ^
+     } ^
+     $trimmed = $content.Trim(); ^
+     if ($trimmed -match '<!DOCTYPE' -or $trimmed -match '<html' -or $trimmed -match '<form.*login' -or $trimmed -match 'SAMLRequest' -or $trimmed -match 'Access Denied') { ^
+       Write-Host 'ERROR: Session expired or invalid cookies'; ^
+       Write-Host ''; ^
+       Write-Host 'The API returned a login/error page instead of data.'; ^
+       Write-Host 'Please refresh your cookies from browser DevTools:'; ^
+       Write-Host '  1. Open Intra in your browser and log in'; ^
+       Write-Host '  2. Press F12 to open DevTools'; ^
+       Write-Host '  3. Go to Network tab, refresh page'; ^
+       Write-Host '  4. Click any request, copy the Cookie header'; ^
+       Write-Host '  5. Paste into cookies.txt (replace entire contents)'; ^
+       exit 3; ^
+     } ^
+     if (-not ($trimmed.StartsWith('[') -or $trimmed.StartsWith('{'))) { ^
+       Write-Host 'ERROR: Invalid response format (not JSON)'; ^
+       Write-Host ''; ^
+       Write-Host 'Your cookies may be invalid or expired.'; ^
+       exit 4; ^
+     } ^
+     $json = $content | ConvertFrom-Json; ^
      if ($json -eq $null -or $json.Count -eq 0) { ^
        Write-Host 'ERROR: No data returned for this PK#'; ^
+       Write-Host ''; ^
+       Write-Host 'The PK# may not exist or has no shipping data.'; ^
        exit 1; ^
      } ^
      $row = $json[0]; ^
-     $csv = 'Name,Company,Address1,Address2,City,State,Postal,ServiceType'; ^
-     $csv += [Environment]::NewLine; ^
      $name = if ($row.name) { $row.name } else { '' }; ^
      $company = if ($row.company) { $row.company } else { '' }; ^
      $addr1 = if ($row.address1) { $row.address1 } else { '' }; ^
@@ -80,6 +107,14 @@ powershell -Command ^
      $state = if ($row.state) { $row.state } else { '' }; ^
      $postal = if ($row.postal) { $row.postal } else { '' }; ^
      $service = if ($row.serviceType) { $row.serviceType } else { '' }; ^
+     if ([string]::IsNullOrWhiteSpace($name) -and [string]::IsNullOrWhiteSpace($company) -and [string]::IsNullOrWhiteSpace($addr1)) { ^
+       Write-Host 'ERROR: No shipping data found for this PK#'; ^
+       Write-Host ''; ^
+       Write-Host 'The form may not have shipping information filled in.'; ^
+       exit 5; ^
+     } ^
+     $csv = 'Name,Company,Address1,Address2,City,State,Postal,ServiceType'; ^
+     $csv += [Environment]::NewLine; ^
      $csv += '\"' + $name + '\",\"' + $company + '\",\"' + $addr1 + '\",\"' + $addr2 + '\",\"' + $city + '\",\"' + $state + '\",\"' + $postal + '\",\"' + $service + '\"'; ^
      $csv | Out-File -Encoding UTF8 '%OUTPUTCSV%'; ^
      Write-Host ''; ^
@@ -97,6 +132,8 @@ powershell -Command ^
      Write-Host ('Service:     ' + $service); ^
    } catch { ^
      Write-Host ('ERROR: ' + $_.Exception.Message); ^
+     Write-Host ''; ^
+     Write-Host 'This may indicate invalid cookies or a server error.'; ^
      exit 1; ^
    }"
 

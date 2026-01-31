@@ -52,14 +52,40 @@ TROUBLESHOOTING
 "cookies.txt not found"
   - Create the cookies.txt file per the setup instructions above
 
-"API call failed" or "No data returned"
-  - Your cookies may have expired - refresh them from browser DevTools
-  - Make sure you're logged into Intra
-  - Check that the PK# is correct
+"ERROR: Empty response from API"
+  - Your cookies may be invalid or expired
+  - Refresh cookies from browser DevTools (see Setup instructions)
 
-"No data returned for this PK#"
-  - The PK# doesn't exist or has no shipping data
-  - Double-check the asset ID
+"ERROR: Session expired or invalid cookies"
+  - The API returned a login page instead of data
+  - Your session has expired - log into Intra again and refresh cookies
+  - This is the most common error when cookies are old
+
+"ERROR: Invalid response format (not JSON)"
+  - The API returned something unexpected (likely an error page)
+  - Refresh your cookies from browser DevTools
+
+"ERROR: No data returned for this PK#"
+  - The PK# doesn't exist in the system
+  - Double-check the asset ID is correct
+
+"ERROR: No shipping data found for this PK#"
+  - The PK# exists but the shipping form fields are empty
+  - The form may not have been filled out yet
+
+"API call failed (curl error)"
+  - Network connectivity issue
+  - Make sure you have internet access
+  - The Intra server may be down
+
+COOKIE EXPIRATION
+-----------------
+Cookies typically expire after:
+  - Browser session ends (if "remember me" wasn't checked)
+  - A few hours of inactivity
+  - When you log out of Intra
+
+When you see cookie errors, refresh your cookies following the Setup steps.
 
 CSV OUTPUT FORMAT
 -----------------
