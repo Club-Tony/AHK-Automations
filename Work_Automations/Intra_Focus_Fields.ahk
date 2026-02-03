@@ -30,7 +30,7 @@ Return
 
 !1:: ; focus package type field
     Sleep 250
-    MouseClick, left, 1100, 365, 2
+    MouseClick, left, 1175, 365, 1
 Return
 
 !2:: ; focus BSC location field

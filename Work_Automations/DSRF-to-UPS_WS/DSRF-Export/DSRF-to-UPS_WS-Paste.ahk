@@ -29,7 +29,9 @@ worldShipFields.Address1   := {x: 85,  y: 323}
 worldShipFields.Address2   := {x: 85,  y: 364}
 worldShipFields.PostalCode := {x: 215, y: 403}
 worldShipFields.STPhone    := {x: 85,  y: 485}
+worldShipFields.STEmail    := {x: 210, y: 485}
 worldShipFields.Ref2       := {x: 721, y: 345}
+worldShipFields.DeclValue  := {x: 721, y: 273}
 
 scaleOffClick := {x: 316, y: 559}
 scaleClickDone := false
@@ -37,6 +39,7 @@ scaleClickDone := false
 return ; end of auto-execute
 
 ; Ctrl+Alt+D: Fetch DSRF data from API and paste to WorldShip
+#If (WinActive("Intra: Shipping Request Form") || WinActive("UPS WorldShip"))
 ^!d::
     scaleClickDone := false
     startTick := A_TickCount
@@ -94,6 +97,7 @@ return ; end of auto-execute
     ToolTip, %doneMsg%
     SetTimer, HideTooltip, -5000
 return
+#If
 
 HideTooltip:
     ToolTip
@@ -248,7 +252,10 @@ FetchDSRFData(assetId, cookies)
     sql .= "ISNULL(iv152.ItemVarValue,'') as city, "
     sql .= "ISNULL(iv153.ItemVarValue,'') as state, "
     sql .= "ISNULL(iv154.ItemVarValue,'') as postal, "
-    sql .= "ISNULL(iv155.ItemVarValue,'') as serviceType "
+    sql .= "ISNULL(iv155.ItemVarValue,'') as serviceType, "
+    sql .= "ISNULL(iv162.ItemVarValue,'') as declaredValue, "
+    sql .= "ISNULL(iv202.ItemVarValue,'') as sfName, "
+    sql .= "ISNULL(iv203.ItemVarValue,'') as email "
     sql .= "FROM Asset a "
     sql .= "LEFT JOIN assetitemvars iv148 ON iv148.assetid=a.assetid AND iv148.profileid=1 AND iv148.itemvarid=148 "
     sql .= "LEFT JOIN assetitemvars iv149 ON iv149.assetid=a.assetid AND iv149.profileid=1 AND iv149.itemvarid=149 "
@@ -258,6 +265,9 @@ FetchDSRFData(assetId, cookies)
     sql .= "LEFT JOIN assetitemvars iv153 ON iv153.assetid=a.assetid AND iv153.profileid=1 AND iv153.itemvarid=153 "
     sql .= "LEFT JOIN assetitemvars iv154 ON iv154.assetid=a.assetid AND iv154.profileid=1 AND iv154.itemvarid=154 "
     sql .= "LEFT JOIN assetitemvars iv155 ON iv155.assetid=a.assetid AND iv155.profileid=1 AND iv155.itemvarid=155 "
+    sql .= "LEFT JOIN assetitemvars iv162 ON iv162.assetid=a.assetid AND iv162.profileid=1 AND iv162.itemvarid=162 "
+    sql .= "LEFT JOIN assetitemvars iv202 ON iv202.assetid=a.assetid AND iv202.profileid=1 AND iv202.itemvarid=202 "
+    sql .= "LEFT JOIN assetitemvars iv203 ON iv203.assetid=a.assetid AND iv203.profileid=1 AND iv203.itemvarid=203 "
     sql .= "WHERE a.AssetID=@assetid AND a.ProfileID=@profileid"
 
     ; Create temp files
@@ -294,6 +304,9 @@ FetchDSRFData(assetId, cookies)
     psScript .= "$out += 'state=' + $row.state; "
     psScript .= "$out += 'postal=' + $row.postal; "
     psScript .= "$out += 'serviceType=' + $row.serviceType; "
+    psScript .= "$out += 'declaredValue=' + $row.declaredValue; "
+    psScript .= "$out += 'sfName=' + $row.sfName; "
+    psScript .= "$out += 'email=' + $row.email; "
     psScript .= "$out | Out-File -Encoding ASCII '" . outputFile . "'"
     psScript .= "} catch { exit 1 }"
 
@@ -364,6 +377,13 @@ PasteToWorldShip(data)
     EnsureWorldShipTop()
     Sleep 120
 
+    ; Verify focus before clicking Ship To tab
+    if (!EnsureWorldShipActive())
+    {
+        MsgBox, 48, Focus Lost, WorldShip lost focus. Aborting.
+        return
+    }
+
     ; Click Ship To tab
     MouseClick, left, % worldShipTabs.ShipTo.x, worldShipTabs.ShipTo.y
     Sleep 120
@@ -372,6 +392,9 @@ PasteToWorldShip(data)
     companyName := data.company != "" ? data.company : data.name
     PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, companyName)
     Sleep 120
+
+    ; Verify focus before clicking away for autocomplete
+    EnsureWorldShipActive()
 
     ; Wait for company autocomplete
     MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
@@ -393,12 +416,40 @@ PasteToWorldShip(data)
     ; Postal Code (triggers city/state autofill)
     PastePostalCode(data.postal, delay)
 
-    ; Phone (if available - not in current API mapping but placeholder)
-    ; PasteFieldAt(worldShipFields.STPhone.x, worldShipFields.STPhone.y, data.phone)
+    ; Email (Ship To tab)
+    if (data.email != "")
+    {
+        PasteFieldAt(worldShipFields.STEmail.x, worldShipFields.STEmail.y, data.email)
+        Sleep 120
+    }
 
-    ; Click Service tab to finish
+    ; Verify focus before clicking Service tab
+    if (!EnsureWorldShipActive())
+    {
+        MsgBox, 48, Focus Lost, WorldShip lost focus. Aborting before Service tab.
+        return
+    }
+
+    ; Click Service tab for Declared Value and Reference fields
     MouseClick, left, % worldShipTabs.Service.x, worldShipTabs.Service.y
     Sleep 150
+
+    ; Declared Value
+    if (data.declaredValue != "")
+    {
+        PasteFieldAt(worldShipFields.DeclValue.x, worldShipFields.DeclValue.y, data.declaredValue)
+        Sleep 120
+    }
+
+    ; Reference Number 2 (Ship From Name)
+    if (data.sfName != "")
+    {
+        PasteFieldAt(worldShipFields.Ref2.x, worldShipFields.Ref2.y, data.sfName)
+        Sleep 120
+    }
+
+    ; Re-enable electronic scale after all paste operations complete
+    EnableWorldShipScale()
 }
 
 PasteFieldAt(x, y, text)
@@ -408,13 +459,24 @@ PasteFieldAt(x, y, text)
     if (text = "")
         return
 
+    ; Verify WorldShip is active before pasting
+    if (!EnsureWorldShipActive())
+    {
+        MsgBox, 48, Focus Lost, WorldShip lost focus and could not be re-activated.`nPaste operation aborted.
+        return
+    }
+
     ClipSaved := ClipboardAll
     Clipboard := text
 
-    ; Click field, select all, delete, then paste
+    ; Click field, clear existing content, then paste
+    ; Note: Ctrl+A doesn't work in UPS WorldShip fields
+    ; Must use End then Ctrl+Shift+Home to select all
     MouseClick, left, %x%, %y%
     Sleep 150
-    SendInput, ^a  ; Select all text in field
+    SendInput, {End}
+    Sleep 80
+    SendInput, ^+{Home}  ; Ctrl+Shift+Home to select all
     Sleep 80
     SendInput, {Delete}
     Sleep 120
@@ -433,13 +495,24 @@ PastePostalCode(postalCode, ref2Delay := 5000)
     if (postalCode = "")
         return
 
+    ; Verify WorldShip is active before pasting
+    if (!EnsureWorldShipActive())
+    {
+        MsgBox, 48, Focus Lost, WorldShip lost focus and could not be re-activated.`nPaste operation aborted.
+        return
+    }
+
     ClipSaved := ClipboardAll
     Clipboard := postalCode
 
     ; Click postal code field and clear it completely
+    ; Note: Ctrl+A doesn't work in UPS WorldShip fields
+    ; Must use End then Ctrl+Shift+Home to select all
     MouseClick, left, % worldShipFields.PostalCode.x, worldShipFields.PostalCode.y
     Sleep 150
-    SendInput, ^a  ; Select all
+    SendInput, {End}
+    Sleep 80
+    SendInput, ^+{Home}  ; Ctrl+Shift+Home to select all
     Sleep 80
     SendInput, {Delete}
     Sleep 250
@@ -447,6 +520,9 @@ PastePostalCode(postalCode, ref2Delay := 5000)
     ; Type the postal code
     SendInput, %postalCode%
     Sleep 250
+
+    ; Verify focus again before clicking away
+    EnsureWorldShipActive()
 
     ; Click away to trigger city/state autofill
     MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
@@ -480,6 +556,35 @@ EnsureWorldShipTop()
     Sleep 200
 }
 
+; Verify WorldShip is active, re-activate if not
+; Returns true if WorldShip is active, false if we couldn't activate it
+EnsureWorldShipActive()
+{
+    global worldShipTitle
+
+    ; Check if WorldShip is already active
+    if WinActive(worldShipTitle)
+        return true
+
+    ; Try to re-activate WorldShip
+    WinActivate, %worldShipTitle%
+    WinWaitActive, %worldShipTitle%,, 1
+
+    if (ErrorLevel)
+    {
+        ; Second attempt
+        Sleep 100
+        WinActivate, %worldShipTitle%
+        WinWaitActive, %worldShipTitle%,, 1
+
+        if (ErrorLevel)
+            return false
+    }
+
+    Sleep 100
+    return true
+}
+
 DisableWorldShipScale()
 {
     global scaleOffClick, scaleClickDone
@@ -489,4 +594,15 @@ DisableWorldShipScale()
     MouseClick, left, % scaleOffClick.x, scaleOffClick.y
     Sleep 250
     scaleClickDone := true
+}
+
+EnableWorldShipScale()
+{
+    global scaleOffClick, scaleClickDone
+    if (!scaleClickDone)
+        return
+    Sleep 150
+    MouseClick, left, % scaleOffClick.x, scaleOffClick.y
+    Sleep 250
+    scaleClickDone := false
 }

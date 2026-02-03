@@ -17,7 +17,7 @@ tabAssistActive := false
 tabAssistStep := 0
 Esc::ExitApp
 
-^!s::
+^+!s::
     tabAssistActive := false
     tabAssistStep := 0
     if (!RequireSmartsheetWindow())
@@ -26,7 +26,8 @@ Esc::ExitApp
         Return
     Mouseclick, left, 1013, 455
     Sleep 100
-    Mouseclick, left, 938, 766
+    Send {Tab 2}
+    Send {Space}
     Sleep 100
     Send {Tab}
     Send daveyuan

@@ -36,4 +36,4 @@ AutoHotkey v1 automation scripts primarily for work-focused mailroom/logistics s
 
 - **ToolTips**: `Other_Automations/ToolTips.ahk`
 - **Quick utilities**: `Other_Automations/Quick_Autos.ahk`
-- **Launcher/keybinds**: `Work_Automations/Launcher Script (Keybinds).ahk`
+- **Launcher/keybinds**: `Work_Automations/Launcher_Script(WorkAutos).ahk`

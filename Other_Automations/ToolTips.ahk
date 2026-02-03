@@ -11,6 +11,7 @@ CoordMode, Mouse, Screen
 TooltipActive := false
 VSCodeTooltipActive := false
 ClaudeTooltipActive := false
+ClaudeKeyDismissReadyTick := 0
 
 #IfWinActive, ahk_exe Code.exe
 ^!t::
@@ -28,7 +29,8 @@ Ctrl+Shift+Alt+P - Restart Extension Host
 Ctrl+Shift+Alt+R - Markdown: Refresh Preview
 Ctrl+Shift+Alt+I - Run installers (new device setup)
 Ctrl+`` - Toggle terminal
-Ctrl+Alt+R - Relaunch terminal (when focused)
+Ctrl+Alt+R - Relaunch terminal safely (opens fresh terminal)
+cd + Tab - Jump to .\Repositories\AHK-Automations\ (PowerShell)
 Ctrl+P - Quick Open
 Ctrl+Shift+E - Explorer
 Ctrl+Shift+F - Search
@@ -53,6 +55,9 @@ ShowClaudeTooltip:
     VSCodeTooltipActive := false
     ClaudeTooltipActive := true
     Hotkey, t, ShowClaudeTooltip, Off
+    Hotkey, *t, HideClaudeTooltipWithT, On
+    ClaudeKeyDismissReadyTick := A_TickCount + 250
+    SetTimer, ClaudeTooltipAnyKeyDismiss, 50
     SetTimer, HideTooltips, Off
     claudeText =
     (
@@ -89,6 +94,26 @@ Press Esc to close
     Tooltip, %claudeText%
     Hotkey, Esc, HideTooltips, On
     SetTimer, HideTooltips, -30000
+return
+
+HideClaudeTooltipWithT:
+    if (!ClaudeTooltipActive)
+        return
+    Hotkey, *t, HideClaudeTooltipWithT, Off
+    Gosub, HideTooltips
+    SendInput, t
+return
+
+ClaudeTooltipAnyKeyDismiss:
+    if (!ClaudeTooltipActive)
+    {
+        SetTimer, ClaudeTooltipAnyKeyDismiss, Off
+        return
+    }
+    if (A_TickCount < ClaudeKeyDismissReadyTick)
+        return
+    if (A_TimeIdleKeyboard <= 150)
+        Gosub, HideTooltips
 return
 
 ^!t::
@@ -141,8 +166,11 @@ HideTooltips:
     TooltipActive := false
     VSCodeTooltipActive := false
     ClaudeTooltipActive := false
+    ClaudeKeyDismissReadyTick := 0
     Hotkey, Esc, HideTooltips, Off
     Hotkey, t, ShowClaudeTooltip, Off
+    Hotkey, *t, HideClaudeTooltipWithT, Off
+    SetTimer, ClaudeTooltipAnyKeyDismiss, Off
     Tooltip
 return
 

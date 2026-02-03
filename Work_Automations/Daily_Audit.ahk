@@ -14,14 +14,17 @@ auditFocusTip := "Audit window inactive, try again"
 expectedMinWidth := 1400
 expectedMinHeight := 600
 Esc::ExitApp
-^!d::
+
+#If WinActive(auditWinTitle)
+^+!d::
     if (!RequireAuditWindow())
         Return
     if (!CheckWindowGeometry())
         Return
     Mouseclick, left, 1392, 230
     Sleep 100
-    Mouseclick, left, 1318, 540
+    Send {Tab 2}
+    Send {Space}
     Sleep 100
     Send {Tab} 
     Send {Space}
@@ -94,6 +97,7 @@ Esc::ExitApp
     Send {Tab}
     ShowCompletionTip("Daily Audit form completed")
 Return
+#If
 
 RequireAuditWindow()
 {

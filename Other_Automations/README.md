@@ -4,9 +4,9 @@
 - **Quick_Autos.ahk** - lightweight always-on helper (Ctrl+Esc reload).
 - **ToolTips.ahk** - shows a temporary tooltip of global hotkeys when requested.
 - **Window_Switch.ahk** - quick focus/minimize/open for various windows/programs.
-- **Alt+Q Map to Alt+F4.ahk** - remaps Alt+Q to Alt+F4 except on specified Firefox tabs.
-- **Ctrl+Home key = Sleep.ahk** - puts the machine to sleep with Ctrl+Home.
-- **Launcher_Script_Other.ahk** - hub to launch helper tools (RS focus, coordinate capture, coord.txt viewer).
+- **Alt+Q=Alt+F4.ahk** - remaps Alt+Q to Alt+F4 except on specified Firefox tabs.
+- **Ctrl+Home=Sleep.ahk** - puts the machine to sleep with Ctrl+Home.
+- **Launcher_Script.ahk** - hub to launch helper tools (RS focus, coordinate capture, coord.txt viewer).
 
 ---
 
@@ -34,7 +34,7 @@
 
 ---
 
-## Launcher_Script_Other.ahk
+## Launcher_Script.ahk
 
 - `Ctrl+Shift+Alt+C` — launch Coordinate Capture Helper (Alt+C starts capture, Alt+I shows more info).
 - `Ctrl+Shift+Alt+O` — open the saved `coord.txt` capture file.

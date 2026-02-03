@@ -66,14 +66,14 @@ return
         ShowTooltip("Smartsheets must be open in browser before continuing", 5000)
         Return
     }
-    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Daily_Audit.ahk ; Keybind: Ctrl+Alt+D
+    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Daily_Audit.ahk ; Keybind: Ctrl+Shift+Alt+D
     Sleep 150
-    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Daily_Smartsheet.ahk ; Keybind: Ctrl+Alt+S
+    Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Daily_Smartsheet.ahk ; Keybind: Ctrl+Shift+Alt+S
     Sleep 150
     TooltipText =
     (
-Ctrl+Alt+D: Daily Audit
-Ctrl+Alt+S: Daily Smartsheet
+Ctrl+Shift+Alt+D: Daily Audit
+Ctrl+Shift+Alt+S: Daily Smartsheet
     )
     ShowTooltip(TooltipText, 5000)
 Return
@@ -520,22 +520,42 @@ RunDailyAuditThenSmartsheet()
     global autoSmartsheetCancelled
     if (autoSmartsheetCancelled)
         return false
-    PostSendHotkey("^!l")
-    if (!SleepWithCancel(1500))
+    ; Force-reload both scripts so updated hotkeys are always in effect.
+    EnsureDailyScriptsRunningAll(true)
+    if (!SleepWithCancel(1200))
         return false
     if (!WaitForAuditWindowActive(10000))
         return false
-    PostSendHotkey("^!d")
+    PostSendHotkey("^+!d")
     if (!SleepWithCancel(8000))
+        return false
+    if (!ShowSheetSwitchCountdown(5))
         return false
     SendEvent, ^{Tab}
     if (!SleepWithCancel(600))
         return false
     if (!WaitForSmartsheetWindowActive(10000))
         return false
-    PostSendHotkey("^!s")
+    PostSendHotkey("^+!s")
     if (!SleepWithCancel(5000))
         return false
+    return true
+}
+
+ShowSheetSwitchCountdown(seconds := 5)
+{
+    remaining := seconds
+    while (remaining > 0)
+    {
+        ToolTip, % "Switching to Sheet 2 in " remaining " seconds..."
+        if (!SleepWithCancel(1000))
+        {
+            ToolTip
+            return false
+        }
+        remaining--
+    }
+    ToolTip
     return true
 }
 
@@ -558,9 +578,9 @@ RunDailyForActiveTab()
     if (!SleepWithCancel(1500))
         return false
     if (dailyType = "audit")
-        PostSendHotkey("^!d")
+        PostSendHotkey("^+!d")
     else
-        PostSendHotkey("^!s")
+        PostSendHotkey("^+!s")
 
     if (!SleepWithCancel(5000))
         return false
@@ -623,28 +643,28 @@ WaitForWindowActiveTitle(title, timeoutMs)
     return false
 }
 
-EnsureDailyScriptRunning(dailyType)
+EnsureDailyScriptRunning(dailyType, forceReload := false)
 {
     DetectHiddenWindows, On
     if (dailyType = "audit")
     {
-        if (!WinExist("Daily_Audit.ahk ahk_class AutoHotkey"))
+        if (forceReload || !WinExist("Daily_Audit.ahk ahk_class AutoHotkey"))
             Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Daily_Audit.ahk
     }
     else
     {
-        if (!WinExist("Daily_Smartsheet.ahk ahk_class AutoHotkey"))
+        if (forceReload || !WinExist("Daily_Smartsheet.ahk ahk_class AutoHotkey"))
             Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Daily_Smartsheet.ahk
     }
     DetectHiddenWindows, Off
 }
 
-EnsureDailyScriptsRunningAll()
+EnsureDailyScriptsRunningAll(forceReload := false)
 {
     DetectHiddenWindows, On
-    if (!WinExist("Daily_Audit.ahk ahk_class AutoHotkey"))
+    if (forceReload || !WinExist("Daily_Audit.ahk ahk_class AutoHotkey"))
         Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Daily_Audit.ahk
-    if (!WinExist("Daily_Smartsheet.ahk ahk_class AutoHotkey"))
+    if (forceReload || !WinExist("Daily_Smartsheet.ahk ahk_class AutoHotkey"))
         Run, C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\Daily_Smartsheet.ahk
     DetectHiddenWindows, Off
 }

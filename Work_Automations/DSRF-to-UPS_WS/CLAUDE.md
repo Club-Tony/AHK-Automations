@@ -6,7 +6,7 @@ This folder contains AutoHotkey v1 scripts that automate transferring data from 
 
 ## Launcher Integration
 
-These scripts are launched via `Launcher Script (Keybinds).ahk` in the parent `Work_Automations/` directory:
+These scripts are launched via `Launcher_Script(WorkAutos).ahk` in the parent `Work_Automations/` directory:
 
 | Hotkey | Action | Script Launched |
 |--------|--------|-----------------|

@@ -11,6 +11,7 @@ TooltipActive := false
 TooltipLocked := false
 VSCodeTooltipActive := false
 ClaudeTooltipActive := false
+ClaudeKeyDismissReadyTick := 0
 TooltipCooldownMs := 1500 ; 1.5 seconds (prevent accidental double-tap)
 ButtonsTooltipActive := false
 interofficeExes := ["firefox.exe", "chrome.exe", "msedge.exe"]
@@ -131,6 +132,8 @@ Return
 ~^!+Delete::Gosub HideTooltips
 ~^!f::Gosub HideTooltips
 ~^!d::Gosub HideTooltips
+~^+!d::Gosub HideTooltips
+~^+!s::Gosub HideTooltips
 ~^+!w::Gosub HideTooltips
 ~^!w::Gosub HideTooltips
 ~^!t::Gosub HideTooltips
@@ -364,7 +367,8 @@ Ctrl+Shift+Alt+P - Restart Extension Host
 Ctrl+Shift+Alt+R - Markdown: Refresh Preview
 Ctrl+Shift+Alt+I - Run installers (new device setup)
 Ctrl+`` - Toggle terminal
-Ctrl+Alt+R - Relaunch terminal (when focused)
+Ctrl+Alt+R - Relaunch terminal safely (opens fresh terminal)
+cd + Tab - Jump to .\Repositories\AHK-Automations\ (PowerShell)
 Ctrl+P - Quick Open
 Ctrl+Shift+E - Explorer
 Ctrl+Shift+F - Search
@@ -389,6 +393,9 @@ ShowClaudeTooltip:
     VSCodeTooltipActive := false
     ClaudeTooltipActive := true
     Hotkey, t, ShowClaudeTooltip, Off
+    Hotkey, *t, HideClaudeTooltipWithT, On
+    ClaudeKeyDismissReadyTick := A_TickCount + 250
+    SetTimer, ClaudeTooltipAnyKeyDismiss, 50
     SetTimer, HideTooltips, Off
     claudeText =
     (
@@ -425,6 +432,26 @@ Press Esc to close
     Tooltip, %claudeText%
     Hotkey, Esc, HideTooltips, On
     SetTimer, HideTooltips, -30000
+return
+
+HideClaudeTooltipWithT:
+    if (!ClaudeTooltipActive)
+        return
+    Hotkey, *t, HideClaudeTooltipWithT, Off
+    Gosub, HideTooltips
+    SendInput, t
+return
+
+ClaudeTooltipAnyKeyDismiss:
+    if (!ClaudeTooltipActive)
+    {
+        SetTimer, ClaudeTooltipAnyKeyDismiss, Off
+        return
+    }
+    if (A_TickCount < ClaudeKeyDismissReadyTick)
+        return
+    if (A_TimeIdleKeyboard <= 150)
+        Gosub, HideTooltips
 return
 
 ; Slack shortcuts when Slack is active
@@ -545,6 +572,8 @@ Ctrl+Alt+E - Open tracking file (1=TXT, 2=CSV)
 Ctrl+Shift+Alt+Delete - Clear both tracking files
 Ctrl+Alt+L - Launch Daily Audit + Smartsheet
 Ctrl+Shift+Alt+L - Auto Daily Audit + Smartsheet
+Ctrl+Shift+Alt+D - Run Daily Audit
+Ctrl+Shift+Alt+S - Run Daily Smartsheet
 Ctrl+Alt+W - Intra Desktop Window Organizing
 Ctrl+Shift+Alt+C - Launch Coord Capture helper
 Ctrl+Shift+Alt+O - Toggle coord.txt open/close (Coord Capture helper)
@@ -563,9 +592,12 @@ HideTooltips:
     TooltipActive := false
     VSCodeTooltipActive := false
     ClaudeTooltipActive := false
+    ClaudeKeyDismissReadyTick := 0
     ButtonsTooltipActive := false
     Hotkey, Esc, HideTooltips, Off
     Hotkey, t, ShowClaudeTooltip, Off
+    Hotkey, *t, HideClaudeTooltipWithT, Off
+    SetTimer, ClaudeTooltipAnyKeyDismiss, Off
     Tooltip
 Return
 

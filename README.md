@@ -39,6 +39,10 @@
 #### -`Ctrl+Alt+I` - Launch SSJ desktop client scripts bundle
 #### -`Ctrl+Alt+F` - Launch/reload Search shortcuts script and show search hotkey tooltip
 #### -`Ctrl+Alt+E` - Toggle tracking file (press 1 for TXT, 2 for CSV)
+#### -`Ctrl+Alt+L` - Launch Daily Audit + Daily Smartsheet scripts
+#### -`Ctrl+Shift+Alt+L` - Auto-run Daily Audit then Daily Smartsheet
+#### -`Ctrl+Shift+Alt+D` - Run Daily Audit flow
+#### -`Ctrl+Shift+Alt+S` - Run Daily Smartsheet flow
 #### -`Ctrl+Shift+Alt+W` - Toggle Window Spy
 #### -`Ctrl+Shift+Alt+O` - Toggle coord.txt open/close (Coord Capture helper)
 ## Bulk Tracking Export to Intra

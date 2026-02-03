@@ -30,6 +30,20 @@ ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automation
 ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Other_Automations")
 ManagedDirs.Push("C:\Users\daveyuan\Documents\GitHub\Repositories\Macros-Script")
 
+; Legacy script-name aliases after filename cleanup.
+ScriptRenameMap := {}
+ScriptRenameMap["Right Click.ahk"] := "RightClick.ahk"
+ScriptRenameMap["Right_Click.ahk"] := "RightClick.ahk"
+ScriptRenameMap["Right-Click.ahk"] := "RightClick.ahk"
+ScriptRenameMap["Launcher Script (Keybinds).ahk"] := "Launcher_Script(WorkAutos).ahk"
+ScriptRenameMap["Launcher_Script_(Keybinds).ahk"] := "Launcher_Script(WorkAutos).ahk"
+ScriptRenameMap["Launcher_Script_Other.ahk"] := "Launcher_Script.ahk"
+ScriptRenameMap["Alt+Q Map to Alt+F4.ahk"] := "Alt+Q=Alt+F4.ahk"
+ScriptRenameMap["Alt+Q_Map_to_Alt+F4.ahk"] := "Alt+Q=Alt+F4.ahk"
+ScriptRenameMap["Ctrl+Home key = Sleep.ahk"] := "Ctrl+Home=Sleep.ahk"
+ScriptRenameMap["Ctrl+Home_key_=_Sleep.ahk"] := "Ctrl+Home=Sleep.ahk"
+ScriptRenameMap["RK71_Key_Fixes.ahk"] := "RK71KeyFixes.ahk"
+
 $^Esc::
     startTick := A_TickCount
     reloadedScripts := []
@@ -67,10 +81,13 @@ $^Esc::
 
         if (isManaged)
         {
-            SplitPath, scriptPath, scriptName
+            resolvedPath := ResolveManagedScriptPath(scriptPath)
+            if (resolvedPath = "")
+                continue
+            SplitPath, resolvedPath, scriptName
             WinClose, ahk_id %hwnd%
             Sleep 50
-            Run, "%scriptPath%"
+            Run, "%resolvedPath%"
             reloadedScripts.Push(scriptName)
         }
     }
@@ -157,3 +174,17 @@ ClearReloadTooltip:
     allowInputDismiss := false
     ToolTip
 return
+
+ResolveManagedScriptPath(scriptPath)
+{
+    global ScriptRenameMap
+    if (FileExist(scriptPath))
+        return scriptPath
+    SplitPath, scriptPath, fileName, fileDir
+    if (!ScriptRenameMap.HasKey(fileName))
+        return ""
+    candidate := fileDir "\" ScriptRenameMap[fileName]
+    if (FileExist(candidate))
+        return candidate
+    return ""
+}

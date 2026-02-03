@@ -16,6 +16,11 @@ return
 ^+!i::
     RunInstallers()
 return
+
+; Relaunch VS Code terminal safely (avoid closing PowerShell extension terminal)
+^!r::
+    RelaunchVSCodeTerminal()
+return
 #If
 
 ; Explorer tab reset Ctrl+Alt+E
@@ -511,19 +516,31 @@ return
 
 RunInstallers()
 {
-    local statusPs7, statusPs5, msg
+    local snippet, statusPs7Console, statusPs7VSCode, statusPs5Console, statusPs5VSCode, msg
 
     ToolTip, Installer running...`nPowerShell cd-tab shortcut setup
 
-    statusPs7 := EnsureProfileSnippet(A_MyDocuments . "\PowerShell\Microsoft.PowerShell_profile.ps1", BuildCdTabSnippet())
-    statusPs5 := EnsureProfileSnippet(A_MyDocuments . "\WindowsPowerShell\Microsoft.PowerShell_profile.ps1", BuildCdTabSnippet())
+    snippet := BuildCdTabSnippet()
+    statusPs7Console := EnsureProfileSnippet(A_MyDocuments . "\PowerShell\Microsoft.PowerShell_profile.ps1", snippet)
+    statusPs7VSCode := EnsureProfileSnippet(A_MyDocuments . "\PowerShell\Microsoft.VSCode_profile.ps1", snippet)
+    statusPs5Console := EnsureProfileSnippet(A_MyDocuments . "\WindowsPowerShell\Microsoft.PowerShell_profile.ps1", snippet)
+    statusPs5VSCode := EnsureProfileSnippet(A_MyDocuments . "\WindowsPowerShell\Microsoft.VSCode_profile.ps1", snippet)
 
     msg := "Installer complete:`n"
-        . "PowerShell 7 profile: " . FormatInstallStatus(statusPs7) . "`n"
-        . "Windows PowerShell profile: " . FormatInstallStatus(statusPs5) . "`n"
+        . "PowerShell 7 (Console): " . FormatInstallStatus(statusPs7Console) . "`n"
+        . "PowerShell 7 (VS Code): " . FormatInstallStatus(statusPs7VSCode) . "`n"
+        . "Windows PS (Console): " . FormatInstallStatus(statusPs5Console) . "`n"
+        . "Windows PS (VS Code): " . FormatInstallStatus(statusPs5VSCode) . "`n"
         . "Restart terminal or run . $PROFILE"
     ToolTip, %msg%
-    SetTimer, HideQuickTip, -6000
+    SetTimer, HideQuickTip, -8000
+}
+
+RelaunchVSCodeTerminal()
+{
+    ; Open a fresh integrated terminal without killing the active one.
+    SendInput, ^+{vkC0}
+    Sleep, 120
 }
 
 BuildCdTabSnippet()
@@ -538,7 +555,7 @@ try {
             $line = $null
             $cursor = $null
             [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
-            if ($line -eq 'cd') {
+            if ($line.Trim() -eq 'cd') {
                 [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, 'cd .\Repositories\AHK-Automations\')
                 [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
                 return
@@ -555,7 +572,9 @@ try {
 
 EnsureProfileSnippet(profilePath, snippet)
 {
-    local dir, content
+    local dir, content, markerStart, markerEnd, pattern, updatedContent
+    markerStart := "# >>> codex cd-tab shortcut >>>"
+    markerEnd := "# <<< codex cd-tab shortcut <<<"
     SplitPath, profilePath, , dir
     if (!InStr(FileExist(dir), "D"))
         FileCreateDir, %dir%
@@ -565,8 +584,20 @@ EnsureProfileSnippet(profilePath, snippet)
         FileRead, content, %profilePath%
         if (ErrorLevel)
             return "error"
-        if (InStr(content, "# >>> codex cd-tab shortcut >>>"))
-            return "exists"
+        if (InStr(content, markerStart) && InStr(content, markerEnd))
+        {
+            pattern := "s)" . markerStart . ".*?" . markerEnd
+            updatedContent := RegExReplace(content, pattern, snippet)
+            if (updatedContent = content)
+                return "exists"
+            FileDelete, %profilePath%
+            if (ErrorLevel)
+                return "error"
+            FileAppend, %updatedContent%, %profilePath%
+            if (ErrorLevel)
+                return "error"
+            return "updated"
+        }
         if (content != "" && !RegExMatch(content, "\r?\n$"))
             FileAppend, `r`n, %profilePath%
     }
@@ -579,6 +610,8 @@ EnsureProfileSnippet(profilePath, snippet)
 
 FormatInstallStatus(status)
 {
+    if (status = "updated")
+        return "refreshed"
     if (status = "added")
         return "updated"
     if (status = "exists")

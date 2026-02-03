@@ -33,7 +33,7 @@ echo Fetching data for %ASSETID%...
 echo.
 
 :: Build the SQL query
-set "SQL=declare @profileid int = 1; declare @assetid nvarchar(50) = '%ASSETID%'; SELECT TOP 1 ISNULL(iv148.ItemVarValue,'') as company, ISNULL(iv149.ItemVarValue,'') as name, ISNULL(iv150.ItemVarValue,'') as address1, ISNULL(iv151.ItemVarValue,'') as address2, ISNULL(iv152.ItemVarValue,'') as city, ISNULL(iv153.ItemVarValue,'') as state, ISNULL(iv154.ItemVarValue,'') as postal, ISNULL(iv155.ItemVarValue,'') as serviceType FROM Asset a LEFT JOIN assetitemvars iv148 ON iv148.assetid=a.assetid AND iv148.profileid=1 AND iv148.itemvarid=148 LEFT JOIN assetitemvars iv149 ON iv149.assetid=a.assetid AND iv149.profileid=1 AND iv149.itemvarid=149 LEFT JOIN assetitemvars iv150 ON iv150.assetid=a.assetid AND iv150.profileid=1 AND iv150.itemvarid=150 LEFT JOIN assetitemvars iv151 ON iv151.assetid=a.assetid AND iv151.profileid=1 AND iv151.itemvarid=151 LEFT JOIN assetitemvars iv152 ON iv152.assetid=a.assetid AND iv152.profileid=1 AND iv152.itemvarid=152 LEFT JOIN assetitemvars iv153 ON iv153.assetid=a.assetid AND iv153.profileid=1 AND iv153.itemvarid=153 LEFT JOIN assetitemvars iv154 ON iv154.assetid=a.assetid AND iv154.profileid=1 AND iv154.itemvarid=154 LEFT JOIN assetitemvars iv155 ON iv155.assetid=a.assetid AND iv155.profileid=1 AND iv155.itemvarid=155 WHERE a.AssetID=@assetid AND a.ProfileID=@profileid"
+set "SQL=declare @profileid int = 1; declare @assetid nvarchar(50) = '%ASSETID%'; SELECT TOP 1 ISNULL(iv148.ItemVarValue,'') as company, ISNULL(iv149.ItemVarValue,'') as name, ISNULL(iv150.ItemVarValue,'') as address1, ISNULL(iv151.ItemVarValue,'') as address2, ISNULL(iv152.ItemVarValue,'') as city, ISNULL(iv153.ItemVarValue,'') as state, ISNULL(iv154.ItemVarValue,'') as postal, ISNULL(iv155.ItemVarValue,'') as serviceType, ISNULL(iv162.ItemVarValue,'') as declaredValue, ISNULL(iv202.ItemVarValue,'') as sfName, ISNULL(iv203.ItemVarValue,'') as email FROM Asset a LEFT JOIN assetitemvars iv148 ON iv148.assetid=a.assetid AND iv148.profileid=1 AND iv148.itemvarid=148 LEFT JOIN assetitemvars iv149 ON iv149.assetid=a.assetid AND iv149.profileid=1 AND iv149.itemvarid=149 LEFT JOIN assetitemvars iv150 ON iv150.assetid=a.assetid AND iv150.profileid=1 AND iv150.itemvarid=150 LEFT JOIN assetitemvars iv151 ON iv151.assetid=a.assetid AND iv151.profileid=1 AND iv151.itemvarid=151 LEFT JOIN assetitemvars iv152 ON iv152.assetid=a.assetid AND iv152.profileid=1 AND iv152.itemvarid=152 LEFT JOIN assetitemvars iv153 ON iv153.assetid=a.assetid AND iv153.profileid=1 AND iv153.itemvarid=153 LEFT JOIN assetitemvars iv154 ON iv154.assetid=a.assetid AND iv154.profileid=1 AND iv154.itemvarid=154 LEFT JOIN assetitemvars iv155 ON iv155.assetid=a.assetid AND iv155.profileid=1 AND iv155.itemvarid=155 LEFT JOIN assetitemvars iv162 ON iv162.assetid=a.assetid AND iv162.profileid=1 AND iv162.itemvarid=162 LEFT JOIN assetitemvars iv202 ON iv202.assetid=a.assetid AND iv202.profileid=1 AND iv202.itemvarid=202 LEFT JOIN assetitemvars iv203 ON iv203.assetid=a.assetid AND iv203.profileid=1 AND iv203.itemvarid=203 WHERE a.AssetID=@assetid AND a.ProfileID=@profileid"
 
 :: Write JSON body to temp file for curl
 set "BODYJSON=%TEMP%\dsrf_body.json"
@@ -107,15 +107,18 @@ powershell -Command ^
      $state = if ($row.state) { $row.state } else { '' }; ^
      $postal = if ($row.postal) { $row.postal } else { '' }; ^
      $service = if ($row.serviceType) { $row.serviceType } else { '' }; ^
+     $declVal = if ($row.declaredValue) { $row.declaredValue } else { '' }; ^
+     $sfName = if ($row.sfName) { $row.sfName } else { '' }; ^
+     $email = if ($row.email) { $row.email } else { '' }; ^
      if ([string]::IsNullOrWhiteSpace($name) -and [string]::IsNullOrWhiteSpace($company) -and [string]::IsNullOrWhiteSpace($addr1)) { ^
        Write-Host 'ERROR: No shipping data found for this PK#'; ^
        Write-Host ''; ^
        Write-Host 'The form may not have shipping information filled in.'; ^
        exit 5; ^
      } ^
-     $csv = 'Name,Company,Address1,Address2,City,State,Postal,ServiceType'; ^
+     $csv = 'Name,Company,Address1,Address2,City,State,Postal,ServiceType,DeclaredValue,ShipFromName,Email'; ^
      $csv += [Environment]::NewLine; ^
-     $csv += '\"' + $name + '\",\"' + $company + '\",\"' + $addr1 + '\",\"' + $addr2 + '\",\"' + $city + '\",\"' + $state + '\",\"' + $postal + '\",\"' + $service + '\"'; ^
+     $csv += '\"' + $name + '\",\"' + $company + '\",\"' + $addr1 + '\",\"' + $addr2 + '\",\"' + $city + '\",\"' + $state + '\",\"' + $postal + '\",\"' + $service + '\",\"' + $declVal + '\",\"' + $sfName + '\",\"' + $email + '\"'; ^
      $csv | Out-File -Encoding UTF8 '%OUTPUTCSV%'; ^
      Write-Host ''; ^
      Write-Host '======================================'; ^
@@ -130,6 +133,9 @@ powershell -Command ^
      Write-Host ('State:       ' + $state); ^
      Write-Host ('Postal:      ' + $postal); ^
      Write-Host ('Service:     ' + $service); ^
+     Write-Host ('Decl Value:  ' + $declVal); ^
+     Write-Host ('Ship From:   ' + $sfName); ^
+     Write-Host ('Email:       ' + $email); ^
    } catch { ^
      Write-Host ('ERROR: ' + $_.Exception.Message); ^
      Write-Host ''; ^
