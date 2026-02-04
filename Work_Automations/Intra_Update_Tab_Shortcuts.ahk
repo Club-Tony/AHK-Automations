@@ -31,7 +31,7 @@ StatusSelect := {x: 375, y: 160}
 abortHotkey := false
 
 
-#If ( WinActive("Intra Desktop Client - Update") || WinActive("Search - General") )
+#If ( (WinActive("Intra Desktop Client - Update") || WinActive("Search - General")) && !CoordHelperActive() )
 Esc::
     abortHotkey := true
 return

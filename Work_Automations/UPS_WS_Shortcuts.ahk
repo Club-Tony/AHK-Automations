@@ -26,6 +26,7 @@ worldShipFields.Company := {x: 78,  y: 241}   ; Company (Ship From)
 worldShipFields.Ref1    := {x: 728, y: 308}   ; Reference 1
 worldShipFields.Ref2    := {x: 731, y: 347}   ; Reference 2
 worldShipFields.Weight  := {x: 346, y: 535}   ; Package weight field
+worldShipScaleToggle := {x: 316, y: 559}      ; Electronic scale toggle button (from DSRF-to-UPS_WS-Paste)
 worldShipServiceMenu := {}
 worldShipServiceMenu.Selection := {x: 400, y: 231}       ; UPS Service Selection dropdown
 worldShipServiceMenu.NextDayAir := {x: 400, y: 262}
@@ -116,6 +117,14 @@ return
     MouseClick, left, % worldShipTabs.Service.x, % worldShipTabs.Service.y
     Sleep 50
     MouseClick, left, % worldShipFields.Weight.x, % worldShipFields.Weight.y, 2
+return
+
+!0::  ; Toggle electronic scale button (helps avoid scale lag)
+    SendInput, {Alt up}
+    EnsureWorldShipTop()
+    MouseClick, left, % worldShipTabs.Service.x, % worldShipTabs.Service.y
+    Sleep 50
+    MouseClick, left, % worldShipScaleToggle.x, % worldShipScaleToggle.y
 return
 
 !g::

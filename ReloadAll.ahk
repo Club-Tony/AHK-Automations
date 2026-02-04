@@ -18,6 +18,7 @@ tooltipMouseX := 0
 tooltipMouseY := 0
 reloadElapsedText := ""
 allowInputDismiss := false
+reloadTooltipShowingList := false
 
 ; Directories to scan for running scripts
 ManagedDirs := []
@@ -105,7 +106,9 @@ $^Esc::
         ToolTip, %msg%
         reloadTooltipActive := true
         allowInputDismiss := false
+        reloadTooltipShowingList := false
         MouseGetPos, tooltipMouseX, tooltipMouseY
+        SetTimer, StartTooltipDismissCheck, -1
         SetTimer, ClearReloadTooltip, -5000
     }
     else
@@ -113,13 +116,22 @@ $^Esc::
         ToolTip, No managed scripts were running`n%reloadElapsedText%
         reloadTooltipActive := true
         allowInputDismiss := false
+        reloadTooltipShowingList := false
         MouseGetPos, tooltipMouseX, tooltipMouseY
+        SetTimer, StartTooltipDismissCheck, -1
         SetTimer, ClearReloadTooltip, -3000
     }
 return
 
 #If reloadTooltipActive
 t::
+    ; If the expanded list is showing, treat "t" as normal typing: dismiss tooltip and pass the key through.
+    if (reloadTooltipShowingList)
+    {
+        Gosub, ClearReloadTooltip
+        SendInput, t
+        return
+    }
     SetTimer, ClearReloadTooltip, Off
     SetTimer, StartTooltipDismissCheck, Off
     SetTimer, CheckTooltipDismiss, Off
@@ -129,7 +141,9 @@ t::
     msg .= "`nPress Esc to close"
     ToolTip, %msg%
     allowInputDismiss := false
+    reloadTooltipShowingList := true
     MouseGetPos, tooltipMouseX, tooltipMouseY
+    SetTimer, StartTooltipDismissCheck, -1
     SetTimer, ClearReloadTooltip, -30000
 return
 
@@ -139,24 +153,31 @@ return
 #If
 
 StartTooltipDismissCheck:
+    ; Allow dismiss via mouse-move or key press after tooltip is shown.
+    allowInputDismiss := true
     SetTimer, CheckTooltipDismiss, 50
 return
 
 CheckTooltipDismiss:
     if (!allowInputDismiss || !reloadTooltipActive)
         return
-    MouseGetPos, currentX, currentY
-    if (Abs(currentX - tooltipMouseX) > 20 || Abs(currentY - tooltipMouseY) > 20)
+    ; Only the short "Press T to view list" tooltip dismisses on mouse move.
+    ; The expanded list should not disappear just because the mouse moved.
+    if (!reloadTooltipShowingList)
     {
-        Gosub, ClearReloadTooltip
-        return
+        MouseGetPos, currentX, currentY
+        if (Abs(currentX - tooltipMouseX) > 20 || Abs(currentY - tooltipMouseY) > 20)
+        {
+            Gosub, ClearReloadTooltip
+            return
+        }
     }
     ; Check for any key press (except T and modifier keys)
     Loop, 256
     {
         key := A_Index
-        ; Skip T (84), Ctrl (17), Shift (16), Alt (18), LWin (91), RWin (92)
-        if (key = 84 || key = 16 || key = 17 || key = 18 || key = 91 || key = 92)
+        ; Skip T (84), Esc (27), Ctrl (17), Shift (16), Alt (18), LWin (91), RWin (92)
+        if (key = 84 || key = 27 || key = 16 || key = 17 || key = 18 || key = 91 || key = 92)
             continue
         if (GetKeyState(Format("vk{:02X}", key), "P"))
         {
@@ -172,6 +193,7 @@ ClearReloadTooltip:
     SetTimer, CheckTooltipDismiss, Off
     reloadTooltipActive := false
     allowInputDismiss := false
+    reloadTooltipShowingList := false
     ToolTip
 return
 

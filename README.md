@@ -60,3 +60,5 @@ If both files have content when running export, you'll be prompted to choose whi
 CSV headers are auto-detected and skipped automatically.
 ## Other Hotkeys:
 #### -`Ctrl+Shift+Alt+C` - Launch Window Coordinate Capture Helper (Alt+C starts capture, Alt+I shows more info)
+#### -`Alt+5` - Focus Intra Custom Carrier (Assign Recip)
+#### -`Ctrl+Alt+O` - Intra Custom Carrier -> Other (Assign Recip)

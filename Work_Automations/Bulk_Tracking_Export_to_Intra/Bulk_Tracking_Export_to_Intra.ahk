@@ -35,7 +35,7 @@ return
 
 RunExport(isFast := false)
 {
-    global exportRunning, ScanField
+    global exportRunning, ScanField, trackingFileTxt, trackingFileCsv
     if (exportRunning)
     {
         ShowTimedTooltip("Export already running!", 2000)

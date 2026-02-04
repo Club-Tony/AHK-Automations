@@ -6,7 +6,14 @@ SendMode Input ; Send works as SendInput
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 SetTitleMatchMode, 2
+CoordMode, Mouse, Window  ; Window-relative coordinates from Window Spy.
 ; Scope: Intra Assign/Update windows; focus helpers only (tooltip moved to ToolTips.ahk).
+
+CustomCarrierField := {x: 515, y: 185}
+
+; Inter-script message trigger (used by L&F automation).
+focusFieldsMsgId := 0x5557
+OnMessage(focusFieldsMsgId, "HandleFocusFieldsMessage")
 
 #If ( WinActive("Intra Desktop Client - Assign Recip")
     || WinActive("Intra Desktop Client - Update") )
@@ -44,6 +51,24 @@ Return
     MouseClick, left, 1150, 213
 Return
 
+!5:: ; focus custom carrier field
+    Sleep 250
+    MouseClick, left, % CustomCarrierField.x, % CustomCarrierField.y, 1
+Return
+
+^!o:: ; set custom carrier field to Other
+    SendInput, {Alt up}
+    KeyWait, Alt
+    Sleep 150
+    MouseClick, left, % CustomCarrierField.x, % CustomCarrierField.y, 1
+    Sleep 150
+    SendEvent, o
+    Sleep 50
+    SendEvent, {Down}
+    Sleep 50
+    SendEvent, {Enter}
+Return
+
 #If ( WinActive("Intra Desktop Client - Assign Recip") && !CoordHelperActive() )
 !c:: ; clear all + submit (Assign Recip)
     MouseClick, left, 68, 1345, 2
@@ -69,6 +94,34 @@ Return
 #If WinActive("Intra Desktop Client - Assign Recip")
 
 !d:: ; click item var lookup + apply-all buttons
+    DoItemVarLookupApplyAll()
+ Return
+
+#If ( WinActive("Intra Desktop Client - Assign Recip")
+    || WinActive("Intra Desktop Client - Update") )
+
+CoordHelperActive()
+{
+    DetectHiddenWindows, On
+    running := WinExist("Coord_Capture.ahk ahk_class AutoHotkey")
+    DetectHiddenWindows, Off
+    return running
+}
+
+HandleFocusFieldsMessage(wParam, lParam, msg, hwnd)
+{
+    global focusFieldsMsgId
+    if (msg != focusFieldsMsgId)
+        return
+    if (wParam = 1)
+        DoItemVarLookupApplyAll()
+}
+
+DoItemVarLookupApplyAll()
+{
+    if (!WinActive("Intra Desktop Client - Assign Recip"))
+        return
+
     Sleep 200
     MouseClick, left, 1035, 185
     Sleep 200
@@ -80,15 +133,4 @@ Return
     {
         MouseClick, WheelUp
     }
-Return
-
-#If ( WinActive("Intra Desktop Client - Assign Recip")
-    || WinActive("Intra Desktop Client - Update") )
-
-CoordHelperActive()
-{
-    DetectHiddenWindows, On
-    running := WinExist("Coord_Capture.ahk ahk_class AutoHotkey")
-    DetectHiddenWindows, Off
-    return running
 }

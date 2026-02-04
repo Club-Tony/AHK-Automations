@@ -15,15 +15,35 @@ expectedMinWidth := 1100
 expectedMinHeight := 800
 tabAssistActive := false
 tabAssistStep := 0
+
+; Inter-script trigger (used by Launcher_Script full-auto).
+dailyMsgId := 0x5558
+OnMessage(dailyMsgId, "HandleDailySmartsheetMessage")
+
 Esc::ExitApp
 
 ^+!s::
+    DoDailySmartsheet()
+Return
+
+HandleDailySmartsheetMessage(wParam, lParam, msg, hwnd)
+{
+    global dailyMsgId
+    if (msg != dailyMsgId)
+        return
+    if (wParam = 1)
+        DoDailySmartsheet()
+}
+
+DoDailySmartsheet()
+{
+    global tabAssistActive, tabAssistStep
     tabAssistActive := false
     tabAssistStep := 0
     if (!RequireSmartsheetWindow())
-        Return
+        return
     if (!CheckWindowGeometry())
-        Return
+        return
     Mouseclick, left, 1013, 455
     Sleep 100
     Send {Tab 2}
@@ -33,27 +53,27 @@ Esc::ExitApp
     Send daveyuan
     Send {Tab}
     Send bsc
-    Sleep 100 
+    Sleep 100
     if (!RequireSmartsheetWindow())
-        Return
+        return
     Send {Enter down}
     Sleep 50
     Send {Enter up}
     Sleep 100
     if (!RequireSmartsheetWindow())
-        Return
+        return
     Send {Tab 16}
     Send {Space}
     Send {Tab}
     Send ouroboros-bsc@amazon.com
     Sleep 150  ; Allow email field to process
     if (!RequireSmartsheetWindow())
-        Return
+        return
     Send +{Tab 13}
     tabAssistActive := true
     tabAssistStep := 0
     ShowCompletionTip("Smartsheet form ready - Tab Assist active")
-Return
+}
 
 #If (tabAssistActive && WinActive(smartsheetWinTitle))
 $Tab::

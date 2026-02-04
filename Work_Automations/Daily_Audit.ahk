@@ -13,91 +13,110 @@ auditFocusTip := "Audit window inactive, try again"
 ; Expected minimum window dimensions for coordinate clicks to be valid
 expectedMinWidth := 1400
 expectedMinHeight := 600
+
+; Inter-script trigger (used by Launcher_Script full-auto).
+dailyMsgId := 0x5558
+OnMessage(dailyMsgId, "HandleDailyAuditMessage")
+
 Esc::ExitApp
 
 #If WinActive(auditWinTitle)
 ^+!d::
+    DoDailyAudit()
+Return
+#If
+
+HandleDailyAuditMessage(wParam, lParam, msg, hwnd)
+{
+    global dailyMsgId
+    if (msg != dailyMsgId)
+        return
+    if (wParam = 1)
+        DoDailyAudit()
+}
+
+DoDailyAudit()
+{
     if (!RequireAuditWindow())
-        Return
+        return
     if (!CheckWindowGeometry())
-        Return
+        return
     Mouseclick, left, 1392, 230
     Sleep 100
     Send {Tab 2}
     Send {Space}
     Sleep 100
-    Send {Tab} 
+    Send {Tab}
     Send {Space}
-    Send {Tab} 
+    Send {Tab}
     Send {Down 3}
-    Sleep 100 
+    Sleep 100
     if (!RequireAuditWindow())
-        Return
+        return
 
     Send {Enter down}
     Sleep 50
     Send {Enter up}
     Sleep 100
     if (!RequireAuditWindow())
-        Return
+        return
 
-    Send {Tab 2} 
+    Send {Tab 2}
     Send puget
     Sleep 100
-    Send {Enter} 
-    Send {Tab 2} 
+    Send {Enter}
+    Send {Tab 2}
     Send 124
     Sleep 100
     if (!RequireAuditWindow())
-        Return
+        return
 
     Send {Enter down}
     Sleep 50
     Send {Enter up}
     Sleep 100
     if (!RequireAuditWindow())
-        Return
-    
+        return
+
     Loop 4 {
         if (!RequireAuditWindow())
-            Return
-        Send {Tab 2} 
-        Send {Down} 
+            return
+        Send {Tab 2}
+        Send {Down}
         Send {Enter}
     }
-    
+
     if (!RequireAuditWindow())
-        Return
-    Send {Tab 2} 
-    Send {Down 2} 
+        return
+    Send {Tab 2}
+    Send {Down 2}
     Send {Enter}
-    
+
     Loop 3 {
         if (!RequireAuditWindow())
-            Return
-        Send {Tab 2} 
-        Send {Down} 
+            return
+        Send {Tab 2}
+        Send {Down}
         Send {Enter}
     }
-    
+
     if (!RequireAuditWindow())
-        Return
+        return
     Send {Tab 2}
     Send Anthony Davey
     Sleep 100  ; Allow name field to process
     if (!RequireAuditWindow())
-        Return
+        return
     Send {Tab}
     Send {Space}
     Send {Tab}
     Send ouroboros-bsc@amazon.com
     Sleep 150  ; Allow email field to process
     if (!RequireAuditWindow())
-        Return
+        return
     Send {Tab}
     ShowCompletionTip("Daily Audit form completed")
-Return
-#If
+}
 
 RequireAuditWindow()
 {

@@ -24,14 +24,25 @@ worldShipTabs.ShipTo      := {x: 47,  y: 162}
 
 worldShipFields := {}
 worldShipFields.Company    := {x: 78,  y: 241}
-worldShipFields.STName     := {x: 85,  y: 280}
+worldShipFields.SFName     := {x: 85,  y: 280}  ; Ship From Name (same coords, different tab)
+worldShipFields.STName     := {x: 85,  y: 280}  ; Ship To Name
 worldShipFields.Address1   := {x: 85,  y: 323}
 worldShipFields.Address2   := {x: 85,  y: 364}
 worldShipFields.PostalCode := {x: 215, y: 403}
-worldShipFields.STPhone    := {x: 85,  y: 485}
+worldShipFields.SFPhone    := {x: 85,  y: 485}  ; Ship From Phone (same coords, different tab)
+worldShipFields.STPhone    := {x: 85,  y: 485}  ; Ship To Phone
 worldShipFields.STEmail    := {x: 210, y: 485}
 worldShipFields.Ref2       := {x: 721, y: 345}
 worldShipFields.DeclValue  := {x: 721, y: 273}
+
+; Service type dropdown menu coordinates
+worldShipServiceMenu := {}
+worldShipServiceMenu.Selection := {x: 400, y: 231}       ; Dropdown button
+worldShipServiceMenu.NextDayAir := {x: 400, y: 262}
+worldShipServiceMenu.NextDayAirSaver := {x: 400, y: 278}
+worldShipServiceMenu.SecondDayAir := {x: 400, y: 308}
+worldShipServiceMenu.ThreeDaySelect := {x: 400, y: 323}
+worldShipServiceMenu.Ground := {x: 400, y: 338}
 
 scaleOffClick := {x: 316, y: 559}
 scaleClickDone := false
@@ -255,7 +266,9 @@ FetchDSRFData(assetId, cookies)
     sql .= "ISNULL(iv155.ItemVarValue,'') as serviceType, "
     sql .= "ISNULL(iv162.ItemVarValue,'') as declaredValue, "
     sql .= "ISNULL(iv202.ItemVarValue,'') as sfName, "
-    sql .= "ISNULL(iv203.ItemVarValue,'') as email "
+    sql .= "ISNULL(iv203.ItemVarValue,'') as email, "
+    sql .= "ISNULL(iv38.ItemVarValue,'') as sfPhone, "
+    sql .= "ISNULL(iv41.ItemVarValue,'') as stPhone "
     sql .= "FROM Asset a "
     sql .= "LEFT JOIN assetitemvars iv148 ON iv148.assetid=a.assetid AND iv148.profileid=1 AND iv148.itemvarid=148 "
     sql .= "LEFT JOIN assetitemvars iv149 ON iv149.assetid=a.assetid AND iv149.profileid=1 AND iv149.itemvarid=149 "
@@ -268,6 +281,8 @@ FetchDSRFData(assetId, cookies)
     sql .= "LEFT JOIN assetitemvars iv162 ON iv162.assetid=a.assetid AND iv162.profileid=1 AND iv162.itemvarid=162 "
     sql .= "LEFT JOIN assetitemvars iv202 ON iv202.assetid=a.assetid AND iv202.profileid=1 AND iv202.itemvarid=202 "
     sql .= "LEFT JOIN assetitemvars iv203 ON iv203.assetid=a.assetid AND iv203.profileid=1 AND iv203.itemvarid=203 "
+    sql .= "LEFT JOIN assetitemvars iv38 ON iv38.assetid=a.assetid AND iv38.profileid=1 AND iv38.itemvarid=38 "
+    sql .= "LEFT JOIN assetitemvars iv41 ON iv41.assetid=a.assetid AND iv41.profileid=1 AND iv41.itemvarid=41 "
     sql .= "WHERE a.AssetID=@assetid AND a.ProfileID=@profileid"
 
     ; Create temp files
@@ -307,6 +322,8 @@ FetchDSRFData(assetId, cookies)
     psScript .= "$out += 'declaredValue=' + $row.declaredValue; "
     psScript .= "$out += 'sfName=' + $row.sfName; "
     psScript .= "$out += 'email=' + $row.email; "
+    psScript .= "$out += 'sfPhone=' + $row.sfPhone; "
+    psScript .= "$out += 'stPhone=' + $row.stPhone; "
     psScript .= "$out | Out-File -Encoding ASCII '" . outputFile . "'"
     psScript .= "} catch { exit 1 }"
 
@@ -377,10 +394,49 @@ PasteToWorldShip(data)
     EnsureWorldShipTop()
     Sleep 120
 
-    ; Verify focus before clicking Ship To tab
+    ; =========================================================================
+    ; SHIP FROM TAB
+    ; =========================================================================
     if (!EnsureWorldShipActive())
     {
         MsgBox, 48, Focus Lost, WorldShip lost focus. Aborting.
+        return
+    }
+
+    ; Click Ship From tab
+    MouseClick, left, % worldShipTabs.ShipFrom.x, worldShipTabs.ShipFrom.y
+    Sleep 120
+
+    ; Ship From Company (use sfName)
+    if (data.sfName != "")
+    {
+        PasteFieldAt(worldShipFields.Company.x, worldShipFields.Company.y, data.sfName)
+        Sleep 120
+
+        ; Wait for company autocomplete
+        EnsureWorldShipActive()
+        MouseClick, left, % worldShipFields.Ref2.x, worldShipFields.Ref2.y
+        Sleep 5000
+
+        ; Ship From Name (Attention)
+        EnsureWorldShipTop()
+        PasteFieldAt(worldShipFields.SFName.x, worldShipFields.SFName.y, data.sfName)
+        Sleep 120
+
+        ; Ship From Phone
+        if (data.sfPhone != "")
+        {
+            PasteFieldAt(worldShipFields.SFPhone.x, worldShipFields.SFPhone.y, data.sfPhone)
+            Sleep 120
+        }
+    }
+
+    ; =========================================================================
+    ; SHIP TO TAB
+    ; =========================================================================
+    if (!EnsureWorldShipActive())
+    {
+        MsgBox, 48, Focus Lost, WorldShip lost focus. Aborting before Ship To tab.
         return
     }
 
@@ -416,6 +472,13 @@ PasteToWorldShip(data)
     ; Postal Code (triggers city/state autofill)
     PastePostalCode(data.postal, delay)
 
+    ; Ship To Phone
+    if (data.stPhone != "")
+    {
+        PasteFieldAt(worldShipFields.STPhone.x, worldShipFields.STPhone.y, data.stPhone)
+        Sleep 120
+    }
+
     ; Email (Ship To tab)
     if (data.email != "")
     {
@@ -423,7 +486,9 @@ PasteToWorldShip(data)
         Sleep 120
     }
 
-    ; Verify focus before clicking Service tab
+    ; =========================================================================
+    ; SERVICE TAB
+    ; =========================================================================
     if (!EnsureWorldShipActive())
     {
         MsgBox, 48, Focus Lost, WorldShip lost focus. Aborting before Service tab.
@@ -441,12 +506,15 @@ PasteToWorldShip(data)
         Sleep 120
     }
 
-    ; Reference Number 2 (Ship From Name)
+    ; Reference Number 2 (Ship From Name for tracking reference)
     if (data.sfName != "")
     {
         PasteFieldAt(worldShipFields.Ref2.x, worldShipFields.Ref2.y, data.sfName)
         Sleep 120
     }
+
+    ; Select Service Type from dropdown
+    SelectServiceType(data.serviceType)
 
     ; Re-enable electronic scale after all paste operations complete
     EnableWorldShipScale()
@@ -605,4 +673,48 @@ EnableWorldShipScale()
     MouseClick, left, % scaleOffClick.x, scaleOffClick.y
     Sleep 250
     scaleClickDone := false
+}
+
+; Select service type from dropdown menu using direct clicks
+; Uses coordinates from UPS_WS_Shortcuts.ahk - no hotkey conflicts
+SelectServiceType(serviceType)
+{
+    global worldShipTabs, worldShipServiceMenu
+
+    if (serviceType = "")
+        return
+
+    if (!EnsureWorldShipActive())
+        return
+
+    ; Click Service tab
+    MouseClick, left, % worldShipTabs.Service.x, % worldShipTabs.Service.y
+    Sleep 50
+
+    ; Click dropdown to open menu
+    MouseClick, left, % worldShipServiceMenu.Selection.x, % worldShipServiceMenu.Selection.y
+    Sleep 250
+
+    ; Determine which option to click based on service type
+    ; Check more specific matches first (e.g., "Next Day Air Saver" before "Next Day Air")
+    targetY := 0
+
+    if (InStr(serviceType, "Ground"))
+        targetY := worldShipServiceMenu.Ground.y
+    else if (InStr(serviceType, "Next Day Air Saver"))
+        targetY := worldShipServiceMenu.NextDayAirSaver.y
+    else if (InStr(serviceType, "Next Day Air"))
+        targetY := worldShipServiceMenu.NextDayAir.y
+    else if (InStr(serviceType, "2nd Day") || InStr(serviceType, "Second Day"))
+        targetY := worldShipServiceMenu.SecondDayAir.y
+    else if (InStr(serviceType, "3 Day") || InStr(serviceType, "3-Day"))
+        targetY := worldShipServiceMenu.ThreeDaySelect.y
+
+    if (targetY > 0)
+    {
+        MouseMove, % worldShipServiceMenu.Selection.x, % targetY
+        Sleep 250
+        MouseClick, left
+        Sleep 150
+    }
 }

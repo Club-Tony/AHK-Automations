@@ -3,16 +3,18 @@
   Asset: PK438893
 ======================================
 
-Asset table columns:
+ItemVar values (1-50):
 
-id = 3595359
-assetID = PK438893
-itemVar1 = 203731742
-itemVar8 = 
-assetDate = 2026-01-29T17:26:11.173
-profileID = 1
+ItemVarID | Value
+----------|------
+1 | 203731742
+36 | daveyuan
+38 | 2063567351
+41 | 2063567351
+
+(Only showing itemVars with values)
 
 ======================================
-DIAGNOSTIC: Showing Asset table structure
-This helps understand the data model
+Searching range: 1-50
+Looking for: Phone (2063567351), Cost Center (9999)
 ======================================

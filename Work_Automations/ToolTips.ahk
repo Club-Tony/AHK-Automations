@@ -45,14 +45,16 @@ Alt+1 - Focus Package Type
 Alt+2 - Focus BSC Location
 Alt+3 - Print Label Toggle
 Alt+4 - Focus Notes Field
+Alt+5 - Focus Custom Carrier
+Ctrl+Alt+O - Custom Carrier -> Other
 Alt+L - Lost and Found
 Alt+D - Item Var Lookup + Apply All Toggle
 -
 Bulk Tracking Export:
-Alt+Shift+E - Export tracking list to Scan field
+Shift+Alt+E - Export tracking list to Scan field
 Ctrl+Shift+Alt+E - Export tracking list to Scan field (fast)
-Ctrl+Alt+E - Open tracking file (1=TXT, 2=CSV)
-Ctrl+Shift+Alt+Delete - Clear both tracking files
+Shift+Alt+O - Open tracking file (1=TXT, 2=CSV)
+Shift+Alt+Delete - Clear both tracking files
 -
 Additional Scripts Launch Hotkeys:
 Ctrl+Alt+F - Launch Intra Search Shortcuts
@@ -91,10 +93,10 @@ Alt+S - Click Status Field
 Alt+4 - Focus Notes Field
 -
 Bulk Tracking Export:
-Alt+Shift+E - Export tracking list to Scan field
+Shift+Alt+E - Export tracking list to Scan field
 Ctrl+Shift+Alt+E - Export tracking list to Scan field (fast)
-Ctrl+Alt+E - Open tracking file (1=TXT, 2=CSV)
-Ctrl+Shift+Alt+Delete - Clear both tracking files
+Shift+Alt+O - Open tracking file (1=TXT, 2=CSV)
+Shift+Alt+Delete - Clear both tracking files
 -
 Additional Scripts Launch Hotkeys:
 Ctrl+Alt+F - Launch Intra Search Shortcuts
@@ -124,14 +126,16 @@ Return
 ~!1::Gosub HideTooltips
 ~!2::Gosub HideTooltips
 ~!3::Gosub HideTooltips
+~!5::Gosub HideTooltips
 ~!d::Gosub HideTooltips
 ~!h::Gosub HideTooltips
 ~!c::Gosub HideTooltips
 ~^!c::Gosub HideTooltips
-~^!e::Gosub HideTooltips
-~^!+Delete::Gosub HideTooltips
+~+!o::Gosub HideTooltips
+~+!Delete::Gosub HideTooltips
 ~^!f::Gosub HideTooltips
 ~^!d::Gosub HideTooltips
+~^!o::Gosub HideTooltips
 ~^+!d::Gosub HideTooltips
 ~^+!s::Gosub HideTooltips
 ~^+!w::Gosub HideTooltips
@@ -317,12 +321,13 @@ UPS WorldShip Hotkeys
 Alt+A   - Paste @amazon.com
 Alt+E   - Copy Ship To email -> QVN Recipients
 Alt+N   - Copy Ship From company -> Ref2
-Alt+P   - Copy Ship To phone -> Ship From phone
-Alt+D   - Focus Package Weight (double-click)
-Ctrl+Alt+Q - Open QVN Recipients window
-Alt+S   - Open UPS Service Selection
-Alt+Tab - Highlight field || Tab input (6x)
-Alt+1   - Ref1 || Tab input (2x)
+ Alt+P   - Copy Ship To phone -> Ship From phone
+ Alt+D   - Focus Package Weight (double-click)
+ Alt+0   - Toggle Electronic Scale button
+ Ctrl+Alt+Q - Open QVN Recipients window
+ Alt+S   - Open UPS Service Selection
+ Alt+Tab - Highlight field || Tab input (6x)
+ Alt+1   - Ref1 || Tab input (2x)
 Alt+2   - Ref2 || Tab input (8x)
 Alt+3   - Service: Next Day Air
 Alt+4   - Service: Next Day Air Saver
@@ -338,16 +343,17 @@ return
 #If
 
 #If (TooltipActive && (WinActive("UPS WorldShip") || WinActive("Quantum View Notify Recipients")))
-~!a::Gosub HideTooltips
-~!e::Gosub HideTooltips
-~!Tab::Gosub HideTooltips
-~!1::Gosub HideTooltips
-~!2::Gosub HideTooltips
-~!s::Gosub HideTooltips
-~!3::Gosub HideTooltips
-~!g::Gosub HideTooltips
-~!p::Gosub HideTooltips
-~!n::Gosub HideTooltips
+ ~!a::Gosub HideTooltips
+ ~!e::Gosub HideTooltips
+ ~!Tab::Gosub HideTooltips
+ ~!1::Gosub HideTooltips
+ ~!2::Gosub HideTooltips
+ ~!0::Gosub HideTooltips
+ ~!s::Gosub HideTooltips
+ ~!3::Gosub HideTooltips
+ ~!g::Gosub HideTooltips
+ ~!p::Gosub HideTooltips
+ ~!n::Gosub HideTooltips
 #If
 
 ; VS Code shortcuts when VS Code is active
@@ -477,6 +483,7 @@ Alt+4 - acp_bsc_comms
 Alt+5 - spssea124lostnfound
 Alt+S - felsusad grovfred
 Alt+A - tstepama grovfred
+Alt+B - bigben, grovfred
 Alt+J - @jssjens
 Alt+L - @leobanks
 Alt+R - @grovfred
@@ -493,9 +500,11 @@ return
 ~!1::Gosub HideTooltips
 ~!2::Gosub HideTooltips
 ~!3::Gosub HideTooltips
+~!4::Gosub HideTooltips
 ~!5::Gosub HideTooltips
 ~!s::Gosub HideTooltips
 ~!a::Gosub HideTooltips
+~!b::Gosub HideTooltips
 ~!j::Gosub HideTooltips
 ~!l::Gosub HideTooltips
 ~!r::Gosub HideTooltips
@@ -568,8 +577,8 @@ Win+I - Focus/Minimize all Intra windows
 Win+Alt+M - Minimize all, then focus Firefox, Outlook PWA, Slack
 Alt+X / Alt+O - Intra Online: Outbound Shipping Requests button anchor
 Alt+Z / Alt+H - Intra Online: Home button anchor
-Ctrl+Alt+E - Open tracking file (1=TXT, 2=CSV)
-Ctrl+Shift+Alt+Delete - Clear both tracking files
+Shift+Alt+O - Open tracking file (1=TXT, 2=CSV)
+Shift+Alt+Delete - Clear both tracking files
 Ctrl+Alt+L - Launch Daily Audit + Smartsheet
 Ctrl+Shift+Alt+L - Auto Daily Audit + Smartsheet
 Ctrl+Shift+Alt+D - Run Daily Audit

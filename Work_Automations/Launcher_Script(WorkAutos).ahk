@@ -16,6 +16,7 @@ showSearchTooltip := true
 fastAssignPrevRunning := false
 autoSmartsheetRunning := false
 autoSmartsheetCancelled := false
+dailyMsgId := 0x5558
 exportRunning := false
 ScanField := {x: 200, y: 245}
 tooltipMouseX := 0
@@ -38,13 +39,13 @@ return
     Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Other_Automations\Coordinate Capture Helper\coord.txt"
 return
 
-; Toggle: Tracking Numbers File ; Keybind: Ctrl+Alt+E
-^!e::
+; Toggle: Tracking Numbers File ; Keybind: Shift+Alt+O
++!o::
     ToggleTrackingNumbersFile()
 return
 
-; Clear: Both Tracking Files ; Keybind: Ctrl+Shift+Alt+Delete
-^!+Delete::
+; Clear: Both Tracking Files ; Keybind: Shift+Alt+Delete
++!Delete::
     ClearTrackingFiles()
 return
 
@@ -671,7 +672,24 @@ EnsureDailyScriptsRunningAll(forceReload := false)
 
 PostSendHotkey(keys)
 {
-    ; Use SendEvent so another script can receive the hotkey reliably.
+    global dailyMsgId
+    ; Prefer PostMessage into the target script window. Some registered hotkeys do not fire via SendEvent.
+    DetectHiddenWindows, On
+    if (keys = "^+!d" && WinExist("Daily_Audit.ahk ahk_class AutoHotkey"))
+    {
+        PostMessage, %dailyMsgId%, 1, 0,, Daily_Audit.ahk ahk_class AutoHotkey
+        DetectHiddenWindows, Off
+        return
+    }
+    if (keys = "^+!s" && WinExist("Daily_Smartsheet.ahk ahk_class AutoHotkey"))
+    {
+        PostMessage, %dailyMsgId%, 1, 0,, Daily_Smartsheet.ahk ahk_class AutoHotkey
+        DetectHiddenWindows, Off
+        return
+    }
+    DetectHiddenWindows, Off
+
+    ; Fallback: send the hotkey to the active window.
     SendEvent, %keys%
 }
 

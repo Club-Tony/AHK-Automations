@@ -285,10 +285,11 @@ RunInterofficeWorkflow(searchString, useNameField := false, useShortcuts := fals
     expTitle := GetExportedReportWinTitle()
     if (expTitle != "")
     {
-        WinActivate, %expTitle%
-        WinWaitActive, %expTitle%,, 2
-        Sleep 200
-        SendInput, ^+{Tab}
+        if (EnsureWindowActive(expTitle))
+        {
+            Sleep 200
+            SendInput, ^+{Tab}
+        }
     }
 
     ; Check if Intra: Interoffice Request is active
@@ -342,11 +343,25 @@ GetExportedReportWinTitle()
     return ""
 }
 
+EnsureWindowActive(title, maxRetries := 3, retryDelay := 200)
+{
+    Loop, %maxRetries%
+    {
+        if (WinActive(title))
+            return true
+        WinActivate, %title%
+        WinWaitActive, %title%,, 1
+        if (!ErrorLevel)
+            return true
+        Sleep %retryDelay%
+    }
+    return false
+}
+
 FocusAssignRecipWindow()
 {
     global assignRecipTitle
-    WinActivate, %assignRecipTitle%
-    WinWaitActive, %assignRecipTitle%,, 2
+    return EnsureWindowActive(assignRecipTitle)
 }
 
 WaitForExportedReportAndPrint(timeoutMs := 15000)

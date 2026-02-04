@@ -23,6 +23,7 @@ slackWindow := "ahk_exe " slackExe
 !5::JumpToSlackChannel("spssea124lostnfound")
 !s::JumpToSlackChannel("felsusad grovfred")
 !a::JumpToSlackChannel("tstepama grovfred")
+!b::JumpToSlackChannel("bigben, grovfred")
 !j::JumpToSlackChannel("@jssjens")
 !l::JumpToSlackChannel("@leobanks")
 !r::JumpToSlackChannel("@grovfred")

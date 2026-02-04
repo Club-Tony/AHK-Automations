@@ -87,6 +87,7 @@ Esc::ExitApp
     data := CollectIntraData("business")
     PasteBusinessToWorldShip(data)
     ClickServiceTab()
+    EnableWorldShipScale()
     FocusIntraWindow()
     EnsureIntraWindow()
     EnsureIntraZoom100()
@@ -99,6 +100,7 @@ return
     data := CollectIntraData("personal")
     PastePersonalToWorldShip(data)
     ClickServiceTab()
+    EnableWorldShipScale()
     FocusIntraWindow()
     EnsureIntraWindow()
     EnsureIntraZoom100()
@@ -554,4 +556,15 @@ DisableWorldShipScale()
     MouseClick, left, % scaleOffClick.x, scaleOffClick.y
     Sleep 250
     scaleClickDone := true
+}
+
+EnableWorldShipScale()
+{
+    global scaleOffClick, scaleClickDone
+    if (!scaleClickDone)
+        return
+    Sleep 150
+    MouseClick, left, % scaleOffClick.x, scaleOffClick.y
+    Sleep 250
+    scaleClickDone := false
 }
