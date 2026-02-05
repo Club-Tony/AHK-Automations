@@ -272,35 +272,6 @@ RunInterofficeWorkflow(searchString, useNameField := false, useShortcuts := fals
     ; Wait for scan input to continue script
     WaitForScanAndSubmit()
 
-    ; Countdown before refocusing Firefox (3 seconds)
-    Loop, 3
-    {
-        remaining := 4 - A_Index
-        ToolTip, Refocusing firefox window to normalize in %remaining% seconds
-        Sleep 1000
-    }
-    ToolTip
-
-    ; Focus ExportedReport.pdf and go back to previous tab
-    expTitle := GetExportedReportWinTitle()
-    if (expTitle != "")
-    {
-        if (EnsureWindowActive(expTitle))
-        {
-            Sleep 200
-            SendInput, ^+{Tab}
-        }
-    }
-
-    ; Check if Intra: Interoffice Request is active
-    Sleep 300
-    if (IsInterofficeActive())
-    {
-        SendInput, {Tab 2}
-        Sleep 100
-        SendInput, {Space}
-    }
-
     workflowRunning := false
 }
 
@@ -376,7 +347,11 @@ WaitForExportedReportAndPrint(timeoutMs := 15000)
         Sleep 200
     }
     if (target = "")
+    {
+        ToolTip, Failed to detect ExportedReport.pdf window
+        SetTimer, ClearPdfFailTooltip, -5000
         return false
+    }
 
     WinActivate, %target%
     WinWaitActive, %target%,, 2
@@ -385,8 +360,19 @@ WaitForExportedReportAndPrint(timeoutMs := 15000)
     Sleep 400
     SendInput, {Enter}
     Sleep 400
+    ; Close PDF and refocus Interoffice
+    SendInput, ^w
+    Sleep 400
+    SendInput, {Tab 2}
+    Sleep 200
+    SendInput, {Space}
+    Sleep 300
     return true
 }
+
+ClearPdfFailTooltip:
+    ToolTip
+return
 
 WaitForScanAndSubmit()
 {

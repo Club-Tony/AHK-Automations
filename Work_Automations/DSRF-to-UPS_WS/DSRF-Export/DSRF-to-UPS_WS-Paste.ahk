@@ -32,6 +32,7 @@ worldShipFields.PostalCode := {x: 215, y: 403}
 worldShipFields.SFPhone    := {x: 85,  y: 485}  ; Ship From Phone (same coords, different tab)
 worldShipFields.STPhone    := {x: 85,  y: 485}  ; Ship To Phone
 worldShipFields.STEmail    := {x: 210, y: 485}
+worldShipFields.Ref1       := {x: 721, y: 309}
 worldShipFields.Ref2       := {x: 721, y: 345}
 worldShipFields.DeclValue  := {x: 721, y: 273}
 

@@ -234,7 +234,7 @@ Alt+1  - Focus "# of Packages"
 Alt+2  - Focus Package Type
 Alt+L  - Click Load button
 Alt+C  - Clear/Reset
-Ctrl+Alt+Enter - Quick submit (scroll bottom + submit)
+Ctrl+Alt+Enter - Submit + print PDF + focus Alias
 Ctrl+W - Close open tabs (bulk prompt)
 Ctrl+Alt+N - Focus Name field (recipient)
 -
@@ -291,6 +291,11 @@ Ctrl+Alt+C: Launch DSRF to WorldShip Script
 Ctrl+Alt+U: Launch Super-Speed version (Warning: May be unstable)
 Ctrl+Alt+P: Personal Form
 Ctrl+Alt+B: Business Form
+-
+Cookie Management:
+Ctrl+Alt+K: Extract cookies from DevTools -> cookies.txt
+Ctrl+Alt+Shift+K: Save clipboard to cookies.txt (manual)
+-
 Ctrl+Alt+T - Show this tooltip again
     )
     Tooltip, %tooltipText%
@@ -301,6 +306,8 @@ return
 ~^!c::Gosub HideTooltips
 ~^!b::Gosub HideTooltips
 ~^!d::Gosub HideTooltips
+~^!k::Gosub HideTooltips
+~^!+k::Gosub HideTooltips
 #If
 
 ; UPS WorldShip shortcuts (UPS_WS_Shortcuts.ahk) when WorldShip or QVN window is active
@@ -319,6 +326,8 @@ return
     (
 UPS WorldShip Hotkeys
 Alt+A   - Paste @amazon.com
+Alt+C   - Ship To Company field (highlight all)
+Alt+W   - Ship To Weight field (highlight all)
 Alt+E   - Copy Ship To email -> QVN Recipients
 Alt+N   - Copy Ship From company -> Ref2
  Alt+P   - Copy Ship To phone -> Ship From phone
@@ -344,6 +353,8 @@ return
 
 #If (TooltipActive && (WinActive("UPS WorldShip") || WinActive("Quantum View Notify Recipients")))
  ~!a::Gosub HideTooltips
+ ~!c::Gosub HideTooltips
+ ~!w::Gosub HideTooltips
  ~!e::Gosub HideTooltips
  ~!Tab::Gosub HideTooltips
  ~!1::Gosub HideTooltips

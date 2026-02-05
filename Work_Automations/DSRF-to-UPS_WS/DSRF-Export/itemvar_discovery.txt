@@ -1,6 +1,6 @@
 ﻿======================================
   ItemVar Discovery Results
-  Asset: PK438893
+  Asset: PK442919
 ======================================
 
 ItemVar values (1-50):
@@ -10,7 +10,7 @@ ItemVarID | Value
 1 | 203731742
 36 | daveyuan
 38 | 2063567351
-41 | 2063567351
+41 | 2053054050
 
 (Only showing itemVars with values)
 

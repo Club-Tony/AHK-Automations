@@ -46,6 +46,8 @@ BuildingFieldX := 468
 BuildingFieldY := 811
 PackagesCountX := 480
 PackagesCountY := 1154
+assignRecipTitle := "Intra Desktop Client - Assign Recip"
+focusFieldsMsgId := 0x5557  ; Message ID for Intra_Focus_Fields.ahk
 
 #If IsInterofficeActive()
 ^#!p::
@@ -342,7 +344,7 @@ SetPackageTypeEnvelope()
 PromptRecipientAliasQuickSelect()
 {
     ; Recipient quick-select menu (1-9, Alt+0-6 for 10-16). Types alias then Tab.
-    prompt := "Enter Recipient Alias:`n1: ouyanj`n2: yoenlee`n3: mfrncoa`n4: shrprob`n5: jirahste`n6: maloufm`n7: betharm`n8: noriekim`n9: pounan`nAlt+0: yogunn`nAlt+1: sssalta`nAlt+2: stevmura`nAlt+3: amydunc`nAlt+4: euellp`nAlt+5: josdeng`nAlt+6: eoneal"
+    prompt := "Enter Recipient Alias:`n1: amydunc`n2: betharm`n3: eoneal`n4: euellp`n5: jirahste`n6: josdeng`n7: maloufm`n8: mfrncoa`n9: noriekim`nAlt+0: ouyanj`nAlt+1: pounan`nAlt+2: shrprob`nAlt+3: sssalta`nAlt+4: stevmura`nAlt+5: yoenlee`nAlt+6: yogunn"
     Tooltip, %prompt%
 
     ; Wait for input - capture regular keys and Alt+number combinations
@@ -392,7 +394,7 @@ PromptRecipientAliasQuickSelect()
         return
     }
 
-    recipientAliases := {1: "ouyanj", 2: "yoenlee", 3: "mfrncoa", 4: "shrprob", 5: "jirahste", 6: "maloufm", 7: "betharm", 8: "noriekim", 9: "pounan", 10: "yogunn", 11: "sssalta", 12: "stevmura", 13: "amydunc", 14: "euellp", 15: "josdeng", 16: "eoneal"}
+    recipientAliases := {1: "amydunc", 2: "betharm", 3: "eoneal", 4: "euellp", 5: "jirahste", 6: "josdeng", 7: "maloufm", 8: "mfrncoa", 9: "noriekim", 10: "ouyanj", 11: "pounan", 12: "shrprob", 13: "sssalta", 14: "stevmura", 15: "yoenlee", 16: "yogunn"}
     alias := recipientAliases[choice]
     if (alias = "")
     {
@@ -669,6 +671,12 @@ DoCtrlAltEnter()
         Sleep 150
         MouseClick, left, %SubmitBtnX%, %submitY%, 2
     }
+
+    ; After submit, wait for PDF and focus alias
+    Sleep 1500
+    WaitForExportedReportAndPrint(15000)
+    Sleep 500
+    FocusAssignRecipAndAlias()
 }
 
 HandlePosterMessage(wParam, lParam, msg, hwnd)
@@ -858,6 +866,60 @@ GetExportedReportWinTitle()
             return candidate
     }
     return ""
+}
+
+WaitForExportedReportAndPrint(timeoutMs := 15000)
+{
+    deadline := A_TickCount + timeoutMs
+    target := ""
+    while (A_TickCount < deadline)
+    {
+        target := GetExportedReportWinTitle()
+        if (target != "")
+            break
+        Sleep 200
+    }
+    if (target = "")
+    {
+        ToolTip, Failed to detect ExportedReport.pdf window
+        SetTimer, ClearPdfFailTooltip, -5000
+        return false
+    }
+    WinActivate, %target%
+    WinWaitActive, %target%,, 2
+    Sleep 300
+    SendInput, ^p
+    Sleep 400
+    SendInput, {Enter}
+    Sleep 400
+    ; Close PDF and refocus Interoffice
+    SendInput, ^w
+    Sleep 400
+    SendInput, {Tab 2}
+    Sleep 200
+    SendInput, {Space}
+    Sleep 300
+    return true
+}
+
+ClearPdfFailTooltip:
+    ToolTip
+return
+
+FocusAssignRecipAndAlias()
+{
+    global assignRecipTitle, focusFieldsMsgId
+    WinActivate, %assignRecipTitle%
+    WinWaitActive, %assignRecipTitle%,, 2
+    if (ErrorLevel)
+        return false
+    Sleep 200
+    ; Use PostMessage to trigger alias focus via Intra_Focus_Fields.ahk (wParam=2)
+    DetectHiddenWindows, On
+    if WinExist("Intra_Focus_Fields.ahk ahk_class AutoHotkey")
+        PostMessage, %focusFieldsMsgId%, 2, 0,, Intra_Focus_Fields.ahk ahk_class AutoHotkey
+    DetectHiddenWindows, Off
+    return true
 }
 
 IsCloseableWindow()

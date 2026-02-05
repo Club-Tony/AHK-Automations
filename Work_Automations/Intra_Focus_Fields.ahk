@@ -115,6 +115,18 @@ HandleFocusFieldsMessage(wParam, lParam, msg, hwnd)
         return
     if (wParam = 1)
         DoItemVarLookupApplyAll()
+    else if (wParam = 2)
+        FocusAliasField()
+}
+
+FocusAliasField()
+{
+    if (!WinActive("Intra Desktop Client - Assign Recip"))
+        return
+    Sleep 250
+    MouseClick, left, 930, 830, 2
+    Sleep 250
+    MouseClick, left, 925, 855
 }
 
 DoItemVarLookupApplyAll()

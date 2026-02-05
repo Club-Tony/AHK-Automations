@@ -119,6 +119,28 @@ return
     MouseClick, left, % worldShipFields.Weight.x, % worldShipFields.Weight.y, 2
 return
 
+!c::  ; Ship To -> Company field, highlight all
+    SendInput, {Alt up}
+    MouseClick, left, 50, 160   ; Ship To tab
+    Sleep 50
+    MouseClick, left, 130, 240  ; Company field
+    Sleep 50
+    SendInput, {End}
+    Sleep 30
+    SendInput, +{Home}
+return
+
+!w::  ; Ship To -> Weight field, highlight all
+    SendInput, {Alt up}
+    MouseClick, left, 50, 160   ; Ship To tab
+    Sleep 50
+    MouseClick, left, 345, 535  ; Weight field
+    Sleep 50
+    SendInput, {End}
+    Sleep 30
+    SendInput, +{Home}
+return
+
 !0::  ; Toggle electronic scale button (helps avoid scale lag)
     SendInput, {Alt up}
     EnsureWorldShipTop()
