@@ -183,6 +183,11 @@ RunInterofficeWorkflow(searchString, useNameField := false, useShortcuts := fals
         SendInput, {Tab 2}
         Sleep 500
 
+        aliasText := CopyFieldText("Top", 1005, 860)
+        Sleep 150
+        if (aliasText != "")
+            Clipboard := aliasText  ; leave alias ready to paste after submit
+
         ; Submit at offset coords
         MouseClick, left, 450, 1369, 2
         Sleep 150
@@ -205,6 +210,11 @@ RunInterofficeWorkflow(searchString, useNameField := false, useShortcuts := fals
             workflowRunning := false
             return
         }
+
+        aliasText := CopyFieldText("Top", 1005, 860)
+        Sleep 150
+        if (aliasText != "")
+            Clipboard := aliasText  ; leave alias ready to paste after submit
 
         ; Submit: scroll to bottom and click submit button
         MouseClick, left, %NeutralClickX%, % IOY(NeutralClickY), 2
@@ -300,6 +310,31 @@ EnsureIntraWindow()
         return
     WinMove, %title%,, 1917, 0, 1530, 1399
     Sleep 150
+}
+
+CopyFieldText(scrollPos, xCoord, yCoord, yMode := "up")
+{
+    if (scrollPos = "Top")
+        SendInput, ^{Home}
+    else if (scrollPos = "Bottom")
+        SendInput, ^{End}
+
+    Sleep 200
+    MouseClick, left, %xCoord%, % IOY(yCoord, yMode)
+    Sleep 200
+    ClipSaved := ClipboardAll
+    Clipboard :=
+    SendInput, ^a
+    Sleep 80
+    SendInput, ^c
+    ClipWait, 0.5
+    if (ErrorLevel)
+        text := ""
+    else
+        text := Clipboard
+    Clipboard := ClipSaved
+    ClipSaved := ""
+    return text
 }
 
 GetExportedReportWinTitle()

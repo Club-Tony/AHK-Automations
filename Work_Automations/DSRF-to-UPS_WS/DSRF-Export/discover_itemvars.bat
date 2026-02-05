@@ -7,7 +7,7 @@ echo ======================================
 echo.
 
 :: Prompt for PK#
-set /p ASSETID="Enter PK# (e.g., PK438893): "
+set /p ASSETID="Enter PK# (e.g., PK123456): "
 
 :: Check if cookies.txt exists
 if not exist "%~dp0cookies.txt" (

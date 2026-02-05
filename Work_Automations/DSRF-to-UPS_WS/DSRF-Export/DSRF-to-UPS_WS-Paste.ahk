@@ -1,6 +1,5 @@
 #Requires AutoHotkey v1
 #NoEnv
-#Warn
 #SingleInstance, Force
 SendMode Input
 SetWorkingDir %A_ScriptDir%
@@ -14,6 +13,10 @@ CoordMode, Mouse, Window
 ; DSRF-to-UPS_WS-Paste.ahk
 ; Fetches shipping data from Intra API and pastes directly into UPS WorldShip
 ; =============================================================================
+
+; Cookie extraction settings
+intraDomain := "amazonmailservices.us.spsprod.net"
+cookiesFile := A_ScriptDir . "\cookies.txt"
 
 ; UPS WorldShip coordinates (window-relative pixels)
 worldShipTitle := "UPS WorldShip"
@@ -47,12 +50,23 @@ worldShipServiceMenu.Ground := {x: 400, y: 338}
 
 scaleOffClick := {x: 316, y: 559}
 scaleClickDone := false
+dsrfOperationActive := false  ; Flag for Esc key to cancel operation
 
 return ; end of auto-execute
+
+; Esc key to reload script while Ctrl+Alt+D is running
+#If (dsrfOperationActive)
+Esc::
+    ToolTip, Cancelled - Reloading script...
+    Sleep 500
+    Reload
+return
+#If
 
 ; Ctrl+Alt+D: Fetch DSRF data from API and paste to WorldShip
 #If (WinActive("Intra: Shipping Request Form") || WinActive("UPS WorldShip"))
 ^!d::
+    dsrfOperationActive := true  ; Enable Esc to cancel
     scaleClickDone := false
     startTick := A_TickCount
 
@@ -62,6 +76,7 @@ return ; end of auto-execute
 
     if (dsrfWindows.Length() = 0)
     {
+        dsrfOperationActive := false
         ToolTip
         MsgBox, 48, Error, No Shipping Request Form windows found.`n`nOpen a DSRF page in Firefox, Chrome, or Edge.
         return
@@ -71,6 +86,7 @@ return ; end of auto-execute
     selected := SelectDSRFWindow(dsrfWindows)
     if (!selected)
     {
+        dsrfOperationActive := false
         ToolTip
         return
     }
@@ -81,6 +97,7 @@ return ; end of auto-execute
     cookies := GetCookies()
     if (!cookies)
     {
+        dsrfOperationActive := false
         ToolTip
         MsgBox, 48, Error, Could not get session cookies.`n`nCreate cookies.txt in the script folder or set INTRA_COOKIES env var.
         return
@@ -92,6 +109,7 @@ return ; end of auto-execute
     data := FetchDSRFData(assetId, cookies)
     if (!data)
     {
+        dsrfOperationActive := false
         ToolTip
         MsgBox, 48, Cookie Error, API call failed - cookies are likely invalid or expired.`n`nTo fix:`n1. Open Intra in browser and log in`n2. Press F12 for DevTools`n3. Go to Network tab, refresh page`n4. Click any request, copy Cookie header`n5. Paste into cookies.txt (replace all)
         return
@@ -103,6 +121,7 @@ return ; end of auto-execute
     PasteToWorldShip(data)
 
     ; Show completion
+    dsrfOperationActive := false
     elapsedMs := A_TickCount - startTick
     elapsedSec := Round(elapsedMs / 1000.0, 2)
     doneMsg := "Done! Runtime: " . elapsedSec . "s`nVerify Service, Dimensions, Weight"
@@ -231,19 +250,33 @@ GetBrowserName(procName)
 
 GetCookies()
 {
-    local cookies, configFile
+    global cookiesFile
 
     ; Try environment variable first
     EnvGet, cookies, INTRA_COOKIES
     if (cookies)
         return cookies
 
-    ; Try cookies.txt in script folder
+    ; Try extracting fresh cookies from Firefox
+    ToolTip, Extracting cookies from Firefox...
+    cookies := ExtractFirefoxCookies()
+    if (cookies != "")
+    {
+        ; Save to cookies.txt for backup/reference
+        SaveCookiesToFile(cookies)
+        ToolTip
+        return cookies
+    }
+    ToolTip
+
+    ; Fallback to existing cookies.txt if extraction failed
     configFile := A_ScriptDir . "\cookies.txt"
     if (FileExist(configFile))
     {
         FileRead, cookies, %configFile%
-        return Trim(cookies, " `t`r`n")
+        cookies := Trim(cookies, " `t`r`n")
+        if (cookies != "")
+            return cookies
     }
 
     return ""
@@ -269,7 +302,9 @@ FetchDSRFData(assetId, cookies)
     sql .= "ISNULL(iv202.ItemVarValue,'') as sfName, "
     sql .= "ISNULL(iv203.ItemVarValue,'') as email, "
     sql .= "ISNULL(iv38.ItemVarValue,'') as sfPhone, "
-    sql .= "ISNULL(iv41.ItemVarValue,'') as stPhone "
+    sql .= "ISNULL(iv41.ItemVarValue,'') as stPhone, "
+    sql .= "ISNULL(iv144.ItemVarValue,'') as costCenter, "
+    sql .= "ISNULL(iv145.ItemVarValue,'') as formType "
     sql .= "FROM Asset a "
     sql .= "LEFT JOIN assetitemvars iv148 ON iv148.assetid=a.assetid AND iv148.profileid=1 AND iv148.itemvarid=148 "
     sql .= "LEFT JOIN assetitemvars iv149 ON iv149.assetid=a.assetid AND iv149.profileid=1 AND iv149.itemvarid=149 "
@@ -284,6 +319,8 @@ FetchDSRFData(assetId, cookies)
     sql .= "LEFT JOIN assetitemvars iv203 ON iv203.assetid=a.assetid AND iv203.profileid=1 AND iv203.itemvarid=203 "
     sql .= "LEFT JOIN assetitemvars iv38 ON iv38.assetid=a.assetid AND iv38.profileid=1 AND iv38.itemvarid=38 "
     sql .= "LEFT JOIN assetitemvars iv41 ON iv41.assetid=a.assetid AND iv41.profileid=1 AND iv41.itemvarid=41 "
+    sql .= "LEFT JOIN assetitemvars iv144 ON iv144.assetid=a.assetid AND iv144.profileid=1 AND iv144.itemvarid=144 "
+    sql .= "LEFT JOIN assetitemvars iv145 ON iv145.assetid=a.assetid AND iv145.profileid=1 AND iv145.itemvarid=145 "
     sql .= "WHERE a.AssetID=@assetid AND a.ProfileID=@profileid"
 
     ; Create temp files
@@ -325,6 +362,8 @@ FetchDSRFData(assetId, cookies)
     psScript .= "$out += 'email=' + $row.email; "
     psScript .= "$out += 'sfPhone=' + $row.sfPhone; "
     psScript .= "$out += 'stPhone=' + $row.stPhone; "
+    psScript .= "$out += 'costCenter=' + $row.costCenter; "
+    psScript .= "$out += 'formType=' + $row.formType; "
     psScript .= "$out | Out-File -Encoding ASCII '" . outputFile . "'"
     psScript .= "} catch { exit 1 }"
 
@@ -505,6 +544,29 @@ PasteToWorldShip(data)
     {
         PasteFieldAt(worldShipFields.DeclValue.x, worldShipFields.DeclValue.y, data.declaredValue)
         Sleep 120
+    }
+
+    ; Reference Number 1 (Cost Center or "9999" for Personal shipments)
+    ref1Value := ""
+    if (data.costCenter != "")
+    {
+        ref1Value := data.costCenter
+    }
+    else if (data.formType = "Personal")
+    {
+        ; Personal shipments without cost center get "9999"
+        ref1Value := "9999"
+    }
+
+    if (ref1Value != "")
+    {
+        ; Check if Ref1 already contains the value (avoid redundant paste)
+        currentRef1 := GetFieldValue(worldShipFields.Ref1.x, worldShipFields.Ref1.y)
+        if (currentRef1 != ref1Value)
+        {
+            PasteFieldAt(worldShipFields.Ref1.x, worldShipFields.Ref1.y, ref1Value)
+            Sleep 120
+        }
     }
 
     ; Reference Number 2 (Ship From Name for tracking reference)
@@ -718,4 +780,256 @@ SelectServiceType(serviceType)
         MouseClick, left
         Sleep 150
     }
+}
+
+; Get current value from a WorldShip field (for checking before paste)
+GetFieldValue(x, y)
+{
+    local ClipSaved, fieldValue
+
+    if (!EnsureWorldShipActive())
+        return ""
+
+    ClipSaved := ClipboardAll
+    Clipboard := ""
+
+    ; Click field and select all content
+    MouseClick, left, %x%, %y%
+    Sleep 100
+    SendInput, {End}
+    Sleep 50
+    SendInput, ^+{Home}
+    Sleep 50
+    SendInput, ^c
+    ClipWait, 0.5
+
+    fieldValue := Clipboard
+    Clipboard := ClipSaved
+    ClipSaved := ""
+
+    ; Click away to deselect
+    SendInput, {End}
+    Sleep 50
+
+    return Trim(fieldValue, " `t`r`n")
+}
+
+; =============================================================================
+; Cookie Extraction Functions
+; =============================================================================
+
+; Extract cookies directly from Firefox's cookies.sqlite database
+; Returns: cookie string or empty string on failure
+ExtractFirefoxCookies()
+{
+    global intraDomain
+
+    ; Find Firefox profile
+    firefoxProfiles := A_AppData . "\Mozilla\Firefox\Profiles"
+    if (!FileExist(firefoxProfiles))
+        return ""
+
+    ; Find the default profile from profiles.ini
+    profileDir := ""
+    cookiesDb := ""
+    profilesIni := A_AppData . "\Mozilla\Firefox\profiles.ini"
+
+    if (FileExist(profilesIni))
+    {
+        FileRead, iniContent, %profilesIni%
+
+        currentPath := ""
+        currentIsRelative := ""
+        foundDefault := false
+
+        Loop, Parse, iniContent, `n, `r
+        {
+            line := A_LoopField
+
+            if (RegExMatch(line, "^\[Profile\d+\]"))
+            {
+                if (foundDefault && currentPath != "")
+                    break
+                currentPath := ""
+                currentIsRelative := ""
+                foundDefault := false
+            }
+            else if (RegExMatch(line, "^Path=(.+)$", match))
+            {
+                currentPath := match1
+            }
+            else if (RegExMatch(line, "^IsRelative=(\d)$", match))
+            {
+                currentIsRelative := match1
+            }
+            else if (line = "Default=1")
+            {
+                foundDefault := true
+            }
+        }
+
+        if (foundDefault && currentPath != "")
+        {
+            if (currentIsRelative = "1")
+                profileDir := A_AppData . "\Mozilla\Firefox\" . currentPath
+            else
+                profileDir := currentPath
+
+            cookiesDb := profileDir . "\cookies.sqlite"
+            if (!FileExist(cookiesDb))
+            {
+                profileDir := ""
+                cookiesDb := ""
+            }
+        }
+    }
+
+    ; Fallback: scan for profiles with cookies.sqlite
+    if (profileDir = "")
+    {
+        Loop, Files, %firefoxProfiles%\*, D
+        {
+            if (InStr(A_LoopFileName, ".default-release"))
+            {
+                testDb := A_LoopFileFullPath . "\cookies.sqlite"
+                if (FileExist(testDb))
+                {
+                    profileDir := A_LoopFileFullPath
+                    cookiesDb := testDb
+                    break
+                }
+            }
+        }
+    }
+
+    if (profileDir = "")
+    {
+        Loop, Files, %firefoxProfiles%\*, D
+        {
+            testDb := A_LoopFileFullPath . "\cookies.sqlite"
+            if (FileExist(testDb))
+            {
+                profileDir := A_LoopFileFullPath
+                cookiesDb := testDb
+                break
+            }
+        }
+    }
+
+    if (profileDir = "" || cookiesDb = "")
+        return ""
+
+    ; Copy database to temp (Firefox locks it while running)
+    tempDb := A_Temp . "\firefox_cookies_temp.sqlite"
+    FileCopy, %cookiesDb%, %tempDb%, 1
+    if (ErrorLevel)
+        return ""  ; Firefox has exclusive lock
+
+    ; Find sqlite3.exe
+    sqlite3 := A_ScriptDir . "\sqlite3.exe"
+    if (!FileExist(sqlite3))
+    {
+        sqlite3Paths := ["C:\Program Files\SQLite\sqlite3.exe"
+                       , "C:\Program Files (x86)\SQLite\sqlite3.exe"
+                       , "C:\ProgramData\chocolatey\bin\sqlite3.exe"]
+
+        for idx, testPath in sqlite3Paths
+        {
+            if (FileExist(testPath))
+            {
+                sqlite3 := testPath
+                break
+            }
+        }
+    }
+
+    if (!FileExist(sqlite3))
+    {
+        FileDelete, %tempDb%
+        return ""
+    }
+
+    ; Query cookies for our domain
+    sqlFile := A_Temp . "\cookie_query.sql"
+    outputFile := A_Temp . "\cookie_output.txt"
+
+    FileDelete, %sqlFile%
+    FileDelete, %outputFile%
+
+    sqlQuery := "SELECT name || '=' || value FROM moz_cookies WHERE host LIKE '%" . intraDomain . "%' ORDER BY name;"
+    FileAppend, %sqlQuery%, %sqlFile%
+
+    RunWait, %ComSpec% /c ""%sqlite3%" "%tempDb%" < "%sqlFile%" > "%outputFile%"",, Hide
+    queryResult := ErrorLevel
+
+    FileDelete, %tempDb%
+    FileDelete, %sqlFile%
+
+    if (queryResult != 0 || !FileExist(outputFile))
+        return ""
+
+    FileRead, cookieLines, %outputFile%
+    FileDelete, %outputFile%
+
+    if (cookieLines = "")
+        return ""
+
+    ; Join lines with "; "
+    cookieValue := ""
+    Loop, Parse, cookieLines, `n, `r
+    {
+        if (A_LoopField != "")
+        {
+            if (cookieValue != "")
+                cookieValue .= "; "
+            cookieValue .= A_LoopField
+        }
+    }
+
+    ; Basic validation
+    if (StrLen(cookieValue) < 100)
+        return ""
+
+    return cookieValue
+}
+
+; Save cookies to file with retry logic for locked files
+SaveCookiesToFile(cookieValue)
+{
+    global cookiesFile
+
+    ; Backup existing file
+    if FileExist(cookiesFile)
+    {
+        backupFile := cookiesFile . ".bak"
+        FileCopy, %cookiesFile%, %backupFile%, 1
+    }
+
+    ; Save with retry logic
+    saveSuccess := false
+    maxRetries := 3
+
+    Loop, %maxRetries%
+    {
+        if FileExist(cookiesFile)
+        {
+            FileDelete, %cookiesFile%
+            if (ErrorLevel)
+            {
+                Sleep 500
+                continue
+            }
+        }
+
+        FileAppend, %cookieValue%, %cookiesFile%
+        if (!ErrorLevel)
+        {
+            saveSuccess := true
+            break
+        }
+
+        Sleep 500
+    }
+
+    return saveSuccess
 }

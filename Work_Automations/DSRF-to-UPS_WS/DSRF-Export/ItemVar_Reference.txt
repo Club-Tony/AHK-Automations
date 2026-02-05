@@ -1,0 +1,65 @@
+================================================================================
+DSRF ItemVar Reference
+Last Updated: 2026-02-05
+Asset Used for Discovery: PK442919
+================================================================================
+
+================================================================================
+CATEGORY 1: USED IN SCRIPT (DSRF-to-UPS_WS-Paste.ahk)
+================================================================================
+ItemVarID | Field Name     | Description                    | Example Value
+----------|----------------|--------------------------------|------------------
+38        | sfPhone        | Ship From Phone                | 2063567351
+41        | stPhone        | Ship To Phone                  | 2053054050
+144       | costCenter     | Cost Center (-> Ref1)          | 1235
+148       | company        | Ship To Company                | tony d company
+149       | name           | Ship To Name (Attention)       | tony d
+150       | address1       | Ship To Address Line 1         | 4021 southcenter blvd
+151       | address2       | Ship To Address Line 2         | (empty in test)
+152       | city           | Ship To City                   | (auto from postal)
+153       | state          | Ship To State                  | (auto from postal)
+154       | postal         | Ship To Postal Code            | (triggers autofill)
+155       | serviceType    | UPS Service Type               | Ground, Next Day Air, etc.
+162       | declaredValue  | Declared Value ($)             | (optional)
+202       | sfName         | Ship From Name (-> Ref2)       | (requestor name)
+203       | email          | Ship To Email                  | (optional)
+145       | formType       | Form Type (Business/Personal)  | Personal -> Ref1="9999"
+
+================================================================================
+CATEGORY 2: DISCOVERED BUT NOT USED
+================================================================================
+ItemVarID | Discovered Value | Purpose
+----------|------------------|----------------------------------
+1         | 203731742        | Internal Asset ID / Record ID?
+36        | daveyuan         | Form Submitter (confirmed)
+143       | 1                | Unknown flag (always 1?)
+147       | Business         | Business vs Residential (likely)
+
+================================================================================
+CATEGORY 3: SEARCHED BUT EMPTY (in test asset PK442919)
+================================================================================
+Ranges searched: 1-150
+
+Empty itemvars in range 1-50:
+  2-35, 37, 39-40, 42-50
+
+Empty itemvars in range 51-100:
+  51-100 (all empty)
+
+Empty itemvars in range 101-150:
+  101-142, 146
+
+================================================================================
+NOTES
+================================================================================
+- ItemVars 148-155 contain the main shipping address fields
+- ItemVar 144 (Cost Center) goes into WorldShip Reference Number 1
+- ItemVar 202 (sfName) goes into WorldShip Reference Number 2
+- ItemVars 38/41 are phone numbers (Ship From / Ship To)
+- ItemVar 162 is Declared Value (optional field)
+- ItemVar 203 is email (optional field)
+
+To discover more itemvars, run:
+  powershell -ExecutionPolicy Bypass -File itemvar_discovery.ps1 -AssetId PK###### -StartRange 151 -EndRange 200
+
+================================================================================

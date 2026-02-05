@@ -225,7 +225,7 @@ Alt+E/Alt+S  - Focus envelope icon
 Alt+A  - Focus alias field
 Alt+N  - Focus SF name field
 Shift+Alt+A - Focus SF alias field (1-5 quick-select)
-Ctrl+Enter - Scroll to bottom and Submit
+Ctrl+Enter - Copy alias + scroll to bottom + Submit
 Ctrl+Alt+S - Fill Special Instructions
 Ctrl+Alt+A - ACP preset -> Alias
 Alt+P  - Load "posters" preset -> Name field
@@ -234,7 +234,7 @@ Alt+1  - Focus "# of Packages"
 Alt+2  - Focus Package Type
 Alt+L  - Click Load button
 Alt+C  - Clear/Reset
-Ctrl+Alt+Enter - Submit + print PDF + focus Alias
+Ctrl+Alt+Enter - Copy alias + Submit + print PDF + focus Alias
 Ctrl+W - Close open tabs (bulk prompt)
 Ctrl+Alt+N - Focus Name field (recipient)
 -
@@ -293,8 +293,7 @@ Ctrl+Alt+P: Personal Form
 Ctrl+Alt+B: Business Form
 -
 Cookie Management:
-Ctrl+Alt+K: Extract cookies from DevTools -> cookies.txt
-Ctrl+Alt+Shift+K: Save clipboard to cookies.txt (manual)
+Ctrl+Alt+K: Extract cookies from Firefox -> cookies.txt
 -
 Ctrl+Alt+T - Show this tooltip again
     )
@@ -307,7 +306,6 @@ return
 ~^!b::Gosub HideTooltips
 ~^!d::Gosub HideTooltips
 ~^!k::Gosub HideTooltips
-~^!+k::Gosub HideTooltips
 #If
 
 ; UPS WorldShip shortcuts (UPS_WS_Shortcuts.ahk) when WorldShip or QVN window is active

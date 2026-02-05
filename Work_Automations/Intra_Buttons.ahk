@@ -652,6 +652,13 @@ DoCtrlAltEnter()
     EnsureIntraWindow()
     Sleep 150
 
+    MouseClick, left, 1005, % IOY(860), 2
+    Sleep 150
+    aliasText := CopyFieldText("Top", AliasFieldX, AliasFieldY)
+    Sleep 150
+    if (aliasText != "")
+        Clipboard := aliasText  ; leave alias ready to paste after submit
+
     if (IsInterofficeYOffsetEnabled())
     {
         ; No scroll needed when offset ON, submit button visible at fixed coords

@@ -1,5 +1,5 @@
 param(
-    [string]$AssetId = "PK442919",
+    [string]$AssetId = "PK123456",
     [int]$StartRange = 1,
     [int]$EndRange = 200
 )
