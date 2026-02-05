@@ -20,7 +20,7 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 ; 500, 120 = Print Label button
 ; 40, 1300 = All Button
 
-#IfWinActive, Intra Desktop Client - Assign Recip
+#If (WinActive("Intra Desktop Client - Assign Recip") && !CoordHelperActive())
 SetKeyDelay 150
 
 !i::
@@ -56,6 +56,7 @@ SetKeyDelay 150
     Sleep 450
 return
 
+#If WinActive("Intra Desktop Client - Assign Recip")
 ^i:: ; Ends at pieces field
     Mouseclick, left, 40, 1300, 2
     Sleep 150
@@ -92,4 +93,12 @@ return
     MouseClick, left, 1100, 535, 2
 return
 
-#IfWinActive
+#If
+
+CoordHelperActive()
+{
+    DetectHiddenWindows, On
+    running := WinExist("Coord_Capture.ahk ahk_class AutoHotkey")
+    DetectHiddenWindows, Off
+    return running
+}

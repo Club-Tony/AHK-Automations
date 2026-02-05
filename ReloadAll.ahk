@@ -161,23 +161,14 @@ return
 CheckTooltipDismiss:
     if (!allowInputDismiss || !reloadTooltipActive)
         return
-    ; Only the short "Press T to view list" tooltip dismisses on mouse move.
-    ; The expanded list should not disappear just because the mouse moved.
-    if (!reloadTooltipShowingList)
-    {
-        MouseGetPos, currentX, currentY
-        if (Abs(currentX - tooltipMouseX) > 20 || Abs(currentY - tooltipMouseY) > 20)
-        {
-            Gosub, ClearReloadTooltip
-            return
-        }
-    }
     ; Check for any key press (except T and modifier keys)
     Loop, 256
     {
         key := A_Index
         ; Skip T (84), Esc (27), Ctrl (17), Shift (16), Alt (18), LWin (91), RWin (92)
-        if (key = 84 || key = 27 || key = 16 || key = 17 || key = 18 || key = 91 || key = 92)
+        ; Skip mouse buttons: LButton (1), RButton (2), MButton (4), XButton1 (5), XButton2 (6)
+        if (key = 84 || key = 27 || key = 16 || key = 17 || key = 18 || key = 91 || key = 92
+            || key = 1 || key = 2 || key = 4 || key = 5 || key = 6)
             continue
         if (GetKeyState(Format("vk{:02X}", key), "P"))
         {

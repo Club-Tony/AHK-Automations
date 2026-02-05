@@ -19,6 +19,7 @@ ScanField := {x: 200, y: 245}
 PackageTypeField := {x: 1175, y: 365}
 BscLocationField := {x: 1100, y: 650}
 CustomCarrierField := {x: 515, y: 185}
+AliasField := {x: 945, y: 850}
 focusFieldsMsgId := 0x5557
 
 abortHotkey := false
@@ -33,33 +34,17 @@ abortHotkey := false
     Sleep 550
     if (AbortRequested())
         return
-    ; Select Lost and Found - Received via dropdown.
-    ; Click status to open dropdown, move to dropdown, scroll down, then click.
+    ; Select Lost and Found - Received via keyboard navigation
     MouseClick, left, % AssignStatus.x, % AssignStatus.y
     Sleep 250
     if (AbortRequested())
         return
-    WinWait, ahk_class ComboLBox,, 2
-    if (!ErrorLevel)
-    {
-        WinGet, lbId, ID, ahk_class ComboLBox
-        if (lbId)
-        {
-            WinGetPos, lbX, lbY, lbW, lbH, ahk_id %lbId%
-            ; Move to dropdown list at (90, 90) relative to dropdown window
-            CoordMode, Mouse, Screen
-            MouseMove, % lbX + 90, % lbY + 90, 0
-            Sleep 100
-            ; Scroll down to reach Lost and Found - Received
-            SendInput, {WheelDown}
-            Sleep 150
-            ; Click to select
-            MouseClick, left
-            CoordMode, Mouse, Window
-        }
-        Sleep 150
-    }
-    Sleep 500
+    SendInput, o
+    Sleep 150
+    MouseClick, left, % AssignStatus.x, % AssignStatus.y
+    Sleep 150
+    SendInput, {Up}
+    Sleep 250
     if (AbortRequested())
         return
     MouseClick, left, % NameField.x, % NameField.y, 2
@@ -171,6 +156,10 @@ return
 Esc::
     abortHotkey := true
 return
+
++!a::
+    DoAssignRecipShiftAltA()
+return
 #If
 
 CoordHelperActive()
@@ -220,4 +209,168 @@ FocusAssignRecipWindow()
     WinActivate, %assignTitle%
     WinWaitActive, %assignTitle%,, 1
     return !ErrorLevel
+}
+
+DoAssignRecipShiftAltA()
+{
+    global NameField, AliasField
+
+    ; Show sender alias selection tooltip
+    prompt := "Enter Sender Alias:`n1: jssjens`n2: osterios`n3: keobeker`n4: leobanks`n5: SEA124"
+    Tooltip, %prompt%
+
+    ; Wait for single key input, 10 second timeout
+    Input, key, L1 T10
+    err := ErrorLevel
+    Tooltip
+
+    if (err = "Timeout")
+        return
+    if (key = Chr(27))  ; Esc
+        return
+
+    if (key = "1")
+    {
+        ; jssjens + set package type to envelope
+        SendInput, jssjens
+        Sleep 50
+        SendInput, {Tab}
+        Sleep 150
+        SetAssignRecipPackageTypeEnvelope()
+    }
+    else if (key = "2")
+    {
+        SendInput, osterios
+        Sleep 50
+        SendInput, {Tab}
+    }
+    else if (key = "3")
+    {
+        SendInput, keobeker
+        Sleep 50
+        SendInput, {Tab}
+    }
+    else if (key = "4")
+    {
+        SendInput, leobanks
+        Sleep 50
+        SendInput, {Tab}
+    }
+    else if (key = "5")
+    {
+        ; SEA124 goes in Name field, not alias
+        MouseClick, left, % NameField.x, % NameField.y, 2
+        Sleep 150
+        SendInput, ^a
+        Sleep 50
+        SendInput, sea124`,
+        Sleep 2000
+        SendInput, {Enter}
+        Sleep 200
+        SendInput, ^a
+        Sleep 50
+        SendInput, sea124`,
+        Sleep 1500
+        SendInput, {Enter}
+        Sleep 250
+    }
+    else
+    {
+        ; Pass through other keys
+        SendInput, %key%
+        return
+    }
+
+    ; End on Alias field and show recipient quick-select
+    Sleep 250
+    MouseClick, left, % AliasField.x, % AliasField.y, 2
+    Sleep 150
+    PromptAssignRecipRecipientAlias()
+}
+
+SetAssignRecipPackageTypeEnvelope()
+{
+    global PackageTypeField
+
+    MouseClick, left, % PackageTypeField.x, % PackageTypeField.y, 1
+    Sleep 300
+    SendEvent, e  ; Jump to "Envelope" in dropdown
+    Sleep 100
+    SendInput, {Enter}
+    Sleep 150
+}
+
+PromptAssignRecipRecipientAlias()
+{
+    ; Recipient quick-select menu (1-16). Types alias then Tab.
+    prompt := "Enter Recipient Alias:`n1: ouyanj`n2: yoenlee`n3: mfrncoa`n4: shrprob`n5: jirahste`n6: maloufm`n7: betharm`n8: noriekim`n9: pounan`n10: yogunn`n11: sssalta`n12: stevmura`n13: amydunc`n14: euellp`n15: josdeng`n16: eoneal"
+    Tooltip, %prompt%
+
+    Input, key1, L1 T10
+    err1 := ErrorLevel
+    if (err1 = "Timeout")
+    {
+        Tooltip
+        return
+    }
+    if (key1 = Chr(27))
+    {
+        Tooltip
+        return
+    }
+
+    if (!RegExMatch(key1, "^[0-9]$"))
+    {
+        Tooltip
+        SendInput, %key1%
+        return
+    }
+    if (key1 = "0")
+    {
+        Tooltip
+        SendInput, %key1%
+        return
+    }
+
+    choice := 0
+    if (key1 = "1")
+    {
+        ; Wait briefly for potential second digit (10-16)
+        Input, key2, L1 T0.35
+        err2 := ErrorLevel
+        if (err2 = "Timeout")
+        {
+            choice := 1
+        }
+        else if (key2 = Chr(27))
+        {
+            Tooltip
+            return
+        }
+        else if (RegExMatch(key2, "^[0-6]$"))
+        {
+            choice := 10 + key2
+        }
+        else
+        {
+            choice := 1
+        }
+    }
+    else
+    {
+        choice := key1 + 0
+    }
+
+    recipientAliases := {1: "ouyanj", 2: "yoenlee", 3: "mfrncoa", 4: "shrprob", 5: "jirahste", 6: "maloufm", 7: "betharm", 8: "noriekim", 9: "pounan", 10: "yogunn", 11: "sssalta", 12: "stevmura", 13: "amydunc", 14: "euellp", 15: "josdeng", 16: "eoneal"}
+    alias := recipientAliases[choice]
+    if (alias = "")
+    {
+        Tooltip
+        return
+    }
+
+    Tooltip
+    SendInput, %alias%
+    Sleep 50
+    SendInput, {Tab}
 }

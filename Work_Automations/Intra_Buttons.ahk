@@ -239,10 +239,15 @@ DoShiftAltA()
     ; Handle quick-select options
     if (key = "1")
     {
-        ; jssjens - simple alias + Tab
+        ; jssjens - alias + Tab + set package type to envelope + recipient quick-select
         SendInput, jssjens
         Sleep 50
         SendInput, {Tab}
+        SetPackageTypeEnvelope()
+        Sleep 250
+        MouseClick, left, 1005, % IOY(860), 2
+        PromptRecipientAliasQuickSelect()
+        return
     }
     else if (key = "2")
     {
@@ -254,7 +259,7 @@ DoShiftAltA()
         SendInput, ^a
         Sleep 50
         SendInput, {Delete}
-        Sleep 50
+        Sleep 250
         SendInput, SEA124
     }
     else if (key = "3")
@@ -274,7 +279,7 @@ DoShiftAltA()
         SendInput, ^a
         Sleep 50
         SendInput, {Delete}
-        Sleep 50
+        Sleep 250
         SendInput, SEA124
     }
     else if (key = "5")
@@ -305,9 +310,100 @@ DoShiftAltA()
         return  ; Don't click recipient alias for manual typing
     }
 
-    ; All 1-5 options: end on Recipient Alias field
+    ; Options 2-5: end on Recipient Alias field
     Sleep 250
     MouseClick, left, 1005, % IOY(860), 2
+}
+
+SetPackageTypeEnvelope()
+{
+    if (!IsInterofficeActive())
+        return
+
+    EnsureIntraWindow()
+    Sleep 100
+    MouseClick, left, 1400, % IOY(850), 2
+    Sleep 100
+    if (!IsInterofficeYOffsetEnabled())
+    {
+        Loop 5 {
+            SendInput, {WheelUp}
+        }
+        Sleep 100
+    }
+    MouseClick, left, 480, % IOY(1246), 2
+    Sleep 150
+    SendInput, env
+    Sleep 250
+    SendInput, {Enter}
+    Sleep 250
+}
+
+PromptRecipientAliasQuickSelect()
+{
+    ; Recipient quick-select menu (1-9, Alt+0-6 for 10-16). Types alias then Tab.
+    prompt := "Enter Recipient Alias:`n1: ouyanj`n2: yoenlee`n3: mfrncoa`n4: shrprob`n5: jirahste`n6: maloufm`n7: betharm`n8: noriekim`n9: pounan`nAlt+0: yogunn`nAlt+1: sssalta`nAlt+2: stevmura`nAlt+3: amydunc`nAlt+4: euellp`nAlt+5: josdeng`nAlt+6: eoneal"
+    Tooltip, %prompt%
+
+    ; Wait for input - capture regular keys and Alt+number combinations
+    Input, key, L1 T20 M, {Esc}
+    err := ErrorLevel
+
+    if (err = "Timeout")
+    {
+        Tooltip
+        return
+    }
+    if (InStr(err, "EndKey:Esc"))
+    {
+        Tooltip
+        return
+    }
+
+    choice := 0
+    ; Check for Alt+number (10-16)
+    if (GetKeyState("Alt", "P"))
+    {
+        if (key = "0")
+            choice := 10
+        else if (key = "1")
+            choice := 11
+        else if (key = "2")
+            choice := 12
+        else if (key = "3")
+            choice := 13
+        else if (key = "4")
+            choice := 14
+        else if (key = "5")
+            choice := 15
+        else if (key = "6")
+            choice := 16
+    }
+    else if (RegExMatch(key, "^[1-9]$"))
+    {
+        choice := key + 0
+    }
+
+    if (choice = 0)
+    {
+        ; Non-matching key - pass through
+        Tooltip
+        SendInput, %key%
+        return
+    }
+
+    recipientAliases := {1: "ouyanj", 2: "yoenlee", 3: "mfrncoa", 4: "shrprob", 5: "jirahste", 6: "maloufm", 7: "betharm", 8: "noriekim", 9: "pounan", 10: "yogunn", 11: "sssalta", 12: "stevmura", 13: "amydunc", 14: "euellp", 15: "josdeng", 16: "eoneal"}
+    alias := recipientAliases[choice]
+    if (alias = "")
+    {
+        Tooltip
+        return
+    }
+
+    Tooltip
+    SendInput, %alias%
+    Sleep 50
+    SendInput, {Tab}
 }
 
 DoAltP()

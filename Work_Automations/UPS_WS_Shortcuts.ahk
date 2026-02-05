@@ -127,6 +127,7 @@ return
     MouseClick, left, % worldShipScaleToggle.x, % worldShipScaleToggle.y
 return
 
+#If (WinActive(worldShipTitle) && !CoordHelperActive())
 !g::
     SendInput, {Alt up}
     MouseClick, left, % worldShipTabs.Service.x, % worldShipTabs.Service.y
@@ -137,6 +138,7 @@ return
     Sleep 250
     MouseClick, left
 return
+#If WinActive(worldShipTitle)
 
 !3::
     SendInput, {Alt up}
@@ -328,4 +330,12 @@ PasteFieldAt(x, y, text)
     SendEvent, {Ctrl down}v{Ctrl up}
     Sleep 100
     Clipboard := ClipSaved
+}
+
+CoordHelperActive()
+{
+    DetectHiddenWindows, On
+    running := WinExist("Coord_Capture.ahk ahk_class AutoHotkey")
+    DetectHiddenWindows, Off
+    return running
 }

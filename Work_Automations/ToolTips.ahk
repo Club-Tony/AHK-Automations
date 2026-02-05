@@ -372,10 +372,11 @@ Ctrl+Shift+P - Command Palette
 Ctrl+Shift+Alt+P - Restart Extension Host
 Ctrl+Shift+Alt+R - Markdown: Refresh Preview
 Ctrl+Shift+Alt+I - Run installers (new device setup)
-Ctrl+`` - Toggle terminal
-Ctrl+Alt+R - Relaunch terminal safely (opens fresh terminal)
+Ctrl+`` - Toggle terminal (creates new if none exist)
+Ctrl+Alt+R - Restart terminal (kill + new)
+Ctrl+Shift+K - Kill terminal
 cd + Tab - Jump to .\Repositories\AHK-Automations\ (PowerShell)
-Ctrl+P - Quick Open
+Ctrl+P - Quick Open any file in Workspace/Explorer
 Ctrl+Shift+E - Explorer
 Ctrl+Shift+F - Search
 Ctrl+Shift+G - Source Control

@@ -538,9 +538,10 @@ RunInstallers()
 
 RelaunchVSCodeTerminal()
 {
-    ; Open a fresh integrated terminal without killing the active one.
-    SendInput, ^+{vkC0}
-    Sleep, 120
+    ; Kill current terminal and open fresh one
+    SendInput, ^+k  ; Kill terminal (Ctrl+Shift+K)
+    Sleep 300
+    SendInput, ^``  ; Toggle/create new terminal (Ctrl+`)
 }
 
 BuildCdTabSnippet()

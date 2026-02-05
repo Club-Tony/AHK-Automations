@@ -139,7 +139,7 @@ GetWindowCount(title)
 
 CycleAssignWindows(title)
 {
-    global trackedLoginWindows, updatePos, updateTitle, pickupTitle, assignPos, assignScanPos
+    global trackedLoginWindows, updatePos, updateTitle, pickupTitle, assignPos, assignScanPos, assignTitle
 
     prevCoordMode := A_CoordModeMouse
     CoordMode, Mouse, Window
@@ -192,33 +192,36 @@ CycleAssignWindows(title)
         WinWaitActive, ahk_id %hwnd%,, 1
         if (index = 1)
         {
-            ; Match Update window sizing/position, then switch to Update tab.
+            ; First opened → Update (RIGHT)
             WinMove, ahk_id %hwnd%,, % updatePos.x, % updatePos.y, % updatePos.w, % updatePos.h
             Sleep 100
             MouseClick, left, 65, 75
             WinWaitActive, %updateTitle%,, 2
-            Sleep 1000
         }
         else if (index = 2)
         {
-            ; Ensure maximized, then switch to Pickup tab.
+            ; Second opened → Pickup (MAXIMIZED)
             WinGet, isMax, MinMax, ahk_id %hwnd%
             if (isMax != 1)
                 WinMaximize, ahk_id %hwnd%
             MouseClick, left, 290, 75, 2
             WinWaitActive, %pickupTitle%,, 2
-            Sleep 1000
         }
         else if (index = 3)
         {
-            ; Return to Assign sizing/position.
+            ; Third opened → Assign (LEFT)
             WinRestore, ahk_id %hwnd%
             WinMove, ahk_id %hwnd%,, % assignPos.x, % assignPos.y, % assignPos.w, % assignPos.h
             Sleep 100
-            MouseMove, % assignScanPos.x, % assignScanPos.y
-            ShowTimedTooltip("Intra Desktop switched and aligned", 3000)
+            ; Stay on Assign tab (no click needed)
         }
     }
+
+    ; Focus back on Assign for scanning
+    Sleep 250
+    WinActivate, %assignTitle%
+    MouseMove, % assignScanPos.x, % assignScanPos.y
+    ShowTimedTooltip("Intra Desktop switched and aligned", 3000)
 
     CoordMode, Mouse, %prevCoordMode%
 }
