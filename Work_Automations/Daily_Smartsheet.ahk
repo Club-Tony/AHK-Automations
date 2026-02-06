@@ -82,13 +82,13 @@ $Tab::
     {
         Send {Tab 3}
     }
-    else if (tabAssistStep = 2 || tabAssistStep = 3)
+    else if (tabAssistStep = 2 || tabAssistStep = 3 || tabAssistStep = 4 || tabAssistStep = 5 || tabAssistStep = 6 || tabAssistStep = 7)
     {
-        Send {Tab 2}
+        Send {Tab}
     }
-    else if (tabAssistStep = 4)
+    else if (tabAssistStep = 8)
     {
-        Send {Tab 7}
+        Send {Tab 5}
         tabAssistActive := false
     }
     else
