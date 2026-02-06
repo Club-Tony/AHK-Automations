@@ -385,6 +385,7 @@ Ctrl+`` - Toggle terminal (creates new if none exist)
 Ctrl+Alt+R - Restart terminal (kill + new)
 Ctrl+Shift+K - Kill terminal
 cd + Tab - Jump to .\Repositories\AHK-Automations\ (PowerShell)
+git + Tab - git push origin main main:home-branch (PowerShell)
 Ctrl+P - Quick Open any file in Workspace/Explorer
 Ctrl+Shift+E - Explorer
 Ctrl+Shift+F - Search

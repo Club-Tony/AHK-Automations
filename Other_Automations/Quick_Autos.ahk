@@ -518,7 +518,7 @@ RunInstallers()
 {
     local snippet, statusPs7Console, statusPs7VSCode, statusPs5Console, statusPs5VSCode, msg
 
-    ToolTip, Installer running...`nPowerShell cd-tab shortcut setup
+    ToolTip, Installer running...`nPowerShell cd/git-tab shortcut setup
 
     snippet := BuildCdTabSnippet()
     statusPs7Console := EnsureProfileSnippet(A_MyDocuments . "\PowerShell\Microsoft.PowerShell_profile.ps1", snippet)
@@ -556,8 +556,14 @@ try {
             $line = $null
             $cursor = $null
             [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
-            if ($line.Trim() -eq 'cd') {
+
+            $trimmed = if ($line) { $line.Trim() } else { '' }
+            if ($trimmed -eq 'cd') {
                 [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, 'cd .\Repositories\AHK-Automations\')
+                [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
+                return
+            } elseif ($trimmed -eq 'git') {
+                [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, 'git push origin main main:home-branch')
                 [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
                 return
             }

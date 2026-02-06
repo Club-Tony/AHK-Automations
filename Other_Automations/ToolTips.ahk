@@ -31,6 +31,7 @@ Ctrl+Shift+Alt+I - Run installers (new device setup)
 Ctrl+`` - Toggle terminal
 Ctrl+Alt+R - Relaunch terminal safely (opens fresh terminal)
 cd + Tab - Jump to .\Repositories\AHK-Automations\ (PowerShell)
+git + Tab - git push origin main main:home-branch (PowerShell)
 Ctrl+P - Quick Open
 Ctrl+Shift+E - Explorer
 Ctrl+Shift+F - Search

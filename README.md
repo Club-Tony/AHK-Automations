@@ -34,6 +34,7 @@
 #### -`Ctrl+Alt+T` = ToolTips (Displays relevant Hotkey Menus depending on currently active window)
 #### -`Esc` key = Exit certain launched scripts + Stop automations early
 #### -`Ctrl+Esc` = Reloads all scripts + Stop automations early
+#### -`Ctrl+Shift+Alt+I` = Run installers (VS Code) - sets up PowerShell `cd + Tab` + `git + Tab` shortcuts
 ## Run 'Launcher Script (Keybinds)' to launch certain scripts with Hotkeys:
 #### -`Ctrl+Alt+C` - Launch DSRF-to-UPS_WS Script for shipping request form to UPS WorldShip field transfer automation
 #### -`Ctrl+Alt+I` - Launch SSJ desktop client scripts bundle
