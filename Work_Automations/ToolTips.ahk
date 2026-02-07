@@ -55,6 +55,7 @@ Shift+Alt+E - Export tracking list to Scan field
 Ctrl+Shift+Alt+E - Export tracking list to Scan field (fast)
 Shift+Alt+O - Open tracking file (1=TXT, 2=CSV)
 Shift+Alt+Delete - Clear both tracking files
+Shift+Alt+T - Load test tracking data (250 items)
 -
 Additional Scripts Launch Hotkeys:
 Ctrl+Alt+F - Launch Intra Search Shortcuts
@@ -97,6 +98,7 @@ Shift+Alt+E - Export tracking list to Scan field
 Ctrl+Shift+Alt+E - Export tracking list to Scan field (fast)
 Shift+Alt+O - Open tracking file (1=TXT, 2=CSV)
 Shift+Alt+Delete - Clear both tracking files
+Shift+Alt+T - Load test tracking data (250 items)
 -
 Additional Scripts Launch Hotkeys:
 Ctrl+Alt+F - Launch Intra Search Shortcuts
@@ -133,6 +135,7 @@ Return
 ~^!c::Gosub HideTooltips
 ~+!o::Gosub HideTooltips
 ~+!Delete::Gosub HideTooltips
+~+!t::Gosub HideTooltips
 ~^!f::Gosub HideTooltips
 ~^!d::Gosub HideTooltips
 ~^!o::Gosub HideTooltips
@@ -286,7 +289,7 @@ Return
     tooltipText =
     (
 Launch Hotkeys:
-Ctrl+Alt+D: API Fetch -> Paste to WorldShip (New)
+Ctrl+Alt+D: DSRF Export -> Paste to WorldShip
 Ctrl+Alt+C: Launch DSRF to WorldShip Script
 Ctrl+Alt+U: Launch Super-Speed version (Warning: May be unstable)
 Ctrl+Alt+P: Personal Form
@@ -444,6 +447,15 @@ CLI Only:
 /status - Show current session status (CLI)
 /terminal-setup - Configure terminal integration (CLI)
 -
+Session Controls:
+Ctrl+C - Cancel/interrupt current operation
+Ctrl+D - Exit CLI session
+/clear - Clear conversation (soft reset)
+exit - Exit session
+-
+Update CLI:
+npm install -g @anthropic-ai/claude-code@latest
+-
 Press Esc to close
     )
     Tooltip, %claudeText%
@@ -590,6 +602,7 @@ Alt+X / Alt+O - Intra Online: Outbound Shipping Requests button anchor
 Alt+Z / Alt+H - Intra Online: Home button anchor
 Shift+Alt+O - Open tracking file (1=TXT, 2=CSV)
 Shift+Alt+Delete - Clear both tracking files
+Shift+Alt+T - Load test tracking data (250 items)
 Ctrl+Alt+L - Launch Daily Audit + Smartsheet
 Ctrl+Shift+Alt+L - Auto Daily Audit + Smartsheet
 Ctrl+Shift+Alt+D - Run Daily Audit

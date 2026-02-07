@@ -88,7 +88,10 @@ $^Esc::
             SplitPath, resolvedPath, scriptName
             WinClose, ahk_id %hwnd%
             Sleep 50
-            Run, "%resolvedPath%"
+            if (scriptName = "IntraWinArrange.ahk")
+                Run, "%A_AhkPath%" "%resolvedPath%" /SkipReadyTooltip
+            else
+                Run, "%resolvedPath%"
             reloadedScripts.Push(scriptName)
         }
     }

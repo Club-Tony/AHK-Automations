@@ -226,7 +226,7 @@ RunInterofficeWorkflow(searchString, useNameField := false, useShortcuts := fals
         MouseClick, left, % SubmitBtnX - 3, % IOY(SubmitBtnY, "down"), 2
     }
 
-    ; Wait for Assign Recip window to appear
+    ; Wait for PDF to appear and print only (don't close)
     Sleep 1500
 
     if (AbortRequested())
@@ -235,7 +235,21 @@ RunInterofficeWorkflow(searchString, useNameField := false, useShortcuts := fals
         return
     }
 
+    pdfTitle := WaitForExportedReportPrintOnly(15000)
+    if (pdfTitle = "")
+    {
+        workflowRunning := false
+        return
+    }
+
+    if (AbortRequested())
+    {
+        workflowRunning := false
+        return
+    }
+
     ; Focus Intra - Assign Recip window
+    Sleep 500
     FocusAssignRecipWindow()
     if (!WinActive(assignRecipTitle))
     {
@@ -257,30 +271,34 @@ RunInterofficeWorkflow(searchString, useNameField := false, useShortcuts := fals
     Sleep 400
     SendInput, {Down}
     Sleep 400
-    MouseClick, left, %ScanFieldX%, %ScanFieldY%, 2
-
-    if (AbortRequested())
+    ; Dismiss any alert popup (double Esc pattern from !c handlers)
+    Loop, 2
     {
-        workflowRunning := false
-        return
+        SendInput, {Esc}
+        Sleep 50
     }
-
-    ; Wait for ExportedReport.pdf to appear and print 1 page
-    WaitForExportedReportAndPrint(15000)
-
-    if (AbortRequested())
-    {
-        workflowRunning := false
-        return
-    }
-
-    ; Focus Intra - Assign Recip again, click scan field
-    FocusAssignRecipWindow()
     Sleep 200
     MouseClick, left, %ScanFieldX%, %ScanFieldY%, 2
 
-    ; Wait for scan input to continue script
+    if (AbortRequested())
+    {
+        workflowRunning := false
+        return
+    }
+
+    ; Wait for scan input, then F5 submit
+    ToolTip, Scan to continue script
     WaitForScanAndSubmit()
+
+    if (AbortRequested())
+    {
+        workflowRunning := false
+        return
+    }
+
+    ; Close PDF tab
+    Sleep 300
+    ClosePdfTab()
 
     workflowRunning := false
 }
@@ -405,26 +423,69 @@ WaitForExportedReportAndPrint(timeoutMs := 15000)
     return true
 }
 
+WaitForExportedReportPrintOnly(timeoutMs := 15000)
+{
+    deadline := A_TickCount + timeoutMs
+    target := ""
+    while (A_TickCount < deadline)
+    {
+        target := GetExportedReportWinTitle()
+        if (target != "")
+            break
+        Sleep 200
+    }
+    if (target = "")
+    {
+        ToolTip, Failed to detect ExportedReport.pdf window
+        SetTimer, ClearPdfFailTooltip, -5000
+        return ""
+    }
+
+    WinActivate, %target%
+    WinWaitActive, %target%,, 2
+    Sleep 300
+    SendInput, ^p
+    Sleep 400
+    SendInput, {Enter}
+    Sleep 400
+    return target
+}
+
+ClosePdfTab()
+{
+    target := GetExportedReportWinTitle()
+    if (target = "")
+        return
+    WinActivate, %target%
+    WinWaitActive, %target%,, 2
+    Sleep 300
+    SendInput, ^w
+    Sleep 400
+    SendInput, {Tab 2}
+    Sleep 200
+    SendInput, {Space}
+}
+
 ClearPdfFailTooltip:
     ToolTip
 return
 
 WaitForScanAndSubmit()
 {
-    global assignRecipTitle, ScanFieldX, ScanFieldY
-
-    ; Get window and control info
-    WinGet, winID, ID, %assignRecipTitle%
-    MouseGetPos, , , , ctrlUnderMouse
+    ; Get window and control under mouse (proven pattern for Intra Desktop Client)
+    MouseGetPos, , , winID, ctrlUnderMouse
     if (ctrlUnderMouse = "")
+    {
+        ShowTimedTooltip("Could not detect control under mouse", 3000)
         return
+    }
 
     ControlGetText, oldText, %ctrlUnderMouse%, ahk_id %winID%
     lastText := oldText
     stableCount := 0
 
-    ; Wait up to ~8s for scan input to stabilize
-    Loop, 80
+    ; Wait up to ~15s for scan input to stabilize
+    Loop, 150
     {
         if (AbortRequested())
             return
@@ -435,18 +496,21 @@ WaitForScanAndSubmit()
             lastText := newText
             stableCount := 1
         }
-        else if (newText != "" && newText = lastText && newText != oldText)
+        else if (newText != "" && newText = lastText)
         {
             stableCount++
         }
         if (stableCount >= 3)
         {
+            ToolTip
             Sleep 150
             SendInput, {F5}
             Sleep 500
-            break
+            return
         }
     }
+    ; Timeout — scan not detected within ~8s
+    ShowTimedTooltip("Scan timed out", 3000)
 }
 
 EnsureIntraButtonsScript()

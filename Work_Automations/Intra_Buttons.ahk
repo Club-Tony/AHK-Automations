@@ -48,6 +48,11 @@ PackagesCountX := 480
 PackagesCountY := 1154
 assignRecipTitle := "Intra Desktop Client - Assign Recip"
 focusFieldsMsgId := 0x5557  ; Message ID for Intra_Focus_Fields.ahk
+; Intra Desktop Client - Assign Recip coordinates
+AssignRecipAliasX := 945
+AssignRecipAliasY := 850
+AssignRecipScanX := 200
+AssignRecipScanY := 245
 
 #If IsInterofficeActive()
 ^#!p::
@@ -93,10 +98,12 @@ return
     DoCtrlAltA()
 return
 
+#If IsInterofficeActive()
 +!a::
     DoShiftAltA()
 return
 
+#If IsInterofficeActive()
 HandleEnvelopeClick:
     MouseClick, left, 730, % IOY(360)
     Sleep 150
@@ -214,6 +221,11 @@ DoCtrlAltN()
 
 DoShiftAltA()
 {
+    WinGetActiveTitle, activeTitle
+    if InStr(activeTitle, "Assign Recip")
+        return
+    if !InStr(activeTitle, "Interoffice Request")
+        return
     EnsureIntraWindow()
     Sleep 150
     MouseClick, left, 1400, % IOY(850), 2
@@ -228,14 +240,14 @@ DoShiftAltA()
     Tooltip, %prompt%
 
     ; Wait for any single key input, 10 second timeout
-    Input, key, L1 T10
+    Input, key, L1 T10 M, {Esc}
     err := ErrorLevel
     Tooltip  ; hide tooltip
 
     ; Timeout or Esc - do nothing
     if (err = "Timeout")
         return
-    if (key = Chr(27))  ; Esc character
+    if (InStr(err, "EndKey:Esc"))
         return
 
     ; Handle quick-select options
@@ -646,9 +658,87 @@ HideInterofficeToggleTooltip:
     Tooltip
 return
 
+WaitForExportedReportPrintOnly(timeoutMs := 15000)
+{
+    deadline := A_TickCount + timeoutMs
+    target := ""
+    while (A_TickCount < deadline)
+    {
+        target := GetExportedReportWinTitle()
+        if (target != "")
+            break
+        Sleep 200
+    }
+    if (target = "")
+    {
+        ToolTip, Failed to detect ExportedReport.pdf window
+        SetTimer, ClearPdfFailTooltip, -5000
+        return ""
+    }
+    WinActivate, %target%
+    WinWaitActive, %target%,, 2
+    Sleep 300
+    SendInput, ^p
+    Sleep 400
+    SendInput, {Enter}
+    Sleep 400
+    return target
+}
+
+WaitForScanInput()
+{
+    ToolTip, Scan to continue script
+
+    ; Use MouseGetPos to identify the control under the mouse cursor
+    ; (ControlGetFocus doesn't reliably return the scan field in Intra Desktop Client)
+    MouseGetPos, , , winID, ctrlUnderMouse
+    if (ctrlUnderMouse = "")
+    {
+        ToolTip, Could not detect control under mouse
+        SetTimer, ClearScanTooltip, -3000
+        return false
+    }
+
+    ControlGetText, oldText, %ctrlUnderMouse%, ahk_id %winID%
+    lastText := oldText
+    stableCount := 0
+
+    Loop, 150
+    {
+        Sleep 100
+        ControlGetText, newText, %ctrlUnderMouse%, ahk_id %winID%
+        if (newText != "" && newText != lastText)
+        {
+            lastText := newText
+            stableCount := 1
+        }
+        else if (newText != "" && newText = lastText)
+        {
+            stableCount++
+        }
+        if (stableCount >= 3)
+        {
+            ToolTip
+            Sleep 150
+            SendInput, {F5}
+            Sleep 500
+            return true
+        }
+    }
+
+    ToolTip, Scan timed out
+    SetTimer, ClearScanTooltip, -3000
+    return false
+}
+
+ClearScanTooltip:
+    ToolTip
+return
+
 DoCtrlAltEnter()
 {
-    global SubmitBtnX, SubmitBtnY
+    global SubmitBtnX, SubmitBtnY, assignRecipTitle
+    global AssignRecipAliasX, AssignRecipAliasY, AssignRecipScanX, AssignRecipScanY
     EnsureIntraWindow()
     Sleep 150
 
@@ -679,11 +769,58 @@ DoCtrlAltEnter()
         MouseClick, left, %SubmitBtnX%, %submitY%, 2
     }
 
-    ; After submit, wait for PDF and focus alias
+    ; Wait for PDF and print only (don't close yet)
     Sleep 1500
-    WaitForExportedReportAndPrint(15000)
+    pdfTitle := WaitForExportedReportPrintOnly(15000)
+    if (pdfTitle = "")
+    {
+        FocusAssignRecipAndAlias()
+        return
+    }
+
+    ; Focus Assign Recip, paste alias, navigate to scan field
     Sleep 500
-    FocusAssignRecipAndAlias()
+    WinActivate, %assignRecipTitle%
+    WinWaitActive, %assignRecipTitle%,, 2
+    if (ErrorLevel)
+        return
+    Sleep 200
+    MouseClick, left, %AssignRecipAliasX%, %AssignRecipAliasY%
+    Sleep 150
+    SendInput, ^v
+    Sleep 150
+    SendInput, {Enter}
+    Sleep 400
+    SendInput, {Down}
+    Sleep 400
+    ; Dismiss any alert popup (double Esc pattern from !c handlers)
+    Loop, 2
+    {
+        SendInput, {Esc}
+        Sleep 50
+    }
+    Sleep 200
+    MouseClick, left, %AssignRecipScanX%, %AssignRecipScanY%, 2
+
+    ; Wait for scan input, then F5 submit
+    scanOK := WaitForScanInput()
+    if (!scanOK)
+        return
+
+    ; Close PDF: refocus and close tab
+    Sleep 300
+    target := GetExportedReportWinTitle()
+    if (target != "")
+    {
+        WinActivate, %target%
+        WinWaitActive, %target%,, 2
+        Sleep 300
+        SendInput, ^w
+        Sleep 400
+        SendInput, {Tab 2}
+        Sleep 200
+        SendInput, {Space}
+    }
 }
 
 HandlePosterMessage(wParam, lParam, msg, hwnd)

@@ -66,12 +66,21 @@ WHERE a.AssetID=@assetid AND a.ProfileID=@profileid
 
 ## WorldShip Coordinates (3440x1440)
 
-See DSRF-to-UPS_WS-Paste.ahk for current coordinate definitions.
+See `ahk\DSRF-Export.ahk` for current coordinate definitions.
 
 ## Files
 
-- `DSRF-to-UPS_WS-Paste.ahk` - Main AHK script (Ctrl+Alt+D hotkey)
-- `DSRF-Export.bat` - Standalone batch version for CSV export
-- `cookies.txt` - Session cookies (user must create/maintain)
+### AHK Version (in `ahk\` subfolder)
+- `ahk\DSRF-Export.ahk` - Main AHK script (Ctrl+Alt+D hotkey, direct paste to WorldShip)
+- `ahk\Cookie_Extractor.ahk` - Standalone cookie extraction (Ctrl+Alt+K)
+
+### Standalone Version (no AHK required)
+- `DSRF-Export.bat` - Launcher (prompts for PK#, runs .ps1)
+- `DSRF-Export.ps1` - Core logic: cookie extraction, API call, XML/CSV generation
+- `DSRF-ExportSetup.bat` - One-time setup (downloads sqlite3, creates folders)
+
+### Shared
+- `cookies.txt` - Session cookies (auto-generated, cached)
+- `sqlite3.exe` - SQLite CLI tool
 - `discover_itemvars.ps1` - Tool for finding itemVar IDs
 - `discover_itemvars.bat` - Launcher for discovery tool

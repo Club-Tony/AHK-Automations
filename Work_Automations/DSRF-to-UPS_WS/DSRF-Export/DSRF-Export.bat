@@ -2,152 +2,83 @@
 setlocal enabledelayedexpansion
 
 echo ======================================
-echo   DSRF to CSV Export Tool
+echo   DSRF to WorldShip Export Tool
 echo ======================================
 echo.
 
+set "SCRIPT_DIR=%~dp0"
+set "SQLITE3=%SCRIPT_DIR%sqlite3.exe"
+set "IMPORT_DIR=%SCRIPT_DIR%import"
+set "PS_SCRIPT=%SCRIPT_DIR%DSRF-Export.ps1"
+
+:: ========================================
+:: Pre-flight checks
+:: ========================================
+
+:: Check PowerShell script exists
+if not exist "%PS_SCRIPT%" (
+    echo ERROR: DSRF-Export.ps1 not found.
+    echo Expected at: %PS_SCRIPT%
+    echo.
+    pause
+    exit /b 1
+)
+
+:: Check sqlite3
+if not exist "%SQLITE3%" (
+    echo ERROR: sqlite3.exe not found.
+    echo.
+    echo Run DSRF-ExportSetup.bat first to install dependencies.
+    echo.
+    pause
+    exit /b 1
+)
+
+:: Check import folder
+if not exist "%IMPORT_DIR%\" (
+    mkdir "%IMPORT_DIR%" 2>nul
+)
+
+:: ========================================
+:: Auto-detect PK# from Firefox history
+:: ========================================
+set "DETECTED_PK="
+
+for /f "usebackq delims=" %%i in (`powershell -ExecutionPolicy Bypass -File "%PS_SCRIPT%" -DetectOnly`) do (
+    set "DETECTED_PK=%%i"
+)
+
+:: ========================================
 :: Prompt for PK#
-set /p ASSETID="Enter PK# (e.g., PK438893): "
+:: ========================================
+if defined DETECTED_PK (
+    echo Detected: !DETECTED_PK! from Firefox browsing history
+    echo.
+    set /p CONFIRM="Use !DETECTED_PK!? [Y/n]: "
+    if /i "!CONFIRM:~0,1!"=="n" (
+        set /p ASSETID="Enter PK# (e.g., PK123456): "
+    ) else (
+        set "ASSETID=!DETECTED_PK!"
+    )
+) else (
+    set /p ASSETID="Enter PK# (e.g., PK123456): "
+)
 
-:: Check if cookies.txt exists
-if not exist "%~dp0cookies.txt" (
-    echo.
-    echo ERROR: cookies.txt not found in script folder
-    echo.
-    echo Please create cookies.txt with your Intra session cookies.
-    echo See README.txt for instructions.
-    echo.
+if "%ASSETID%"=="" (
+    echo ERROR: No PK# entered.
     pause
     exit /b 1
 )
 
-:: Read cookies from file (first line only)
-set /p COOKIES=<"%~dp0cookies.txt"
-
-:: Create temp files
-set "TEMPJSON=%TEMP%\dsrf_response.json"
-set "OUTPUTCSV=%~dp0dsrf_export.csv"
-
+:: ========================================
+:: Run PowerShell export script
+:: ========================================
 echo.
-echo Fetching data for %ASSETID%...
-echo.
-
-:: Build the SQL query
-set "SQL=declare @profileid int = 1; declare @assetid nvarchar(50) = '%ASSETID%'; SELECT TOP 1 ISNULL(iv148.ItemVarValue,'') as company, ISNULL(iv149.ItemVarValue,'') as name, ISNULL(iv150.ItemVarValue,'') as address1, ISNULL(iv151.ItemVarValue,'') as address2, ISNULL(iv152.ItemVarValue,'') as city, ISNULL(iv153.ItemVarValue,'') as state, ISNULL(iv154.ItemVarValue,'') as postal, ISNULL(iv155.ItemVarValue,'') as serviceType, ISNULL(iv162.ItemVarValue,'') as declaredValue, ISNULL(iv202.ItemVarValue,'') as sfName, ISNULL(iv203.ItemVarValue,'') as email FROM Asset a LEFT JOIN assetitemvars iv148 ON iv148.assetid=a.assetid AND iv148.profileid=1 AND iv148.itemvarid=148 LEFT JOIN assetitemvars iv149 ON iv149.assetid=a.assetid AND iv149.profileid=1 AND iv149.itemvarid=149 LEFT JOIN assetitemvars iv150 ON iv150.assetid=a.assetid AND iv150.profileid=1 AND iv150.itemvarid=150 LEFT JOIN assetitemvars iv151 ON iv151.assetid=a.assetid AND iv151.profileid=1 AND iv151.itemvarid=151 LEFT JOIN assetitemvars iv152 ON iv152.assetid=a.assetid AND iv152.profileid=1 AND iv152.itemvarid=152 LEFT JOIN assetitemvars iv153 ON iv153.assetid=a.assetid AND iv153.profileid=1 AND iv153.itemvarid=153 LEFT JOIN assetitemvars iv154 ON iv154.assetid=a.assetid AND iv154.profileid=1 AND iv154.itemvarid=154 LEFT JOIN assetitemvars iv155 ON iv155.assetid=a.assetid AND iv155.profileid=1 AND iv155.itemvarid=155 LEFT JOIN assetitemvars iv162 ON iv162.assetid=a.assetid AND iv162.profileid=1 AND iv162.itemvarid=162 LEFT JOIN assetitemvars iv202 ON iv202.assetid=a.assetid AND iv202.profileid=1 AND iv202.itemvarid=202 LEFT JOIN assetitemvars iv203 ON iv203.assetid=a.assetid AND iv203.profileid=1 AND iv203.itemvarid=203 WHERE a.AssetID=@assetid AND a.ProfileID=@profileid"
-
-:: Write JSON body to temp file for curl
-set "BODYJSON=%TEMP%\dsrf_body.json"
-echo {"Sql":"%SQL%"} > "%BODYJSON%"
-
-:: Call API using curl (built into Windows 10+)
-curl.exe -s -X POST ^
-  -H "Content-Type: application/json" ^
-  -H "Cookie: %COOKIES%" ^
-  -d @"%BODYJSON%" ^
-  "https://amazonmailservices.us.spsprod.net/IntraWeb/api/automation/then/executeQuery" ^
-  -o "%TEMPJSON%"
-
-if %ERRORLEVEL% neq 0 (
-    echo ERROR: API call failed (curl error)
-    echo Make sure you have an active Intra session and valid cookies.
-    pause
-    exit /b 1
-)
-
-:: Check if response file exists and has content
-if not exist "%TEMPJSON%" (
-    echo ERROR: No response received from API
-    pause
-    exit /b 1
-)
-
-:: Parse JSON and output CSV using PowerShell (with cookie validation)
-powershell -Command ^
-  "try { ^
-     $content = Get-Content '%TEMPJSON%' -Raw; ^
-     if ([string]::IsNullOrWhiteSpace($content)) { ^
-       Write-Host 'ERROR: Empty response from API'; ^
-       Write-Host ''; ^
-       Write-Host 'Your cookies may be invalid or expired.'; ^
-       Write-Host 'Please refresh your cookies from browser DevTools.'; ^
-       exit 2; ^
-     } ^
-     $trimmed = $content.Trim(); ^
-     if ($trimmed -match '<!DOCTYPE' -or $trimmed -match '<html' -or $trimmed -match '<form.*login' -or $trimmed -match 'SAMLRequest' -or $trimmed -match 'Access Denied') { ^
-       Write-Host 'ERROR: Session expired or invalid cookies'; ^
-       Write-Host ''; ^
-       Write-Host 'The API returned a login/error page instead of data.'; ^
-       Write-Host 'Please refresh your cookies from browser DevTools:'; ^
-       Write-Host '  1. Open Intra in your browser and log in'; ^
-       Write-Host '  2. Press F12 to open DevTools'; ^
-       Write-Host '  3. Go to Network tab, refresh page'; ^
-       Write-Host '  4. Click any request, copy the Cookie header'; ^
-       Write-Host '  5. Paste into cookies.txt (replace entire contents)'; ^
-       exit 3; ^
-     } ^
-     if (-not ($trimmed.StartsWith('[') -or $trimmed.StartsWith('{'))) { ^
-       Write-Host 'ERROR: Invalid response format (not JSON)'; ^
-       Write-Host ''; ^
-       Write-Host 'Your cookies may be invalid or expired.'; ^
-       exit 4; ^
-     } ^
-     $json = $content | ConvertFrom-Json; ^
-     if ($json -eq $null -or $json.Count -eq 0) { ^
-       Write-Host 'ERROR: No data returned for this PK#'; ^
-       Write-Host ''; ^
-       Write-Host 'The PK# may not exist or has no shipping data.'; ^
-       exit 1; ^
-     } ^
-     $row = $json[0]; ^
-     $name = if ($row.name) { $row.name } else { '' }; ^
-     $company = if ($row.company) { $row.company } else { '' }; ^
-     $addr1 = if ($row.address1) { $row.address1 } else { '' }; ^
-     $addr2 = if ($row.address2) { $row.address2 } else { '' }; ^
-     $city = if ($row.city) { $row.city } else { '' }; ^
-     $state = if ($row.state) { $row.state } else { '' }; ^
-     $postal = if ($row.postal) { $row.postal } else { '' }; ^
-     $service = if ($row.serviceType) { $row.serviceType } else { '' }; ^
-     $declVal = if ($row.declaredValue) { $row.declaredValue } else { '' }; ^
-     $sfName = if ($row.sfName) { $row.sfName } else { '' }; ^
-     $email = if ($row.email) { $row.email } else { '' }; ^
-     if ([string]::IsNullOrWhiteSpace($name) -and [string]::IsNullOrWhiteSpace($company) -and [string]::IsNullOrWhiteSpace($addr1)) { ^
-       Write-Host 'ERROR: No shipping data found for this PK#'; ^
-       Write-Host ''; ^
-       Write-Host 'The form may not have shipping information filled in.'; ^
-       exit 5; ^
-     } ^
-     $csv = 'Name,Company,Address1,Address2,City,State,Postal,ServiceType,DeclaredValue,ShipFromName,Email'; ^
-     $csv += [Environment]::NewLine; ^
-     $csv += '\"' + $name + '\",\"' + $company + '\",\"' + $addr1 + '\",\"' + $addr2 + '\",\"' + $city + '\",\"' + $state + '\",\"' + $postal + '\",\"' + $service + '\",\"' + $declVal + '\",\"' + $sfName + '\",\"' + $email + '\"'; ^
-     $csv | Out-File -Encoding UTF8 '%OUTPUTCSV%'; ^
-     Write-Host ''; ^
-     Write-Host '======================================'; ^
-     Write-Host '  SUCCESS: Exported to dsrf_export.csv'; ^
-     Write-Host '======================================'; ^
-     Write-Host ''; ^
-     Write-Host ('Name:        ' + $name); ^
-     Write-Host ('Company:     ' + $company); ^
-     Write-Host ('Address 1:   ' + $addr1); ^
-     Write-Host ('Address 2:   ' + $addr2); ^
-     Write-Host ('City:        ' + $city); ^
-     Write-Host ('State:       ' + $state); ^
-     Write-Host ('Postal:      ' + $postal); ^
-     Write-Host ('Service:     ' + $service); ^
-     Write-Host ('Decl Value:  ' + $declVal); ^
-     Write-Host ('Ship From:   ' + $sfName); ^
-     Write-Host ('Email:       ' + $email); ^
-   } catch { ^
-     Write-Host ('ERROR: ' + $_.Exception.Message); ^
-     Write-Host ''; ^
-     Write-Host 'This may indicate invalid cookies or a server error.'; ^
-     exit 1; ^
-   }"
+powershell -ExecutionPolicy Bypass -File "%PS_SCRIPT%" -AssetId "%ASSETID%"
 
 if %ERRORLEVEL% neq 0 (
     echo.
-    echo Check that your cookies are valid and not expired.
-    pause
-    exit /b 1
+    echo Script encountered an error. See messages above.
 )
 
 echo.

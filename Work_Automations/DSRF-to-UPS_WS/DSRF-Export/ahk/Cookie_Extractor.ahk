@@ -8,11 +8,13 @@ SetWorkingDir %A_ScriptDir%
 ; Cookie_Extractor.ahk
 ; Extracts Intra session cookies from Firefox's cookies.sqlite database
 ;
-; Requires: sqlite3.exe in script directory
+; Requires: sqlite3.exe in parent directory (DSRF-Export root)
 ; Hotkey:   Ctrl+Alt+K - Extract cookies from Firefox
 ; =============================================================================
 
-cookiesFile := A_ScriptDir . "\cookies.txt"
+; Parent directory (DSRF-Export root) for shared files
+dsrfExportDir := A_ScriptDir . "\.."
+cookiesFile := dsrfExportDir . "\cookies.txt"
 intraDomain := "amazonmailservices.us.spsprod.net"
 
 return ; end of auto-execute
@@ -145,7 +147,7 @@ return ; end of auto-execute
     }
 
     ; Find sqlite3.exe
-    sqlite3 := A_ScriptDir . "\sqlite3.exe"
+    sqlite3 := dsrfExportDir . "\sqlite3.exe"
     if (!FileExist(sqlite3))
     {
         ; Check other common paths
@@ -167,7 +169,7 @@ return ; end of auto-execute
     {
         FileDelete, %tempDb%
         ToolTip
-        MsgBox, 48, Error, sqlite3.exe not found.`n`nPlace sqlite3.exe in:`n%A_ScriptDir%
+        MsgBox, 48, Error, sqlite3.exe not found.`n`nRun DSRF-ExportSetup.bat or place sqlite3.exe in:`n%dsrfExportDir%
         return
     }
 

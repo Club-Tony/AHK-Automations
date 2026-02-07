@@ -49,6 +49,11 @@ return
     ClearTrackingFiles()
 return
 
+; Load Test Data: Sample tracking numbers ; Keybind: Shift+Alt+T
++!t::
+    LoadTestTrackingData()
+return
+
 ; Bulk Tracking Export hotkeys (Assign Recip and Update)
 #If WinActive("Intra Desktop Client - Assign Recip") || WinActive("Intra Desktop Client - Update")
 !+e::  ; paste list into scan field (normal speed)
@@ -127,7 +132,7 @@ Return
     }
 
     CloseWorldShipScripts()
-    Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WS\DSRF-Export\DSRF-to-UPS_WS-Paste.ahk"
+    Run, "C:\Users\daveyuan\Documents\GitHub\Repositories\AHK-Automations\Work_Automations\DSRF-to-UPS_WS\DSRF-Export\ahk\DSRF-Export.ahk"
 
     ; Ensure Intra Window is focused and Mouse cursor is positioned
     FocusIntraWindow()
@@ -943,6 +948,59 @@ ClearTrackingFiles()
     if (csvCleared)
         msg .= "[OK] tracking_numbers.csv"
     ShowTooltip(msg, 3000)
+}
+
+LoadTestTrackingData()
+{
+    trackingDir := A_ScriptDir "\Bulk_Tracking_Export_to_Intra"
+    sampleFile := trackingDir "\sample_tracking_numbers.txt"
+    txtFile := trackingDir "\tracking_numbers.txt"
+    csvFile := trackingDir "\tracking_numbers.csv"
+
+    ; Verify sample file exists
+    if (!FileExist(sampleFile))
+    {
+        ShowTooltip("sample_tracking_numbers.txt not found!", 3000)
+        return
+    }
+
+    ; Read sample data
+    FileRead, sampleData, %sampleFile%
+    if (ErrorLevel || Trim(sampleData) = "")
+    {
+        ShowTooltip("Error reading sample data or file is empty!", 3000)
+        return
+    }
+
+    ; Ask user: TXT or CSV?
+    MsgBox, 4, Load Test Data, Load 250 sample tracking numbers into TXT?`n`nYes = tracking_numbers.txt`nNo = tracking_numbers.csv
+    IfMsgBox, Yes
+        targetFile := txtFile
+    else
+        targetFile := csvFile
+
+    ; Clear target file and write sample data
+    if FileExist(targetFile)
+        FileDelete, %targetFile%
+    FileAppend, %sampleData%, %targetFile%
+
+    if (ErrorLevel)
+    {
+        ShowTooltip("Error writing test data!", 3000)
+        return
+    }
+
+    ; Count lines for confirmation
+    lineCount := 0
+    Loop, Parse, sampleData, `n, `r
+    {
+        if (A_LoopField != "")
+            lineCount++
+    }
+
+    ; Show which file was populated
+    SplitPath, targetFile, targetName
+    ShowTooltip("Loaded " lineCount " test tracking numbers into " targetName, 3000)
 }
 
 ; ========== Bulk Tracking Export Functions ==========

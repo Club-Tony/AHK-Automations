@@ -10,13 +10,16 @@ SetDefaultMouseSpeed, 0
 CoordMode, Mouse, Window
 
 ; =============================================================================
-; DSRF-to-UPS_WS-Paste.ahk
+; DSRF-Export.ahk (AHK Version)
 ; Fetches shipping data from Intra API and pastes directly into UPS WorldShip
 ; =============================================================================
 
+; Parent directory (DSRF-Export root) for shared files (sqlite3.exe, cookies.txt)
+dsrfExportDir := A_ScriptDir . "\.."
+
 ; Cookie extraction settings
 intraDomain := "amazonmailservices.us.spsprod.net"
-cookiesFile := A_ScriptDir . "\cookies.txt"
+cookiesFile := dsrfExportDir . "\cookies.txt"
 
 ; UPS WorldShip coordinates (window-relative pixels)
 worldShipTitle := "UPS WorldShip"
@@ -250,7 +253,7 @@ GetBrowserName(procName)
 
 GetCookies()
 {
-    global cookiesFile
+    global cookiesFile, dsrfExportDir
 
     ; Try environment variable first
     EnvGet, cookies, INTRA_COOKIES
@@ -270,7 +273,7 @@ GetCookies()
     ToolTip
 
     ; Fallback to existing cookies.txt if extraction failed
-    configFile := A_ScriptDir . "\cookies.txt"
+    configFile := dsrfExportDir . "\cookies.txt"
     if (FileExist(configFile))
     {
         FileRead, cookies, %configFile%
@@ -822,7 +825,7 @@ GetFieldValue(x, y)
 ; Returns: cookie string or empty string on failure
 ExtractFirefoxCookies()
 {
-    global intraDomain
+    global intraDomain, dsrfExportDir
 
     ; Find Firefox profile
     firefoxProfiles := A_AppData . "\Mozilla\Firefox\Profiles"
@@ -926,7 +929,7 @@ ExtractFirefoxCookies()
         return ""  ; Firefox has exclusive lock
 
     ; Find sqlite3.exe
-    sqlite3 := A_ScriptDir . "\sqlite3.exe"
+    sqlite3 := dsrfExportDir . "\sqlite3.exe"
     if (!FileExist(sqlite3))
     {
         sqlite3Paths := ["C:\Program Files\SQLite\sqlite3.exe"

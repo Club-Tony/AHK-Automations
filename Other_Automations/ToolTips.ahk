@@ -90,6 +90,15 @@ CLI Only:
 /status - Show current session status (CLI)
 /terminal-setup - Configure terminal integration (CLI)
 -
+Session Controls:
+Ctrl+C - Cancel/interrupt current operation
+Ctrl+D - Exit CLI session
+/clear - Clear conversation (soft reset)
+exit - Exit session
+-
+Update CLI:
+npm install -g @anthropic-ai/claude-code@latest
+-
 Press Esc to close
     )
     Tooltip, %claudeText%

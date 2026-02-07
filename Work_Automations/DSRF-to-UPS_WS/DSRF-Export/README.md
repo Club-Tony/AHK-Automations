@@ -1,68 +1,94 @@
 # DSRF-Export
 
-Tools for exporting DSRF (Desktop Shipping Request Form) data from Intra and pasting into UPS WorldShip.
+Tools for exporting DSRF (Desktop Shipping Request Form) data from Intra and importing into UPS WorldShip.
 
-## Required Programs
+## Two Versions
 
-| Program | Purpose | Location |
-|---------|---------|----------|
+### Standalone Version (No AHK Required)
+Uses `DSRF-Export.bat` + `DSRF-Export.ps1` to fetch data and generate WorldShip-compatible XML/CSV files.
+
+### AHK Version (Direct Paste)
+Uses `ahk\DSRF-Export.ahk` to fetch data and paste directly into WorldShip fields via automation.
+
+---
+
+## Standalone Version Setup
+
+### Requirements
+
+| Program | Purpose | Install |
+|---------|---------|---------|
+| **sqlite3.exe** | Read Firefox cookies database | Run `DSRF-ExportSetup.bat` (auto-downloads) |
+| **Firefox** | Browser with Intra session | Already installed |
+
+### First-Time Setup
+
+1. Run `DSRF-ExportSetup.bat` — downloads sqlite3.exe and creates the `import\` folder
+2. Configure WorldShip Auto-Import (one-time):
+   - In WorldShip: Import/Export > Auto Import
+   - Set import directory to the `import\` subfolder
+   - Enable auto-processing
+
+### Standalone Workflow
+
+1. Log into Intra in Firefox
+2. Double-click `DSRF-Export.bat`
+3. Enter the PK# when prompted
+4. Script auto-extracts cookies, fetches data, generates files in `import\`
+5. WorldShip picks up the XML automatically (if Auto-Import configured)
+   - Or use the CSV file for manual batch import
+
+### Output Files
+
+Generated in `import\` subfolder, named by PK#:
+- `PK######.xml` — WorldShip XML Auto-Import format (no field mapping needed)
+- `PK######.csv` — Standard CSV for batch import (requires one-time field mapping)
+
+---
+
+## AHK Version Setup
+
+### Requirements
+
+| Program | Purpose | Install |
+|---------|---------|---------|
 | **sqlite3.exe** | Read Firefox cookies database | `DSRF-Export\sqlite3.exe` |
 | **AutoHotkey v1** | Run automation scripts | System-wide install |
-| **Firefox** | Browser with Intra session cookies | N/A |
+| **Firefox** | Browser with Intra session | Already installed |
 
-### sqlite3.exe
+### AHK Workflow
 
-Required for `Cookie_Extractor.ahk` to read session cookies directly from Firefox's `cookies.sqlite` database.
+1. Log into Intra in Firefox
+2. Open a DSRF form in Intra
+3. Open UPS WorldShip with a new shipment
+4. Press `Ctrl+Alt+D` to fetch and paste data directly into WorldShip
+5. Press `Esc` to cancel/reload if needed
 
-**Download:** https://www.sqlite.org/download.html (Precompiled Binaries for Windows - sqlite-tools-win-x64)
-
-Extract `sqlite3.exe` from the zip and place it in this folder.
+---
 
 ## Scripts
 
-### Cookie_Extractor.ahk
+| File | Description |
+|------|-------------|
+| `DSRF-Export.bat` | Standalone launcher (prompts for PK#, runs .ps1) |
+| `DSRF-Export.ps1` | Core logic: cookie extraction, API call, XML/CSV generation |
+| `DSRF-ExportSetup.bat` | One-time setup: downloads sqlite3, creates folders |
+| `ahk\DSRF-Export.ahk` | AHK version: direct paste into WorldShip |
+| `ahk\Cookie_Extractor.ahk` | Standalone cookie extraction (AHK) |
 
-Extracts Intra session cookies from Firefox and saves to `cookies.txt`.
-
-**Hotkey:** `Ctrl+Alt+K`
-
-**How it works:**
-1. Locates Firefox profile folder
-2. Copies `cookies.sqlite` to temp (Firefox locks it while running)
-3. Queries for cookies matching `amazonmailservices.us.spsprod.net`
-4. Formats and saves to `cookies.txt`
-
-**Note:** If Firefox has the database locked, close Firefox and retry.
-
-### DSRF-to-UPS_WS-Paste.ahk
-
-Fetches DSRF data from Intra API using cookies and pastes into UPS WorldShip.
-
-**Hotkey:** `Ctrl+Alt+D`
-
-**Requires:** Valid `cookies.txt` (run Cookie_Extractor first)
-
-### ItemVar Discovery Tools
-
-For discovering additional itemvars from the Intra API:
-
-- `discover_itemvars.bat` - Interactive batch file
-- `itemvar_discovery.ps1` - PowerShell script
-- `ItemVar_Reference.txt` - Documentation of discovered itemvars
-
-## Workflow
-
-1. Log into Intra in Firefox
-2. Press `Ctrl+Alt+K` to extract cookies
-3. Open a DSRF form in Intra, copy the PK#
-4. Open UPS WorldShip with a new shipment
-5. Press `Ctrl+Alt+D` to fetch and paste data
-
-## Files
+## Reference Files
 
 | File | Description |
 |------|-------------|
-| `cookies.txt` | Session cookies (auto-generated) |
-| `cookies.txt.bak` | Backup of previous cookies |
-| `sqlite3.exe` | SQLite CLI tool |
-| `ItemVar_Reference.txt` | ItemVar field mappings |
+| `ItemVar_Reference.txt` | ItemVar field mappings (IDs to field names) |
+| `sqlite3.exe` | SQLite CLI tool (auto-installed by setup) |
+| `cookies.txt` | Session cookies (auto-generated, cached) |
+
+## Discovery Tools
+
+| File | Description |
+|------|-------------|
+| `discover_itemvars.bat` | Interactive itemvar discovery |
+| `itemvar_discovery.ps1` | PowerShell itemvar discovery |
+| `parse_itemvars.ps1` | Parse itemvar results |
+| `extract_firefox_cookies.ps1` | Standalone PowerShell cookie extraction |

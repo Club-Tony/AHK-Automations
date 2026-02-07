@@ -6,6 +6,30 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 SetTitleMatchMode, 2  ; Partial matches for Intra window names.
 
+; Startup tooltip:
+; - Uses a separate tooltip ID (20) to avoid interfering with normal status tooltips.
+; - Auto-hides after 30s and also hides on the first new key press.
+; - Suppressible via ReloadAll by passing /SkipReadyTooltip.
+readyTooltipActive := false
+readyTooltipKeysDown := {}
+skipReadyTooltip := false
+for _, arg in A_Args
+{
+    if (arg = "/SkipReadyTooltip")
+    {
+        skipReadyTooltip := true
+        break
+    }
+}
+
+if (!skipReadyTooltip)
+{
+    readyTooltipActive := true
+    ToolTip, Intra Window Alignment Script Ready: Open 3 Desktop Clients - (Ctrl + Alt + W), , , 20
+    SetTimer, HideReadyTooltip, -30000
+    SetTimer, StartReadyTooltipDismissCheck, -1
+}
+
 assignTitle := "Intra Desktop Client - Assign Recip"
 updateTitle := "Intra Desktop Client - Update"
 pickupTitle := "Intra Desktop Client - Pickup"
@@ -27,6 +51,54 @@ return
 ^!0::  ; Clear tracked login windows
     trackedLoginWindows := []
     ShowTimedTooltip("Login tracking cleared", 1500)
+return
+
+StartReadyTooltipDismissCheck:
+    if (!readyTooltipActive)
+        return
+    readyTooltipKeysDown := {}
+    Loop, 256
+    {
+        key := A_Index
+        ; Skip mouse buttons.
+        if (key = 1 || key = 2 || key = 4 || key = 5 || key = 6)
+            continue
+        if (GetKeyState(Format("vk{:02X}", key), "P"))
+            readyTooltipKeysDown[key] := true
+    }
+    SetTimer, CheckReadyTooltipDismiss, 50
+return
+
+CheckReadyTooltipDismiss:
+    if (!readyTooltipActive)
+        return
+    Loop, 256
+    {
+        key := A_Index
+        ; Skip mouse buttons.
+        if (key = 1 || key = 2 || key = 4 || key = 5 || key = 6)
+            continue
+        isPressed := GetKeyState(Format("vk{:02X}", key), "P")
+        if (isPressed)
+        {
+            if (!readyTooltipKeysDown.HasKey(key))
+            {
+                Gosub, HideReadyTooltip
+                return
+            }
+        }
+        else if (readyTooltipKeysDown.HasKey(key))
+            readyTooltipKeysDown.Delete(key)
+    }
+return
+
+HideReadyTooltip:
+    SetTimer, HideReadyTooltip, Off
+    SetTimer, StartReadyTooltipDismissCheck, Off
+    SetTimer, CheckReadyTooltipDismiss, Off
+    readyTooltipActive := false
+    readyTooltipKeysDown := {}
+    ToolTip, , , , 20
 return
 
 TrackLoginWindows:
